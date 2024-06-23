@@ -618,6 +618,8 @@ public class ApplicationHook implements IXposedHookLoadPackage {
             Log.i(TAG, "stopHandler err:");
             Log.printStackTrace(TAG, th);
         }
+        // 重置读取到内存中的文件
+        IdMapManager.resetIdMap();
     }
 
     private static Boolean setAlarmTask(long triggerAtMillis, PendingIntent operation) {

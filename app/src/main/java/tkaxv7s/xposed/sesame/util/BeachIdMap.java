@@ -12,6 +12,12 @@ public class BeachIdMap {
     private static Map<String, String> idMap;
     private static boolean hasChanged = false;
 
+    {
+        // 加载时向IdMapManager注册
+        IdMapManager.register(BeachIdMap.class.getName());
+        Log.i(TAG,"register to IdMapManager");
+    }
+
     public static void putIdMap(String key, String value) {
         if (key == null || key.isEmpty())
             return;
@@ -70,6 +76,14 @@ public class BeachIdMap {
             }
         }
         return idMap;
+    }
+
+    public static void reset(){
+        if (idMap != null && !shouldReload) {
+            saveIdMap();
+        }
+        idMap = null;
+        Log.i(TAG,"reset");
     }
 
 }

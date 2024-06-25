@@ -614,6 +614,8 @@ public class ApplicationHook implements IXposedHookLoadPackage {
             } else {
                 ModelTask.stopAllTask();
             }
+            // 重置读取到内存中的文件
+            IdMapManager.resetIdMap();
         } catch (Throwable th) {
             Log.i(TAG, "stopHandler err:");
             Log.printStackTrace(TAG, th);

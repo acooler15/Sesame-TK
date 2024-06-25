@@ -22,6 +22,11 @@ public class UserIdMap {
 
     private static boolean hasChanged = false;
 
+    static {
+        // 加载时向IdMapManager注册
+        IdMapManager.register(UserIdMap.class.getName());
+    }
+
     public static void setCurrentUid(String uid) {
         if (currentUid == null || !currentUid.equals(uid)) {
             currentUid = uid;
@@ -149,6 +154,14 @@ public class UserIdMap {
                 Thread.sleep(1000);
             }
         }
+    }
+
+    public static void reset(){
+        if (idMap != null && !shouldReload) {
+            saveIdMap();
+        }
+        idMap = null;
+        Log.i(TAG,"reset");
     }
 
 }

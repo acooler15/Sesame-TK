@@ -12,6 +12,11 @@ public class CooperationIdMap {
     private static Map<String, String> idMap;
     private static boolean hasChanged = false;
 
+    static {
+        // 加载时向IdMapManager注册
+        IdMapManager.register(CooperationIdMap.class.getName());
+    }
+
     public static void putIdMap(String key, String value) {
         if (key == null || key.isEmpty())
             return;
@@ -70,6 +75,14 @@ public class CooperationIdMap {
             }
         }
         return idMap;
+    }
+
+    public static void reset(){
+        if (idMap != null && !shouldReload) {
+            saveIdMap();
+        }
+        idMap = null;
+        Log.i(TAG,"reset");
     }
 
 }

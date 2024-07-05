@@ -99,7 +99,7 @@ public class Status {
             wfl = stat.waterFriendLogList.get(index);
         }
         wfl.waterCount = count;
-        save();
+        save("waterFriendToday");
     }
 
     public static int getReserveTimes(String id) {
@@ -136,7 +136,7 @@ public class Status {
             rl = stat.reserveLogList.get(index);
         }
         rl.applyCount += count;
-        save();
+        save("reserveToday");
     }
 
     public static boolean canCooperateWaterToday(String uid, String coopId) {
@@ -148,7 +148,7 @@ public class Status {
         String v = uid + "_" + coopId;
         if (!stat.cooperateWaterList.contains(v)) {
             stat.cooperateWaterList.add(v);
-            save();
+            save("cooperateWaterToday");
         }
     }
 
@@ -160,7 +160,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.ancientTreeCityCodeList.contains(cityCode)) {
             stat.ancientTreeCityCodeList.add(cityCode);
-            save();
+            save("ancientTreeToday");
         }
     }
 
@@ -172,7 +172,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.answerQuestionList.contains(uid)) {
             stat.answerQuestionList.add(uid);
-            save();
+            save("answerQuestionToday");
         }
     }
 
@@ -180,7 +180,7 @@ public class Status {
         Status stat = INSTANCE;
         if (stat.questionHint == null) {
             stat.questionHint = s;
-            save();
+            save("setQuestionHint");
         }
     }
 
@@ -214,7 +214,7 @@ public class Status {
             ffl = stat.feedFriendLogList.get(index);
         }
         ffl.feedCount++;
-        save();
+        save("feedFriendToday");
     }
 
     public static boolean canVisitFriendToday(String id, int count) {
@@ -249,7 +249,7 @@ public class Status {
             vfl = stat.visitFriendLogList.get(index);
         }
         vfl.visitCount = count;
-        save();
+        save("visitFriendToday");
     }
 
     public static List<String> stallP2PUserIdList(String uid) {
@@ -278,7 +278,7 @@ public class Status {
             ssil = stat.stallShareIdLogList.get(index);
         }
         ssil.shareId = sid;
-        save();
+        save("stallShareIdToday");
     }
 
     public static String getStallShareId(String uid) {
@@ -330,7 +330,7 @@ public class Status {
         } else {
             shcl.helpedCount += 1;
         }
-        save();
+        save("stallHelpToday");
     }
 
     public static boolean canStallBeHelpToday(String id) {
@@ -367,7 +367,7 @@ public class Status {
         } else {
             shcl.beHelpedCount += 1;
         }
-        save();
+        save("stallBeHelpToday");
     }
 
     public static boolean canMemberSignInToday(String uid) {
@@ -378,7 +378,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.memberSignInList.contains(uid)) {
             stat.memberSignInList.add(uid);
-            save();
+            save("memberSignInToday");
         }
     }
 
@@ -390,7 +390,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.donationEggList.contains(uid)) {
             stat.donationEggList.add(uid);
-            save();
+            save("donationEgg");
         }
     }
 
@@ -402,7 +402,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.spreadManureList.contains(uid)) {
             stat.spreadManureList.add(uid);
-            save();
+            save("spreadManureToday");
         }
     }
 
@@ -416,7 +416,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.stallP2PHelpedList.contains(uid)) {
             stat.stallP2PHelpedList.add(uid);
-            save();
+            save("stallP2PHelpeToday");
         }
     }
 
@@ -437,7 +437,7 @@ public class Status {
         String uid = UserIdMap.getCurrentUid();
         if (!stat.antStallAssistFriend.contains(uid)) {
             stat.antStallAssistFriend.add(uid);
-            save();
+            save("antStallAssistFriendToday");
         }
     }
 
@@ -449,7 +449,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.exchangeList.contains(uid)) {
             stat.exchangeList.add(uid);
-            save();
+            save("exchangeToday");
         }
     }
 
@@ -461,7 +461,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.protectBubbleList.contains(uid)) {
             stat.protectBubbleList.add(uid);
-            save();
+            save("protectBubbleToday");
         }
     }
 
@@ -492,7 +492,7 @@ public class Status {
                 stat.exchangeTimes = task.getExchangeEnergyDoubleClickCount().getValue();
             }
         }
-        save();
+        save("exchangeDoubleCardToday");
     }
 
     public static boolean canExchangeDoubleCardTodayLongTime() {
@@ -517,7 +517,7 @@ public class Status {
         } /*else {
             stat.exchangeTimesLongTime = AntForestV2.exchangeEnergyDoubleClickCountLongTime.getValue();
         }*/
-        save();
+        save("exchangeDoubleCardTodayLongTime");
     }
 
     /**
@@ -537,7 +537,7 @@ public class Status {
             return;
         }
         INSTANCE.canPasteTicketTime.add(UserIdMap.getCurrentUid());
-        save();
+        save("pasteTicketTime");
     }
 
     public static boolean canDoubleToday() {
@@ -550,7 +550,7 @@ public class Status {
 
     public static void DoubleToday() {
         INSTANCE.doubleTimes += 1;
-        save();
+        save("DoubleToday");
     }
 
     public static boolean canKbSignInToday() {
@@ -562,7 +562,7 @@ public class Status {
         Status stat = INSTANCE;
         if (stat.kbSignIn != Statistics.INSTANCE.getDay().time) {
             stat.kbSignIn = Statistics.INSTANCE.getDay().time;
-            save();
+            save("KbSignInToday");
         }
     }
 
@@ -572,7 +572,7 @@ public class Status {
 
     public static void setDadaDailySet(Set<String> dailyAnswerList) {
         INSTANCE.dailyAnswerList = dailyAnswerList;
-        save();
+        save("setDadaDailySet");
     }
 
     public static boolean canSyncStepToday(String uid) {
@@ -584,7 +584,7 @@ public class Status {
         Status stat = INSTANCE;
         if (!stat.syncStepList.contains(uid)) {
             stat.syncStepList.add(uid);
-            save();
+            save("SyncStepToday");
         }
     }
 
@@ -605,7 +605,7 @@ public class Status {
             return;
         }
         INSTANCE.greenFinancePointFriend.add(UserIdMap.getCurrentUid());
-        save();
+        save("greenFinancePointFriend");
     }
 
     /**
@@ -631,7 +631,7 @@ public class Status {
             return;
         }
         INSTANCE.greenFinancePrizesMap.put(UserIdMap.getCurrentUid(), TimeUtil.getWeekNumber(new Date()));
-        save();
+        save("greenFinancePrizesMap");
     }
 
     public static void dayClear() {
@@ -662,7 +662,7 @@ public class Status {
         stat.antStallAssistFriend.clear();
         stat.canPasteTicketTime.clear();
         stat.greenFinancePointFriend.clear();
-        save();
+        save("dayClear");
     }
 
     public static synchronized Status load() {
@@ -714,10 +714,10 @@ public class Status {
         }
     }
 
-    private static void save() {
+    private static void save(String methodName) {
         INSTANCE.saveTime = System.currentTimeMillis();
         String json = JsonUtil.toJsonString(INSTANCE);
-        Log.system(TAG, "保存 status.json");
+        Log.system(TAG, methodName + "保存 status.json");
         String currentUid = UserIdMap.getCurrentUid();
         if (StringUtil.isEmpty(currentUid)) {
             Log.i(TAG, "用户为空，状态保存失败");

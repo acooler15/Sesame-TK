@@ -590,6 +590,8 @@ public class ApplicationHook implements IXposedHookLoadPackage {
             int nowYear = nowCalendar.get(Calendar.YEAR);
             int nowMonth = nowCalendar.get(Calendar.MONTH);
             int nowDay = nowCalendar.get(Calendar.DAY_OF_MONTH);
+            Log.record("nowCalendar：" + nowYear + "-" + (nowMonth + 1) + "-" + nowDay);
+            Log.record("nowCalendar：" + dayCalendar.get(Calendar.YEAR) + "-" + (dayCalendar.get(Calendar.MONTH) + 1) + "-" + dayCalendar.get(Calendar.DAY_OF_MONTH));
             if (dayCalendar.get(Calendar.YEAR) != nowYear || dayCalendar.get(Calendar.MONTH) != nowMonth || dayCalendar.get(Calendar.DAY_OF_MONTH) != nowDay) {
                 Log.record("日期更新为：" + nowYear + "-" + (nowMonth + 1) + "-" + nowDay);
                 try {

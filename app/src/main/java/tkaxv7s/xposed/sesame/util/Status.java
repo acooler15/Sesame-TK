@@ -714,7 +714,9 @@ public class Status {
     }
 
     public static synchronized void save() {
-        ApplicationHook.updateDay();
+        if (INSTANCE.saveTime != 0) {
+            ApplicationHook.updateDay();
+        }
         long lastSaveTime = INSTANCE.saveTime;
         try {
             INSTANCE.saveTime = System.currentTimeMillis();

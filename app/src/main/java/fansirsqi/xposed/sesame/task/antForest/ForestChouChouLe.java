@@ -11,6 +11,7 @@ import fansirsqi.xposed.sesame.data.Status;
 import fansirsqi.xposed.sesame.task.TaskStatus;
 import fansirsqi.xposed.sesame.util.GlobalThreadPools;
 import fansirsqi.xposed.sesame.util.Log;
+import fansirsqi.xposed.sesame.util.StringUtil;
 import fansirsqi.xposed.sesame.util.maps.UserMap;
 import fansirsqi.xposed.sesame.util.ResChecker;
 
@@ -61,22 +62,37 @@ public class ForestChouChouLe {
                             if (taskStatus.equals(TaskStatus.TODO.name())) { //适配签到任务
                                 if (taskType.equals("NORMAL_DRAW_EXCHANGE_VITALITY")) {//活力值兑换次数
                                     String sginRes = AntForestRpcCall.exchangeTimesFromTaskopengreen(activityId, sceneCode, source, taskSceneCode, taskType);
+<<<<<<< main
                                     if (ResChecker.checkRes(sginRes)) {
                                         Log.forest( "森林寻宝🧾：" + taskName);
+=======
+                                    if (ResUtil.checkSuccess(sginRes)) {
+                                        Log.forest(TAG, "森林寻宝🧾：" + taskName);
+>>>>>>> 增加不完整、不好用的子功能：森林抽抽乐-助力(确认邀请)
                                         doublecheck = true;
                                     }
                                 }
                                 if (taskType.equals("FOREST_NORMAL_DRAW_XLIGHT_1")) {
                                     String sginRes = AntForestRpcCall.finishTask4Chouchoule(taskType, taskSceneCode);
+<<<<<<< main
                                     if (ResChecker.checkRes(sginRes)) {
                                         Log.forest( "森林寻宝🧾：" + taskName);
+=======
+                                    if (ResUtil.checkSuccess(sginRes)) {
+                                        Log.forest(TAG, "森林寻宝🧾：" + taskName);
+>>>>>>> 增加不完整、不好用的子功能：森林抽抽乐-助力(确认邀请)
                                         doublecheck = true;
                                     }
                                 }
                                 if (taskType.equals("FOREST_NORMAL_DRAW_ANTTODO")) {
                                     String sginRes = AntForestRpcCall.finishTaskopengreen(taskType, taskSceneCode);
+<<<<<<< main
                                     if (ResChecker.checkRes(sginRes)) {
                                         Log.forest( "森林寻宝🧾：" + taskName);
+=======
+                                    if (ResUtil.checkSuccess(sginRes)) {
+                                        Log.forest(TAG, "森林寻宝🧾：" + taskName);
+>>>>>>> 增加不完整、不好用的子功能：森林抽抽乐-助力(确认邀请)
                                         doublecheck = true;
                                     }
                                 }
@@ -84,8 +100,13 @@ public class ForestChouChouLe {
 
                             if (taskStatus.equals(TaskStatus.FINISHED.name())) {// 领取奖励
                                 String sginRes = AntForestRpcCall.receiveTaskAwardopengreen(source, taskSceneCode, taskType);
+<<<<<<< main
                                 if (ResChecker.checkRes(sginRes)) {
                                     Log.forest( "森林寻宝🧾：" + taskName);
+=======
+                                if (ResUtil.checkSuccess(sginRes)) {
+                                    Log.forest(TAG, "森林寻宝🧾：" + taskName);
+>>>>>>> 增加不完整、不好用的子功能：森林抽抽乐-助力(确认邀请)
                                     // 检查是否需要再次检测任务
                                     if (rightsTimesLimit - rightsTimes > 0) {
                                         doublecheck = true;
@@ -118,7 +139,7 @@ public class ForestChouChouLe {
                         JSONObject prizeVO = jo.getJSONObject("prizeVO");
                         String prizeName = prizeVO.getString("prizeName");
                         int prizeNum = prizeVO.getInt("prizeNum");
-                        Log.forest("森林寻宝🎁[领取: " + prizeName + "*" + prizeNum + "]");
+                        Log.forest(TAG, "森林寻宝🎁[领取: " + prizeName + "*" + prizeNum + "]");
                     }
                 }
             }

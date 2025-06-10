@@ -3,6 +3,11 @@ package fansirsqi.xposed.sesame.task.antForest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import fansirsqi.xposed.sesame.data.Status;
 import fansirsqi.xposed.sesame.task.TaskStatus;
 import fansirsqi.xposed.sesame.util.GlobalThreadPools;
 import fansirsqi.xposed.sesame.util.Log;
@@ -142,6 +147,10 @@ public class ForestChouChouLe {
                             Log.forest(TAG, "森林抽抽乐助力-跳过当前号的邀请码");
                             continue;
                         }
+                        if (!Status.canForestCCLShare(shareUserId)) {
+                            Log.forest(TAG, "森林抽抽乐助力-今日已助力过 "+shareUserId);
+                            continue;
+                        }
                     }
                 } else {
                     Log.forest(TAG, "森林抽抽乐助力-获取邀请用户ID失败");
@@ -151,6 +160,7 @@ public class ForestChouChouLe {
                 GlobalThreadPools.sleep(5 * 1000L);
                 JSONObject confirmShareRecall = new JSONObject(AntForestRpcCall.confirmShareRecall(UserMap.getCurrentUid(), shareId));
                 Log.forest(TAG, "助力" + shareUserId + ",结果：" + confirmShareRecall.getString("desc")); // 暂时这样吧，后面再改
+                Status.forestCCLShare(shareUserId);
                 if (!ResUtil.checkSuccess(confirmShareRecall)) {
                     Log.runtime(confirmShareRecall.toString());
                 }

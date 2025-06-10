@@ -101,16 +101,10 @@ public class Status {
      */
     private Set<String> memberPointExchangeBenefitLogList = new HashSet<>();
 
-
-    public static long getCurrentDayTimestamp() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis(); // 返回当天零点时间戳
-    }
-
+    /**
+     * 蚂蚁森林-抽抽乐助力
+     */
+    private Set<String> forestCCLShare = new HashSet<>();
 
     public static int getVitalityCount(String skuId) {
         Integer exchangedCount = getINSTANCE().getVitalityStoreList().get(skuId);
@@ -613,6 +607,17 @@ public class Status {
      */
     public static boolean canParadiseCoinExchangeBenefitToday(String spuId) {
         return !hasFlagToday("farm::paradiseCoinExchangeLimit::" + spuId);
+    }
+
+    public static void forestCCLShare(String userId) {
+        if (canForestCCLShare(userId)) {
+            getINSTANCE().forestCCLShare.add(userId);
+            save();
+        }
+    }
+
+    public static boolean canForestCCLShare(String userId) {
+        return !getINSTANCE().forestCCLShare.contains(userId);
     }
 
     public static String getTAG() {

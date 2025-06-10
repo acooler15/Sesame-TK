@@ -760,6 +760,39 @@ public class AntForestRpcCall {
         return RequestManager.requestString("com.alipay.antieptask.finishTaskopengreen", args);
     }
 
+    /**
+     * 获取邀请链接对应的用户ID
+     */
+    public static String shareComponentRecall(String shareId) throws JSONException{
+        JSONObject params = new JSONObject();
+        params.put("iepShareChannelType", "qrcode");
+        params.put("requestType", "RPC");
+        params.put("sceneCode", "FOREST_NORMAL_20250510_SHARE");
+        params.put("shareId", shareId);
+        params.put("source", "chouchoule");
+        String args = "[" + params + "]";
+        return RequestManager.requestString("com.alipay.antiep.shareComponentRecall", args);
+
+    }
+
+    /**
+     *
+     * 确认邀请
+     */
+    public static String confirmShareRecall(String userId, String shareId ) throws JSONException {
+        JSONObject params = new JSONObject();
+        JSONObject beSharedBizExtInfo = new JSONObject();
+        beSharedBizExtInfo.put("drawActivityId", "2025060301");
+        beSharedBizExtInfo.put("inviterUid", userId);
+        params.put("beSharedBizExtInfo", beSharedBizExtInfo);
+        params.put("requestType", "RPC");
+        params.put("sceneCode", "FOREST_NORMAL_20250510_SHARE");
+        params.put("shareId", shareId);
+        params.put("source", "chouchoule");
+        params.put("userId", userId);
+        String args = "[" + params + "]";
+        return RequestManager.requestString("com.alipay.antiep.confirmShareRecall", args);
+    }
 }
 
 

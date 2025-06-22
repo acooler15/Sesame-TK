@@ -3,9 +3,13 @@ package fansirsqi.xposed.sesame.task.antForest;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.List;
+
+import fansirsqi.xposed.sesame.data.Status;
 import fansirsqi.xposed.sesame.task.TaskStatus;
 import fansirsqi.xposed.sesame.util.GlobalThreadPools;
 import fansirsqi.xposed.sesame.util.Log;
+import fansirsqi.xposed.sesame.util.StringUtil;
 import fansirsqi.xposed.sesame.util.maps.UserMap;
 import fansirsqi.xposed.sesame.util.ResChecker;
 
@@ -121,6 +125,49 @@ public class ForestChouChouLe {
             Log.printStackTrace(e);
         }
 
+    }
+
+    void confirmShareRecall(List<String> shareIds) {
+        try {
+            if (shareIds == null || shareIds.isEmpty()) {
+                return;
+            }
+            for (String shareId : shareIds) {
+                if(StringUtil.isEmpty(shareId)) continue;
+                GlobalThreadPools.sleep(5 * 1000L);
+                String shareUserId = null;
+                JSONObject shareComponentRecall = new JSONObject(AntForestRpcCall.shareComponentRecall(shareId));
+                if (ResChecker.checkRes(TAG, shareComponentRecall)) {
+
+                    JSONObject inviterInfoVo = shareComponentRecall.optJSONObject("inviterInfoVo");
+                    if (inviterInfoVo != null) {
+                        shareUserId = inviterInfoVo.optString("userId");
+                        if (UserMap.getCurrentUid().equals(shareUserId)) {
+                            Log.forest(TAG, "森林抽抽乐助力-跳过当前号的邀请码");
+                            continue;
+                        }
+                        if (!Status.canForestCCLShare(shareUserId)) {
+                            Log.forest(TAG, "森林抽抽乐助力-今日已助力过 "+shareUserId);
+                            continue;
+                        }
+                    }
+                } else {
+                    Log.forest(TAG, "森林抽抽乐助力-获取邀请用户ID失败");
+                    Log.error(TAG, shareComponentRecall.getString("desc"));
+                    continue;
+                }
+                GlobalThreadPools.sleep(5 * 1000L);
+                JSONObject confirmShareRecall = new JSONObject(AntForestRpcCall.confirmShareRecall(UserMap.getCurrentUid(), shareId));
+                Log.forest(TAG, "助力" + shareUserId + ",结果：" + confirmShareRecall.getString("desc")); // 暂时这样吧，后面再改
+                Status.forestCCLShare(shareUserId);
+                if (!ResChecker.checkRes(TAG, confirmShareRecall)) {
+                    Log.runtime(confirmShareRecall.toString());
+                }
+            }
+        }catch (Exception e) {
+            Log.forest(TAG,"森林抽抽乐-出错");
+            Log.printStackTrace(e);
+        }
     }
 
 

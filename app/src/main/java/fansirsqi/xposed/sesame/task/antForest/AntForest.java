@@ -174,6 +174,7 @@ public class AntForest extends ModelTask {
     private ListModelField.ListJoinCommaToStringModelField bubbleBoostTime;
 
     private BooleanModelField forestChouChouLe;//森林抽抽乐
+    private ListModelField.ListJoinCommaToStringModelField forestChouChouLeShareIds; // 森林抽抽乐邀请id列表
     private static boolean canConsumeAnimalProp;
     private static int totalCollected = 0;
     private static int totalHelpCollected = 0;
@@ -276,6 +277,8 @@ public class AntForest extends ModelTask {
         modelFields.addField(receiveForestTaskAward = new BooleanModelField("receiveForestTaskAward", "森林任务", false));
 
         modelFields.addField(forestChouChouLe = new BooleanModelField("forestChouChouLe", "森林寻宝任务", false));
+        modelFields.addField(forestChouChouLeShareIds = new ListModelField.ListJoinCommaToStringModelField("forestChouChouLeShareIds", "森林寻宝任务|分享ID列表-不好用", ListUtil.newArrayList(
+                "")));
 
         modelFields.addField(collectGiftBox = new BooleanModelField("collectGiftBox", "领取礼盒", false));
 
@@ -433,6 +436,7 @@ public class AntForest extends ModelTask {
                 }
                 if (forestChouChouLe.getValue()) {
                     ForestChouChouLe chouChouLe = new ForestChouChouLe();
+                    chouChouLe.confirmShareRecall(forestChouChouLeShareIds.getValue()); // 执行助力(确认分享)操作
                     chouChouLe.chouChouLe();
                 }
             }

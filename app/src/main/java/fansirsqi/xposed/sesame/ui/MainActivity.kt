@@ -79,41 +79,44 @@ class MainActivity : BaseActivity() {
             }
         }
         // 获取并设置一言句子
-        try {
-            if (!AssetUtil.copySoFileToStorage(this, AssetUtil.checkerDestFile)) {
-                Log.error(TAG, "checker file copy failed")
-            }
-            if (!AssetUtil.copySoFileToStorage(this, AssetUtil.dexkitDestFile)) {
-                Log.error(TAG, "dexkit file copy failed")
-            }
-            Detector.loadLibrary("checker")
-            Detector.initDetector(this)
-        } catch (e: Exception) {
-            Log.error(TAG, "load libSesame err:" + e.message)
-        }
+//        try {
+//            if (!AssetUtil.copySoFileToStorage(this, AssetUtil.checkerDestFile)) {
+//                Log.error(TAG, "checker file copy failed")
+//            }
+//            if (!AssetUtil.copySoFileToStorage(this, AssetUtil.dexkitDestFile)) {
+//                Log.error(TAG, "dexkit file copy failed")
+//            }
+//            Detector.loadLibrary("checker")
+//            Detector.initDetector(this)
+//        } catch (e: Exception) {
+//            Log.error(TAG, "load libSesame err:" + e.message)
+//        }
 
         lifecycleScope.launch {
             val result = FansirsqiUtil.getOneWord()
             oneWord.text = result
         }
-        c = SecureApiClient(baseUrl = getRandomApi(0x22), signatureKey = getRandomEncryptData(0xCF))
+//        c = SecureApiClient(baseUrl = getRandomApi(0x22), signatureKey = getRandomEncryptData(0xCF))
         lifecycleScope.launch {
-            val result = withContext(Dispatchers.IO) {
-                c.secureVerify(deviceId = verifyId, path = getRandomEncryptData(0x9e))
-            }
-            Log.runtime("verify result = $result")
-            ToastUtil.makeText("${result?.optString("message")}", Toast.LENGTH_SHORT).show()
-            when (result?.optInt("status")) {
-                208, 400, 210, 209, 300, 200, 202, 203, 204, 205 -> {
-                    ViewAppInfo.veriftag = false
-                }
-
-                101, 100 -> {
-                    ViewAppInfo.veriftag = true
-                    userNickName = result.optJSONObject("data")?.optString("user").toString()
-                    updateSubTitle(RunType.LOADED.nickName)
-                }
-            }
+//            val result = withContext(Dispatchers.IO) {
+//                c.secureVerify(deviceId = verifyId, path = getRandomEncryptData(0x9e))
+//            }
+//            Log.runtime("verify result = $result")
+//            ToastUtil.makeText("${result?.optString("message")}", Toast.LENGTH_SHORT).show()
+//            when (result?.optInt("status")) {
+//                208, 400, 210, 209, 300, 200, 202, 203, 204, 205 -> {
+//                    ViewAppInfo.veriftag = false
+//                }
+//
+//                101, 100 -> {
+//                    ViewAppInfo.veriftag = true
+//                    userNickName = result.optJSONObject("data")?.optString("user").toString()
+//                    updateSubTitle(RunType.LOADED.nickName)
+//                }
+//            }
+            ViewAppInfo.veriftag = true
+//            userNickName = result.optJSONObject("data")?.optString("user").toString()
+            updateSubTitle(RunType.LOADED.nickName)
 
         }
 
@@ -376,21 +379,21 @@ class MainActivity : BaseActivity() {
     }
 
     private fun goSettingActivity(index: Int) {
-        if (Detector.loadLibrary("checker")) {
-            val userEntity = userEntityArray[index]
-            val targetActivity = UIConfig.INSTANCE.targetActivityClass
-            val intent = Intent(this, targetActivity)
-            if (userEntity != null) {
-                intent.putExtra("userId", userEntity.userId)
-                intent.putExtra("userName", userEntity.showName)
-            } else {
-                intent.putExtra("userName", userNameArray[index])
-            }
-
-            startActivity(intent)
+//        if (Detector.loadLibrary("checker")) {
+        val userEntity = userEntityArray[index]
+        val targetActivity = UIConfig.INSTANCE.targetActivityClass
+        val intent = Intent(this, targetActivity)
+        if (userEntity != null) {
+            intent.putExtra("userId", userEntity.userId)
+            intent.putExtra("userName", userEntity.showName)
         } else {
-            Detector.tips(this, "缺少必要依赖！")
+            intent.putExtra("userName", userNameArray[index])
         }
+
+        startActivity(intent)
+//        } else {
+//            Detector.tips(this, "缺少必要依赖！")
+//        }
     }
 
     fun updateSubTitle(runType: String) {

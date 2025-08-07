@@ -266,8 +266,8 @@ public class ApplicationHook {
                         assert pInfo.versionName != null;
                         alipayVersion = new AlipayVersion(pInfo.versionName);
                         Log.runtime(TAG, "handleLoadPackage alipayVersion: " + alipayVersion.getVersionString());
-                        loadNativeLibs(appContext, AssetUtil.INSTANCE.getCheckerDestFile());
-                        loadNativeLibs(appContext, AssetUtil.INSTANCE.getDexkitDestFile());
+//                        loadNativeLibs(appContext, AssetUtil.INSTANCE.getCheckerDestFile());
+//                        loadNativeLibs(appContext, AssetUtil.INSTANCE.getDexkitDestFile());
                         HookUtil.INSTANCE.fuckAccounLimit(loadPackageParam);
                         if (BuildConfig.DEBUG) {
                             try {
@@ -344,17 +344,17 @@ public class ApplicationHook {
 
                                 Log.runtime(TAG, "Service onCreate");
                                 appContext = appService.getApplicationContext();
-                                boolean isok = Detector.INSTANCE.isLegitimateEnvironment(appContext);
-                                if (isok) {
-                                    Detector.INSTANCE.dangerous(appContext);
-                                    return;
-                                }
+//                                boolean isok = Detector.INSTANCE.isLegitimateEnvironment(appContext);
+//                                if (isok) {
+//                                    Detector.INSTANCE.dangerous(appContext);
+//                                    return;
+//                                }
                                 String packageName = loadPackageParam.getPackageName();
                                 String apkPath = loadPackageParam.getApplicationInfo().sourceDir;
-                                try (DexKitBridge bridge = DexKitBridge.create(apkPath)) {
-                                    // Other use cases
-                                    Log.runtime(TAG, "hook dexkit successfully");
-                                }
+//                                try (DexKitBridge bridge = DexKitBridge.create(apkPath)) {
+//                                    // Other use cases
+//                                    Log.runtime(TAG, "hook dexkit successfully");
+//                                }
                                 service = appService;
                                 mainTask = BaseTask.newInstance("MAIN_TASK", () -> {
                                     try {

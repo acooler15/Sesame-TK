@@ -149,29 +149,29 @@ class ExtendActivity : BaseActivity() {
             )
 
 
-            extendFunctions.add(
-                ExtendFunctionItem("获取BaseUrl") {
-                    val inputEditText = EditText(this)
-                    AlertDialog.Builder(this)
-                        .setTitle("请输入Key")
-                        .setView(inputEditText)
-                        .setPositiveButton(R.string.ok) { _, _ ->
-                            val inputText = inputEditText.text.toString()
-                            Log.debug(TAG, "获取BaseUrl：$inputText")
-                            val key = inputText.toIntOrNull(16)  // 支持输入 0x11 这样的十六进制
-                            Log.debug(TAG, "获取BaseUrl key：$key")
-                            if (key != null) {
-                                val output = getApi(key)
-                                ToastUtil.showToast(this, "$output \n输入内容: $inputText")
-                            } else {
-                                ToastUtil.showToast(this, "输入内容: $inputText , 请输入正确的十六进制数字")
-                            }
-
-                        }
-                        .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-                        .show()
-                }
-            )
+//            extendFunctions.add(
+//                ExtendFunctionItem("获取BaseUrl") {
+//                    val inputEditText = EditText(this)
+//                    AlertDialog.Builder(this)
+//                        .setTitle("请输入Key")
+//                        .setView(inputEditText)
+//                        .setPositiveButton(R.string.ok) { _, _ ->
+//                            val inputText = inputEditText.text.toString()
+//                            Log.debug(TAG, "获取BaseUrl：$inputText")
+//                            val key = inputText.toIntOrNull(16)  // 支持输入 0x11 这样的十六进制
+//                            Log.debug(TAG, "获取BaseUrl key：$key")
+//                            if (key != null) {
+//                                val output = getApi(key)
+//                                ToastUtil.showToast(this, "$output \n输入内容: $inputText")
+//                            } else {
+//                                ToastUtil.showToast(this, "输入内容: $inputText , 请输入正确的十六进制数字")
+//                            }
+//
+//                        }
+//                        .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
+//                        .show()
+//                }
+//            )
         }
         extendFunctionAdapter.notifyDataSetChanged()
     }

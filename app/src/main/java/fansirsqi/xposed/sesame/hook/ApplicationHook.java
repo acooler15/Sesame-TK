@@ -58,6 +58,7 @@ import fansirsqi.xposed.sesame.model.Model;
 import fansirsqi.xposed.sesame.newutil.DataStore;
 import fansirsqi.xposed.sesame.task.BaseTask;
 import fansirsqi.xposed.sesame.task.ModelTask;
+import fansirsqi.xposed.sesame.task.TaskCommon;
 import fansirsqi.xposed.sesame.util.AssetUtil;
 import fansirsqi.xposed.sesame.util.Detector;
 import fansirsqi.xposed.sesame.util.Files;
@@ -381,7 +382,7 @@ public class ApplicationHook {
                                             return;
                                         }
                                         lastExecTime = currentTime; // 更新最后执行时间
-                                        ModelTask.startAllTask(false);
+                                        ModelTask.startAllTask(true);
                                         scheduleNextExecution(lastExecTime);
                                     } catch (Exception e) {
                                         Log.record(TAG, "❌执行异常");
@@ -616,6 +617,7 @@ public class ApplicationHook {
                 Log.record(successMsg);
                 Toast.show(successMsg);
             }
+            TaskCommon.update();
             offline = false;
             execHandler();
             return true;

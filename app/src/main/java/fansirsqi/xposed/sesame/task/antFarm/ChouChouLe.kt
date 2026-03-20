@@ -532,6 +532,7 @@ class ChouChouLe {
                     val itemReachedLimit = isReachedLimit(item)
                     val minPriceObj = item.optJSONObject("minPrice")
                     val cent = minPriceObj?.optInt("cent", 0) ?: 0
+                    val labelType = item.optJSONArray("labelTypeList")?.optString(0) ?: ""
 
                     val skuList = item.optJSONArray("skuModelList") ?: continue
                     for (j in 0 until skuList.length()) {
@@ -540,13 +541,24 @@ class ChouChouLe {
                         sku.put("_spuName", item.optString("spuName"))
                         sku.put("_isReachLimit", itemReachedLimit || isReachedLimit(sku))
                         sku.put("_cent", cent)
+                        sku.put("_labelType", labelType)
                         allSkus.add(sku)
                     }
                 }
-                allSkus.sortWith { a, b -> b.optInt("_cent", 0).compareTo(a.optInt("_cent", 0)) }
-
+                // 过滤掉 _isReachLimit 为True的项(已到兑换次数上限)
+                allSkus.removeIf { it.optBoolean("_isReachLimit", false) }
+                // 排序：先按 labelType 排序，再按价格从高到低（DRESS装扮 > REISSUE_CARD补签卡 > DELICIOUS_FOOD食物 > 其他）
+                allSkus.sortWith(
+                    compareBy<JSONObject> {
+                        when {
+                            it.optString("_labelType").contains("DRESS") -> 0
+                            it.optString("_labelType").contains("REISSUE_CARD") -> 1
+                            it.optString("_labelType").contains("DELICIOUS_FOOD") -> 2
+                            else -> 3
+                        }
+                    }.thenByDescending { it.optInt("_cent", 0) }
+                )
                 for (sku in allSkus) {
-                    if (sku.optBoolean("_isReachLimit")) continue
                     val cent = sku.optInt("_cent", 0)
                     val skuName = sku.optString("skuName")
 
@@ -559,7 +571,6 @@ class ChouChouLe {
 
                 // 执行顺序兑换，按价格从高到低
                 for (sku in allSkus) {
-                    if (sku.optBoolean("_isReachLimit")) continue
 
                     val skuName = sku.optString("skuName")
                     val cent = sku.optInt("_cent", 0)

@@ -350,7 +350,7 @@ class AntFarm : ModelTask() {
         modelFields.addField(
             BooleanModelField(
                 "autoExchange",
-                "IP抽抽乐自动从高到低兑换物品",
+                "IP抽抽乐自动兑换物品（优先装扮、补签卡、食物）",
                 false
             ).also { autoExchange = it })
         modelFields.addField(

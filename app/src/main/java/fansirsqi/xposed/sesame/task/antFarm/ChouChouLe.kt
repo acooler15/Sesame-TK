@@ -532,6 +532,7 @@ class ChouChouLe {
                     val itemReachedLimit = isReachedLimit(item)
                     val minPriceObj = item.optJSONObject("minPrice")
                     val cent = minPriceObj?.optInt("cent", 0) ?: 0
+                    val labelType = item.optJSONArray("labelTypeList")?.optString(0) ?: ""
 
                     val skuList = item.optJSONArray("skuModelList") ?: continue
                     for (j in 0 until skuList.length()) {
@@ -540,31 +541,37 @@ class ChouChouLe {
                         sku.put("_spuName", item.optString("spuName"))
                         sku.put("_isReachLimit", itemReachedLimit || isReachedLimit(sku))
                         sku.put("_cent", cent)
+
+                        if (sku.optString("_spuName","").contains("新蛋卡")){
+                            // 如果是新蛋卡，则设置_labelType为NEW_EGG
+                            sku.put("_labelType","NEW_EGG")
+                        } else{
+                            sku.put("_labelType", labelType)
+                        }
                         allSkus.add(sku)
                     }
                 }
-                allSkus.sortWith { a, b -> b.optInt("_cent", 0).compareTo(a.optInt("_cent", 0)) }
-
-                for (sku in allSkus) {
-                    if (sku.optBoolean("_isReachLimit")) continue
-                    val cent = sku.optInt("_cent", 0)
-                    val skuName = sku.optString("skuName")
-
-                    if (isNoEnoughPoint(sku) || (cent > 0 && totalCent < cent)) {
-                        Log.record("自动兑换", "最高价值项 [$skuName] 碎片不足(持有 ${totalCent/100}, 需 ${cent/100})，等攒够再换，终止本次兑换")
-                        return
-                    }
-                    break
-                }
+                // 过滤掉 _isReachLimit 为True的项(已到兑换次数上限)
+                allSkus.removeIf { it.optBoolean("_isReachLimit", false) }
+                // 排序：先按 labelType 排序，再按价格从高到低（DRESS装扮 > REISSUE_CARD补签卡 > DELICIOUS_FOOD食物 > 其他）
+                allSkus.sortWith(
+                    compareBy<JSONObject> {
+                        when {
+                            it.optString("_labelType").contains("DRESS") -> 0
+                            it.optString("_labelType").contains("DELICIOUS_FOOD") -> 1
+                            it.optString("_labelType").contains("REISSUE_CARD") -> 2
+                            it.optString("_labelType").contains("NEW_EGG") -> 4 // 新蛋卡最后兑换
+                            else -> 3
+                        }
+                    }.thenByDescending { it.optInt("_cent", 0) }
+                )
 
                 // 执行顺序兑换，按价格从高到低
                 for (sku in allSkus) {
-                    if (sku.optBoolean("_isReachLimit")) continue
 
                     val skuName = sku.optString("skuName")
                     val cent = sku.optInt("_cent", 0)
-                    val extendInfo = sku.optString("skuExtendInfo")
-                    val limitCount = if (extendInfo.contains("20次")) 20 else if (extendInfo.contains("5次")) 5 else 1
+                    val limitCount = parseExchangeLimitCount( sku.optString("skuExtendInfo",""))
 
                     // 【核心逻辑】：如果当前项买不起，直接 return 停止，不再尝试后续更便宜的项目
                     if (isNoEnoughPoint(sku) || (cent > 0 && totalCent < cent)) {
@@ -635,4 +642,21 @@ class ChouChouLe {
         }
         return false
     }
+
+    // 在类中添加辅助方法
+private fun parseExchangeLimitCount(extendInfo: String): Int {
+    if (extendInfo.isBlank()) {
+        return 1
+    }
+    return try {
+        val jsonObj = JSONObject(extendInfo)
+        val exchangeCount = jsonObj.optString("exchangeCount", "")
+        val regex = Regex("(\\d+)次")
+        val matchResult = regex.find(exchangeCount)
+        matchResult?.groupValues?.get(1)?.toInt() ?: 1
+    } catch (e: Exception) {
+        // JSON解析失败，返回默认值
+        1
+    }
+}
 }

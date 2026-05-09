@@ -1,8 +1,16 @@
 package fansirsqi.xposed.sesame.hook.simple
 
 import android.content.Context
-import android.graphics.* import fansirsqi.xposed.sesame.ml.Slider
+import android.graphics.*
+import android.os.Looper
+import fansirsqi.xposed.sesame.ml.Slider
+import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.util.Log
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.model.Model
@@ -23,15 +31,152 @@ class SliderTFLite(val context: Context) {
         private const val INPUT_SIZE = 640
         private const val MASK_NUM = 32
         private const val NUM_ANCHORS = 8400
+        private const val MODEL_IDLE_TIMEOUT_MS = 60 * 60 * 1000L
+
+        private val sharedModelMutex = Mutex()
+
+        @Volatile
+        private var sharedModel: SliderTFLite? = null
+
+        @Volatile
+        private var lastUsedAt: Long = 0L
+
+        @Volatile
+        private var unloadTicket: Long = 0L
+
+        fun preloadAsync(context: Context) {
+            val appContext = context.applicationContext
+            GlobalThreadPools.execute(
+                CoroutineName("SliderTFLitePreload") + GlobalThreadPools.computeDispatcher
+            ) {
+                val startTime = System.currentTimeMillis()
+                Log.record(
+                    TAG,
+                    "[预加载开始] thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+                )
+                try {
+                    obtainSharedModel(appContext, "preload")
+                    Log.record(
+                        TAG,
+                        "[预加载结束] success=true, cost=${System.currentTimeMillis() - startTime}ms"
+                    )
+                } catch (e: Exception) {
+                    Log.record(
+                        TAG,
+                        "[预加载结束] success=false, cost=${System.currentTimeMillis() - startTime}ms, error=${e.message}"
+                    )
+                    Log.printStackTrace(TAG, "模型预加载失败", e)
+                }
+            }
+        }
+
+        suspend fun identifyShared(
+            context: Context,
+            bitmap: Bitmap,
+            conf: Float = CONF_THRESHOLD,
+            iou: Float = IOU_THRESHOLD
+        ): SlideRecognitionResult? {
+            val detector = obtainSharedModel(context.applicationContext, "inference")
+            val callerThread = Thread.currentThread().name
+            val callerIsMain = isMainThread()
+            return withContext(GlobalThreadPools.computeDispatcher) {
+                val startTime = System.currentTimeMillis()
+                Log.record(
+                    TAG,
+                    "[模型推理开始] callerThread=$callerThread, callerIsMain=$callerIsMain, workerThread=${Thread.currentThread().name}, isMain=${isMainThread()}, size=${bitmap.width}x${bitmap.height}"
+                )
+                try {
+                    detector.identifySlideRecognition(bitmap, conf, iou)
+                } finally {
+                    touchSharedModelLocked()
+                    Log.record(
+                        TAG,
+                        "[模型推理结束] cost=${System.currentTimeMillis() - startTime}ms, workerThread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+                    )
+                }
+            }
+        }
+
+        private suspend fun obtainSharedModel(context: Context, reason: String): SliderTFLite {
+            return withContext(GlobalThreadPools.computeDispatcher) {
+                sharedModelMutex.withLock {
+                    sharedModel?.let { model ->
+                        lastUsedAt = System.currentTimeMillis()
+                        scheduleIdleReleaseLocked()
+                        Log.record(
+                            TAG,
+                            "[复用全局模型实例] reason=$reason, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+                        )
+                        return@withLock model
+                    }
+
+                    val initStartTime = System.currentTimeMillis()
+                    Log.record(
+                        TAG,
+                        "[初始化开始] reason=$reason, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+                    )
+                    val detector = SliderTFLite(context.applicationContext)
+                    val initSuccess = detector.init()
+                    if (!initSuccess) {
+                        detector.close()
+                        throw IllegalStateException("SliderTFLite init failed")
+                    }
+                    sharedModel = detector
+                    lastUsedAt = System.currentTimeMillis()
+                    scheduleIdleReleaseLocked()
+                    Log.record(
+                        TAG,
+                        "[初始化结束] success=true, cost=${System.currentTimeMillis() - initStartTime}ms"
+                    )
+                    detector
+                }
+            }
+        }
+
+        private suspend fun touchSharedModelLocked() {
+            sharedModelMutex.withLock {
+                if (sharedModel != null) {
+                    lastUsedAt = System.currentTimeMillis()
+                    scheduleIdleReleaseLocked()
+                }
+            }
+        }
+
+        private fun scheduleIdleReleaseLocked() {
+            val ticket = ++unloadTicket
+            GlobalThreadPools.execute(
+                CoroutineName("SliderTFLiteIdleRelease") + GlobalThreadPools.computeDispatcher
+            ) {
+                delay(MODEL_IDLE_TIMEOUT_MS)
+                sharedModelMutex.withLock {
+                    if (ticket != unloadTicket) {
+                        return@withLock
+                    }
+                    val idleFor = System.currentTimeMillis() - lastUsedAt
+                    if (sharedModel != null && idleFor >= MODEL_IDLE_TIMEOUT_MS) {
+                        Log.record(
+                            TAG,
+                            "[模型空闲超时卸载] idleMs=$idleFor, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+                        )
+                        sharedModel?.close()
+                        sharedModel = null
+                    }
+                }
+            }
+        }
+
+        private fun isMainThread(): Boolean {
+            return Looper.getMainLooper().thread === Thread.currentThread()
+        }
     }
 
     private var sliderModel: Slider? = null
 
-    fun init() {
-        initModel()
+    fun init(): Boolean {
+        return initModel()
     }
 
-    private fun initModel() {
+    private fun initModel(): Boolean {
         try {
             // 配置 GPU 或 CPU 线程
             val optionsBuilder = Model.Options.Builder()
@@ -45,8 +190,11 @@ class SliderTFLite(val context: Context) {
             // 使用生成的 Slider 类实例化
             sliderModel = Slider.newInstance(context, optionsBuilder.build())
             Log.record(TAG, "模型初始化成功")
+            return true
         } catch (e: IOException) {
-            Log.record(TAG, "模型初始化失败")
+            Log.record(TAG, "模型初始化失败: ${e.message}")
+            Log.printStackTrace(TAG, "SliderTFLite 初始化异常", e)
+            return false
         }
     }
 
@@ -56,6 +204,7 @@ class SliderTFLite(val context: Context) {
     fun close() {
         sliderModel?.close()
         sliderModel = null
+        Log.record(TAG, "模型资源已释放")
     }
 
     data class DetectionResult(
@@ -66,23 +215,73 @@ class SliderTFLite(val context: Context) {
         var mask: Bitmap? = null
     )
 
+    /**
+     * 滑块识别结果：包含滑块坐标和目标缺口坐标
+     */
+    data class SlideRecognitionResult(
+        val sliderX: Float,     // 滑块中心X
+        val sliderY: Float,     // 滑块中心Y
+        val targetX: Float,     // 目标缺口中心X
+        val targetY: Float,     // 目标缺口中心Y
+        val confidence: Float,  // 置信度
+        val candidateCount: Int // 模型候选框数量
+    )
+
     fun identifyOffset(
         bitmap: Bitmap,
         conf: Float = CONF_THRESHOLD,
         iou: Float = IOU_THRESHOLD
     ): Pair<Int, Float> {
+        val result = identifySlideRecognition(bitmap, conf, iou)
+        return if (result != null) {
+            Pair(result.targetX.toInt(), result.confidence)
+        } else {
+            Pair(0, 0f)
+        }
+    }
+
+    /**
+     * 识别滑块验证码的滑块和目标缺口位置。
+     * 用于全屏截图模式，返回滑块和缺口的屏幕坐标。
+     */
+    fun identifySlideRecognition(
+        bitmap: Bitmap,
+        conf: Float = CONF_THRESHOLD,
+        iou: Float = IOU_THRESHOLD
+    ): SlideRecognitionResult? {
         val results = predict(bitmap, conf, iou)
 
-        if (results.isEmpty()) return Pair(0, 0f)
+        Log.record(TAG, "识别候选框数量: ${results.size}")
+        results.forEachIndexed { index, result ->
+            Log.record(
+                TAG,
+                "候选[$index] box=(${result.x1.toInt()},${result.y1.toInt()},${result.x2.toInt()},${result.y2.toInt()}) score=${result.score}"
+            )
+        }
+
+        if (results.isEmpty()) return null
 
         var targetBox: DetectionResult?
+        var sliderBox: DetectionResult? = null
 
         if (results.size == 1) {
-            targetBox = results[0]
+            // 只检测到一个框，可能是滑块也可能是目标，返回其位置让调用方判断
+            val box = results[0]
+            Log.record(TAG, "仅检测到1个框: (${box.x1.toInt()},${box.y1.toInt()}) score=${box.score}")
+            return SlideRecognitionResult(
+                sliderX = (box.x1 + box.x2) / 2f,
+                sliderY = (box.y1 + box.y2) / 2f,
+                targetX = (box.x1 + box.x2) / 2f,
+                targetY = (box.y1 + box.y2) / 2f,
+                confidence = box.score,
+                candidateCount = 1
+            )
         } else {
             // 1. 找到最左边的作为滑块
             val sliderIndex = results.indices.minByOrNull { results[it].x1 } ?: 0
             val slider = results[sliderIndex]
+            sliderBox = slider
+            Log.record(TAG, "判定滑块框: index=$sliderIndex center=(${(slider.x1+slider.x2)/2f},${(slider.y1+slider.y2)/2f}) score=${slider.score}")
 
             val candidates = results.filterIndexed { index, _ -> index != sliderIndex }
 
@@ -118,11 +317,23 @@ class SliderTFLite(val context: Context) {
             }
         }
 
-        return if (targetBox != null) {
-            Pair(targetBox.x1.toInt(), targetBox.score)
-        } else {
-            Pair(0, 0f)
+        if (targetBox != null && sliderBox != null) {
+            val sliderCenterX = (sliderBox.x1 + sliderBox.x2) / 2f
+            val sliderCenterY = (sliderBox.y1 + sliderBox.y2) / 2f
+            val targetCenterX = (targetBox.x1 + targetBox.x2) / 2f
+            val targetCenterY = (targetBox.y1 + targetBox.y2) / 2f
+            Log.record(TAG, "滑块中心: (${sliderCenterX.toInt()},${sliderCenterY.toInt()}), 目标中心: (${targetCenterX.toInt()},${targetCenterY.toInt()}), 距离: ${(targetCenterX-sliderCenterX).toInt()}")
+            return SlideRecognitionResult(
+                sliderX = sliderCenterX,
+                sliderY = sliderCenterY,
+                targetX = targetCenterX,
+                targetY = targetCenterY,
+                confidence = targetBox.score,
+                candidateCount = results.size
+            )
         }
+
+        return null
     }
 
     private fun predict(

@@ -1,6 +1,7 @@
 package fansirsqi.xposed.sesame.task.customTasks
 
 import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.hook.CaptchaHook
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.antFarm.AntFarm
 import fansirsqi.xposed.sesame.task.antForest.AntForest
@@ -100,6 +101,15 @@ object ManualTask {
                                 val toolType = extraParams["toolType"] as? String ?: ""
                                 val toolCount = extraParams["toolCount"] as? Int ?: 1
                                 getFarmInstance()?.manualUseFarmTool(toolType, toolCount)
+                            }
+
+                            CustomTask.TRIGGER_CAPTCHA -> {
+                                val success = CaptchaHook.triggerCaptcha()
+                                if (success) {
+                                    Log.record("ManualTask", "✅ 验证码触发成功")
+                                } else {
+                                    Log.record("ManualTask", "❌ 验证码触发失败")
+                                }
                             }
                         }
                     } catch (t: Throwable) {

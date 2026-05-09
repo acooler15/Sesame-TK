@@ -41,6 +41,7 @@ import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcVersion
 import fansirsqi.xposed.sesame.hook.rpc.debug.DebugRpc
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.clearIntervalLimit
+import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
 import fansirsqi.xposed.sesame.hook.server.ModuleHttpServerManager.startIfNeeded
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.addHandler
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.enableWindowMonitoring
@@ -247,13 +248,31 @@ class ApplicationHook {
                         initVersionInfo(packageName)
                         loadLibs()
 
-                        HookUtil.hookAssetManagerForModel(classLoader!!)
+                        try {
+                            HookUtil.hookAssetManagerForModel(classLoader!!)
+                        } catch (t: Throwable) {
+                            printStackTrace(TAG, "hookAssetManagerForModel 失败", t)
+                        }
                         // 特殊版本处理
-                        if (VersionHook.hasVersion() && alipayVersion.compareTo(AlipayVersion("10.7.26.8100")) == 0) {
-                            HookUtil.fuckAccounLimit(classLoader!!)
+                        try {
+                            if (VersionHook.hasVersion() && alipayVersion.compareTo(AlipayVersion("10.7.26.8100")) == 0) {
+                                HookUtil.fuckAccounLimit(classLoader!!)
+                            }
+                        } catch (t: Throwable) {
+                            printStackTrace(TAG, "fuckAccounLimit 失败", t)
                         }
 
-                        initSimplePageManager()
+                        try {
+                            initSimplePageManager()
+                        } catch (t: Throwable) {
+                            printStackTrace(TAG, "initSimplePageManager 失败", t)
+                        }
+
+                        try {
+                            SliderTFLite.preloadAsync(appContext!!)
+                        } catch (t: Throwable) {
+                            printStackTrace(TAG, "SliderTFLite 预加载失败", t)
+                        }
                     }
                 })
         } catch (e: Exception) {
@@ -374,10 +393,16 @@ class ApplicationHook {
 
     // 滑块验证hook注册
     private fun initSimplePageManager() {
+        record(TAG, "准备初始化 SimplePageManager，当前版本: $alipayVersion")
         if (shouldEnableSimplePageManager()) {
+            record(TAG, "SimplePageManager 已启用，开始注册验证码页面处理器")
             enableWindowMonitoring(classLoader)
             addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverActivity", Captcha1Handler())
+            addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverTransActivity\$Main", Captcha2Handler())
             addHandler("com.alipay.mobile.nebulax.integration.mpaas.activity.NebulaTransActivity\$Main", Captcha2Handler())
+            record(TAG, "验证码页面处理器注册完成")
+        } else {
+            record(TAG, "SimplePageManager 未启用，跳过验证码页面处理器注册")
         }
     }
 
@@ -518,6 +543,7 @@ class ApplicationHook {
         @JvmStatic
         fun shouldEnableSimplePageManager(): Boolean {
             if (!VersionHook.hasVersion() || alipayVersion.toString().isEmpty()) {
+                record(TAG, "SimplePageManager 版本判断失败：未捕获到目标应用版本")
                 return false
             }
 
@@ -528,6 +554,7 @@ class ApplicationHook {
                 return false
             }
 
+            record(TAG, "SimplePageManager 版本判断通过: $alipayVersion <= $maxSupported")
             return true
         }
 

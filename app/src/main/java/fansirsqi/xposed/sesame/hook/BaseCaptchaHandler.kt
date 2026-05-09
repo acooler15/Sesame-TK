@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Looper
 import android.util.Base64
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +14,8 @@ import fansirsqi.xposed.sesame.hook.simple.SimplePageManager
 import fansirsqi.xposed.sesame.hook.simple.SimpleViewImage
 import fansirsqi.xposed.sesame.hook.simple.ViewHierarchyAnalyzer
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
+import fansirsqi.xposed.sesame.hook.simple.SystemInputSwiper
+import fansirsqi.xposed.sesame.util.CommandUtil
 import fansirsqi.xposed.sesame.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
@@ -32,6 +35,39 @@ data class SlideCoordinates(
     val endY: Float
 )
 
+private data class CaptchaVisualSnapshot(
+    val fullBitmap: Bitmap,
+    val croppedBitmap: Bitmap,
+    val recognitionResult: SliderTFLite.SlideRecognitionResult?
+)
+
+private data class SliderHandleDetection(
+    val centerX: Float,
+    val centerY: Float,
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int,
+    val pixelCount: Int
+)
+
+private data class CaptchaPreCheckResult(
+    val passed: Boolean,
+    val passReasons: List<String>,
+    val failReasons: List<String>,
+    val sliderHandle: SliderHandleDetection?
+)
+
+private data class LightweightCaptchaPreCheckResult(
+    val passed: Boolean,
+    val passReasons: List<String>,
+    val failReasons: List<String>,
+    val sliderHandle: SliderHandleDetection?,
+    val fullBitmap: Bitmap?,
+    val croppedBitmap: Bitmap?,
+    val cropTop: Int
+)
+
 /**
  * 验证码处理程序的基类，提供处理滑动验证码的通用逻辑。
  */
@@ -43,9 +79,12 @@ abstract class BaseCaptchaHandler {
         // 滑动参数配置
         private const val SLIDE_START_OFFSET = 25
         private const val SLIDE_END_MARGIN = 20
-        private const val SLIDE_DURATION_MIN = 300L  // 减少最小滑动时间
-        private const val SLIDE_DURATION_MAX = 600L  // 减少最大滑动时间
-        private const val POST_SLIDE_CHECK_DELAY_MS = 1000L  // 减少检查延迟
+        private const val SLIDE_DURATION_MIN = 900L  // XRiver/WebView 场景改为更慢的系统级滑动
+        private const val SLIDE_DURATION_MAX = 1400L
+        private const val CORRECTIVE_SLIDE_DURATION_MIN = 420L
+        private const val CORRECTIVE_SLIDE_DURATION_MAX = 650L
+        private const val POST_SLIDE_CHECK_DELAY_MS = 1200L
+        private const val NEW_CAPTCHA_CONFIDENCE_THRESHOLD = 0.55f
 
         // 旧版本 XPath
         private const val OLD_SLIDE_VERIFY_TEXT_XPATH = "//TextView[contains(@text,'向右滑动验证')]"
@@ -58,13 +97,14 @@ abstract class BaseCaptchaHandler {
 
     protected abstract fun getSlidePathKey(): String
 
-    private var sliderDetector: SliderTFLite? = null
-
     open suspend fun handleActivity(activity: Activity, root: SimpleViewImage): Boolean {
         return try {
             // 立即记录开始处理时间
             val startTime = System.currentTimeMillis()
-            Log.record(TAG, "开始处理验证码，Activity: ${activity.javaClass}")
+            Log.record(
+                TAG,
+                "[触发命中] Activity 命中验证码处理器: ${activity.javaClass.name}, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+            )
 
             // 版本判断逻辑
             val isNewVersion = if (VersionHook.hasVersion()) {
@@ -94,66 +134,132 @@ abstract class BaseCaptchaHandler {
 
     @SuppressLint("SuspiciousIndentation")
     private suspend fun handleNewVersionCaptcha(activity: Activity): Boolean {
-        if (!captchaProcessingMutex.tryLock()) {
-            Log.record(TAG, "验证码正在处理中，跳过本次处理")
-            return true
-        }
+        if (!captchaProcessingMutex.tryLock()) return true
         try {
-            val initStartTime = System.currentTimeMillis()
-            if (sliderDetector == null) {
-                sliderDetector = SliderTFLite(activity.applicationContext)
-                Log.record(TAG, "初始化TFLite检测器耗时: ${System.currentTimeMillis() - initStartTime}ms")
-            }
+            Log.record(
+                TAG,
+                "[新验证码] 开始处理, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+            )
 
-            // 1. 查找新版提示文本 - 减少等待时间
-            val searchStartTime = System.currentTimeMillis()
-            var verifyText = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
-
-            // 如果没找到新版文本，尝试找旧版文本
-            if (verifyText == null) {
-                verifyText = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH)
-                if (verifyText != null) {
-                    Log.record(TAG, "未找到新版文本但发现了旧版文本，回退到旧逻辑。")
-                    captchaProcessingMutex.unlock() // 解锁以便调用旧逻辑
-                    return handleLegacySlideCaptcha(activity)
-                }
-            }
-
-            if (verifyText == null) {
-                Log.record(TAG, "未找到验证码文本!!!")
+            val textAnchor = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
+            if (textAnchor == null) {
+                Log.record(TAG, "[前置跳过] reason=text-anchor-missing")
                 return false
             }
 
-            Log.record(TAG, "发现滑动验证文本: ${verifyText.getText()}, 查找耗时: ${System.currentTimeMillis() - searchStartTime}ms")
+            val anchorText = textAnchor.getText()?.toString()?.take(24).orEmpty()
+            Log.record(TAG, "[前置命中] text-anchor=$anchorText")
 
-            // 减少等待图片加载的时间
-            delay(300L) // 从800ms减少到300ms
+            // 预连接 CommandService（利用渲染等待时间预热 shell 服务）
+            val context = SimplePageManager.getContext()
+            if (context != null) {
+                CommandUtil.connect(context)
+                Log.record(TAG, "已发起 CommandService 预连接")
+            }
 
-            // 2. 查找关键视图：滑块(Slider) 和 背景图(Background)
-            val findViewStartTime = System.currentTimeMillis()
-            val sliderView = ViewHierarchyAnalyzer.findActualSliderView(verifyText) ?: run {
-                Log.record(TAG, "无法找到滑块视图，查找耗时: ${System.currentTimeMillis() - findViewStartTime}ms")
+            // 延迟等待渲染，确保截图时验证码已显示
+            delay(1200L)
+
+            val decorView = activity.window.decorView
+
+            val lightweightPreCheck = evaluateLightweightCaptchaPreCheck(
+                decorView = decorView,
+                anchorText = anchorText
+            )
+            if (!lightweightPreCheck.passed) {
+                Log.record(
+                    TAG,
+                    "[前置跳过] 判定为普通页并跳过: ${lightweightPreCheck.failReasons.joinToString("; ")}; 通过项=${lightweightPreCheck.passReasons.joinToString(", ")}"
+                )
                 return false
             }
 
-            val backgroundView = findCaptchaImageView(sliderView) ?: run {
-                Log.record(TAG, "无法找到验证码背景图片视图")
+            val fullBitmap = lightweightPreCheck.fullBitmap ?: run {
+                Log.record(TAG, "轻量前置检测未生成 fullBitmap")
                 return false
             }
-            Log.record(TAG, "视图查找耗时: ${System.currentTimeMillis() - findViewStartTime}ms")
-
-            // 3. 截图并识别
-            val recognizeStartTime = System.currentTimeMillis()
-            val (gapX, conf) = recognizeCaptchaGapNative(backgroundView) ?: run {
-                Log.record(TAG, "图像识别失败")
+            val croppedBitmap = lightweightPreCheck.croppedBitmap ?: run {
+                Log.record(TAG, "轻量前置检测未生成 croppedBitmap")
                 return false
             }
-            Log.record(TAG, "图像识别耗时: ${System.currentTimeMillis() - recognizeStartTime}ms, 识别结果: x1=$gapX, conf=$conf")
+            val cropTop = lightweightPreCheck.cropTop
+            val detectedHandle = lightweightPreCheck.sliderHandle ?: run {
+                Log.record(TAG, "轻量前置检测未命中滑块手柄")
+                return false
+            }
 
-            // 4. 计算坐标并滑动
-            val slideDistance = calculateDistance(gapX, backgroundView.width, backgroundView, sliderView)
+            Log.record(
+                TAG,
+                "[模型转后台] callerThread=${Thread.currentThread().name}, isMain=${isMainThread()}"
+            )
+            val recognitionResult = SliderTFLite.identifyShared(activity.applicationContext, croppedBitmap) ?: run {
+                Log.record(TAG, "裁剪区域模型识别失败，未检测到滑块和缺口")
+                return false
+            }
 
-            return performSlide(activity, sliderView, slideDistance)
+            // 将裁剪区域坐标转换为 DecorView 局部坐标
+            val sliderLocalX = recognitionResult.sliderX
+            val sliderLocalY = recognitionResult.sliderY + cropTop
+            val targetLocalX = recognitionResult.targetX
+            val targetLocalY = recognitionResult.targetY + cropTop
+
+            Log.record(TAG, "裁剪识别成功: 裁剪内坐标 滑块=(${recognitionResult.sliderX.toInt()},${recognitionResult.sliderY.toInt()}) 目标=(${recognitionResult.targetX.toInt()},${recognitionResult.targetY.toInt()})")
+            Log.record(TAG, "DecorView坐标: 滑块=(${sliderLocalX.toInt()},${sliderLocalY.toInt()}), 目标=(${targetLocalX.toInt()},${targetLocalY.toInt()}), 置信度=${recognitionResult.confidence}")
+
+            val distance = targetLocalX - sliderLocalX
+
+            val preCheck = evaluateNewCaptchaPreCheck(
+                croppedBitmap = croppedBitmap,
+                recognitionResult = recognitionResult,
+                anchorText = anchorText,
+                sliderHandle = detectedHandle
+            )
+            if (!preCheck.passed) {
+                Log.record(
+                    TAG,
+                    "[前置检测失败] 判定为普通页并跳过: ${preCheck.failReasons.joinToString("; ")}; 通过项=${preCheck.passReasons.joinToString(", ")}"
+                )
+                return false
+            }
+
+            Log.record(
+                TAG,
+                "[前置检测通过] 判定为滑块验证码页: ${preCheck.passReasons.joinToString(", ")}"
+            )
+
+            Log.record(TAG, "滑动参数: 起点=(${sliderLocalX.toInt()},${sliderLocalY.toInt()}), 终点=(${targetLocalX.toInt()},${targetLocalY.toInt()}), 距离=${distance.toInt()}px")
+
+            // 对 DecorView 执行滑动（WebView 内容在 DecorView 坐标系下）
+            val sliderHandle = preCheck.sliderHandle ?: detectedHandle
+            val actualStartX = sliderHandle.centerX
+            val actualStartY = sliderHandle.centerY
+            val actualEndX = actualStartX + distance
+            val actualEndY = actualStartY
+
+            Log.record(
+                TAG,
+                "命中滑块手柄: bounds=(${sliderHandle.left},${sliderHandle.top},${sliderHandle.right},${sliderHandle.bottom}), center=(${sliderHandle.centerX.toInt()},${sliderHandle.centerY.toInt()}), pixels=${sliderHandle.pixelCount}"
+            )
+
+            Log.record(
+                TAG,
+                "实际滑动参数: 起点=(${actualStartX.toInt()},${actualStartY.toInt()}), 终点=(${actualEndX.toInt()},${actualEndY.toInt()}), 距离=${distance.toInt()}px"
+            )
+
+            val beforeSnapshot = CaptchaVisualSnapshot(
+                fullBitmap = fullBitmap,
+                croppedBitmap = croppedBitmap,
+                recognitionResult = recognitionResult
+            )
+            return executeSlideOnView(
+                view = decorView,
+                localStartX = actualStartX,
+                localStartY = actualStartY,
+                localEndX = actualEndX,
+                localEndY = actualEndY,
+                beforeSnapshot = beforeSnapshot,
+                cropTop = cropTop
+            )
 
         } catch (e: Exception) {
             Log.record(TAG, "新版验证码处理出错: ${e.stackTraceToString()}")
@@ -161,6 +267,295 @@ abstract class BaseCaptchaHandler {
         } finally {
             if (captchaProcessingMutex.isLocked) captchaProcessingMutex.unlock()
         }
+    }
+
+    private fun saveDebugBitmap(bitmap: Bitmap, fileName: String) {
+        try {
+            val context = SimplePageManager.getContext() ?: return
+            // 保存到 /data/data/com.eg.android.AlipayGphone/cache/captcha_debug/
+            val dir = java.io.File(context.cacheDir, "captcha_debug")
+            if (!dir.exists()) dir.mkdirs()
+
+            val file = java.io.File(dir, "${System.currentTimeMillis()}_$fileName.jpg")
+            java.io.FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            Log.record("CaptchaDebug", "调试图片已导出: ${file.absolutePath}")
+
+            context.externalCacheDir?.let { externalCacheDir ->
+                val externalDir = java.io.File(externalCacheDir, "captcha_debug")
+                if (!externalDir.exists()) externalDir.mkdirs()
+                val externalFile = java.io.File(externalDir, file.name)
+                java.io.FileOutputStream(externalFile).use { out ->
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                }
+                Log.record("CaptchaDebug", "调试图片已同步到外部缓存: ${externalFile.absolutePath}")
+            }
+        } catch (e: Exception) {
+            Log.error("CaptchaDebug", "导出调试图片失败: ${e.message}")
+        }
+    }
+
+    private fun findSliderByFeature(root: View): View? {
+        val candidates = mutableListOf<View>()
+        val rootWidth = root.rootView?.width ?: root.width
+        val rootHeight = root.rootView?.height ?: root.height
+
+        fun traverse(view: View) {
+            if (view.visibility != View.VISIBLE) return
+
+            // 获取绝对坐标和尺寸
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val w = view.width
+            val h = view.height
+
+            // 关键调试：如果你还是找不到，观察这里打印出的宽高
+            // Log.record(TAG, "扫描 View: ${view.javaClass.simpleName} [$w x $h] at (${location[0]}, ${location[1]})")
+
+            // 策略调整：
+            // 1. 滑块通常是接近正方形的 (宽/高比在 0.8~1.2 之间)
+            // 2. 滑块不会太小（大于50像素），也不会太大（小于屏幕宽度的1/3）
+            // 3. 它通常在屏幕的下半部分
+            val isSquare = w > 0 && h > 0 && kotlin.math.abs(w - h) <= (maxOf(w, h) * 0.35)
+            val inReasonableSize = w in 60..220 && h in 60..220
+            val inLeftArea = location[0] in 0..(rootWidth * 45 / 100)
+            val inLowerArea = location[1] >= (rootHeight * 60 / 100)
+
+            if (isSquare && inReasonableSize && inLeftArea && inLowerArea) {
+                candidates.add(view)
+            }
+
+            if (view is ViewGroup) {
+                for (i in 0 until view.childCount) {
+                    traverse(view.getChildAt(i))
+                }
+            }
+        }
+
+        traverse(root)
+
+        // 支付宝新版滑块的一个显著特征：它是横向滑动条里唯一的、可点击的小方块
+        // 我们取符合条件的最后一个（通常层级最深，即最具体的那个 View）
+        Log.record(TAG, "特征搜索候选数量: ${candidates.size}")
+        candidates.forEachIndexed { index, candidate ->
+            val loc = IntArray(2)
+            candidate.getLocationOnScreen(loc)
+            Log.record(TAG, "  候选[$index]: ${candidate.javaClass.simpleName} [${candidate.width}x${candidate.height}] at (${loc[0]}, ${loc[1]}) clickable=${candidate.isClickable}")
+        }
+
+        val result = candidates
+            .sortedWith(
+                compareByDescending<View> { it.isClickable }
+                    .thenByDescending { it.width * it.height }
+                    .thenBy { v ->
+                        val loc = IntArray(2)
+                        v.getLocationOnScreen(loc)
+                        kotlin.math.abs(loc[0])
+                    }
+            )
+            .firstOrNull()
+
+        if (result != null) {
+            Log.record(TAG, "特征搜索命中: ${result.javaClass.simpleName} [${result.width}x${result.height}]")
+        }
+        return result
+    }
+
+    private fun findSliderByBottomSliderArea(root: View): View? {
+        val candidates = mutableListOf<View>()
+        val rootWidth = root.rootView?.width ?: root.width
+        val rootHeight = root.rootView?.height ?: root.height
+
+        fun traverse(view: View) {
+            if (view.visibility != View.VISIBLE) return
+
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            val x = location[0]
+            val y = location[1]
+            val w = view.width
+            val h = view.height
+
+            val inBottomHalf = y > rootHeight * 2 / 3
+            val inLeftHalf = x < rootWidth / 2
+            val reasonableSize = w in 80..220 && h in 80..220
+            val visibleEnough = view.alpha > 0.8f
+
+            if (inBottomHalf && inLeftHalf && reasonableSize && visibleEnough) {
+                candidates.add(view)
+            }
+
+            if (view is ViewGroup) {
+                for (i in 0 until view.childCount) {
+                    traverse(view.getChildAt(i))
+                }
+            }
+        }
+
+        traverse(root)
+
+        Log.record(TAG, "底部滑条区域候选数量: ${candidates.size}")
+        candidates.forEachIndexed { index, candidate ->
+            val loc = IntArray(2)
+            candidate.getLocationOnScreen(loc)
+            Log.record(TAG, "  底部候选[$index]: ${candidate.javaClass.simpleName} [${candidate.width}x${candidate.height}] at (${loc[0]}, ${loc[1]}) clickable=${candidate.isClickable}")
+        }
+
+        val result = candidates.sortedWith(
+            compareBy<View> { v ->
+                val loc = IntArray(2)
+                v.getLocationOnScreen(loc)
+                loc[0]
+            }.thenByDescending { it.width * it.height }
+        ).firstOrNull()
+
+        if (result != null) {
+            Log.record(TAG, "底部滑条区域命中: ${result.javaClass.simpleName} [${result.width}x${result.height}]")
+        }
+        return result
+    }
+
+    private fun findSliderByTextAnchor(): View? {
+        return try {
+            val slideTextInDialog = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
+            if (slideTextInDialog == null) {
+                Log.record(TAG, "未找到新版滑动验证文本锚点")
+                return null
+            }
+            Log.record(TAG, "发现新版滑动验证文本: ${slideTextInDialog.getText()}")
+            ViewHierarchyAnalyzer.findActualSliderView(slideTextInDialog)
+        } catch (e: Throwable) {
+            Log.record(TAG, "通过文本锚点定位滑块失败: ${e.message}")
+            null
+        }
+    }
+
+    private fun evaluateNewCaptchaPreCheck(
+        croppedBitmap: Bitmap,
+        recognitionResult: SliderTFLite.SlideRecognitionResult,
+        anchorText: String,
+        sliderHandle: SliderHandleDetection
+    ): CaptchaPreCheckResult {
+        val passReasons = mutableListOf<String>()
+        val failReasons = mutableListOf<String>()
+
+        passReasons += "text-anchor=$anchorText"
+        passReasons += "blueHandle=(${sliderHandle.left},${sliderHandle.top},${sliderHandle.right},${sliderHandle.bottom})"
+
+        if (recognitionResult.candidateCount >= 2) {
+            passReasons += "candidateCount=${recognitionResult.candidateCount}"
+        } else {
+            failReasons += "candidateCount=${recognitionResult.candidateCount}<2"
+        }
+
+        if (recognitionResult.confidence >= NEW_CAPTCHA_CONFIDENCE_THRESHOLD) {
+            passReasons += "confidence=${recognitionResult.confidence}"
+        } else {
+            failReasons += "confidence=${recognitionResult.confidence}<${NEW_CAPTCHA_CONFIDENCE_THRESHOLD}"
+        }
+
+        val distance = recognitionResult.targetX - recognitionResult.sliderX
+        val minDistance = maxOf(croppedBitmap.width * 0.05f, 40f)
+        val maxDistance = croppedBitmap.width * 0.82f
+        if (distance in minDistance..maxDistance) {
+            passReasons += "distance=${distance.toInt()}"
+        } else {
+            failReasons += "distance=${distance.toInt()} not in ${minDistance.toInt()}..${maxDistance.toInt()}"
+        }
+
+        val verticalDelta = kotlin.math.abs(recognitionResult.targetY - recognitionResult.sliderY)
+        val maxVerticalDelta = maxOf(croppedBitmap.height * 0.12f, 72f)
+        if (verticalDelta <= maxVerticalDelta) {
+            passReasons += "verticalDelta=${verticalDelta.toInt()}"
+        } else {
+            failReasons += "verticalDelta=${verticalDelta.toInt()}>${maxVerticalDelta.toInt()}"
+        }
+
+        val sliderRatio = recognitionResult.sliderX / croppedBitmap.width.toFloat()
+        if (sliderRatio <= 0.35f) {
+            passReasons += "sliderRatio=${"%.2f".format(sliderRatio)}"
+        } else {
+            failReasons += "sliderRatio=${"%.2f".format(sliderRatio)}>0.35"
+        }
+
+        val targetRatio = recognitionResult.targetX / croppedBitmap.width.toFloat()
+        if (targetRatio in 0.20f..0.95f) {
+            passReasons += "targetRatio=${"%.2f".format(targetRatio)}"
+        } else {
+            failReasons += "targetRatio=${"%.2f".format(targetRatio)} out-of-range"
+        }
+
+        val passed = failReasons.isEmpty()
+        return CaptchaPreCheckResult(
+            passed = passed,
+            passReasons = passReasons,
+            failReasons = failReasons,
+            sliderHandle = sliderHandle
+        )
+    }
+
+    private fun evaluateLightweightCaptchaPreCheck(
+        decorView: View,
+        anchorText: String
+    ): LightweightCaptchaPreCheckResult {
+        val passReasons = mutableListOf<String>()
+        val failReasons = mutableListOf<String>()
+        passReasons += "text-anchor=$anchorText"
+
+        val fullBitmap = getBitmapFromView(decorView)
+        if (fullBitmap == null) {
+            failReasons += "decor-screenshot-failed"
+            return LightweightCaptchaPreCheckResult(
+                passed = false,
+                passReasons = passReasons,
+                failReasons = failReasons,
+                sliderHandle = null,
+                fullBitmap = null,
+                croppedBitmap = null,
+                cropTop = 0
+            )
+        }
+
+        saveDebugBitmap(fullBitmap, "full_decorview")
+
+        val cropTop = fullBitmap.height * 40 / 100
+        val croppedBitmap = Bitmap.createBitmap(fullBitmap, 0, cropTop, fullBitmap.width, fullBitmap.height - cropTop)
+        Log.record(TAG, "[前置检测] 裁剪区域: y=$cropTop, size=${croppedBitmap.width}x${croppedBitmap.height}")
+        saveDebugBitmap(croppedBitmap, "cropped_captcha_area")
+
+        val sliderHandle = detectSliderHandle(fullBitmap, cropTop, null)
+        if (sliderHandle != null) {
+            passReasons += "blueHandle=(${sliderHandle.left},${sliderHandle.top},${sliderHandle.right},${sliderHandle.bottom})"
+        } else {
+            failReasons += "blueHandle-missing"
+        }
+
+        sliderHandle?.let {
+            val handleXRatio = it.centerX / fullBitmap.width.toFloat()
+            if (handleXRatio <= 0.42f) {
+                passReasons += "handleXRatio=${"%.2f".format(handleXRatio)}"
+            } else {
+                failReasons += "handleXRatio=${"%.2f".format(handleXRatio)}>0.42"
+            }
+
+            val handleYRatio = it.centerY / fullBitmap.height.toFloat()
+            if (handleYRatio in 0.55f..0.95f) {
+                passReasons += "handleYRatio=${"%.2f".format(handleYRatio)}"
+            } else {
+                failReasons += "handleYRatio=${"%.2f".format(handleYRatio)} out-of-range"
+            }
+        }
+
+        return LightweightCaptchaPreCheckResult(
+            passed = failReasons.isEmpty(),
+            passReasons = passReasons,
+            failReasons = failReasons,
+            sliderHandle = sliderHandle,
+            fullBitmap = fullBitmap,
+            croppedBitmap = croppedBitmap,
+            cropTop = cropTop
+        )
     }
 
     /*
@@ -187,20 +582,25 @@ abstract class BaseCaptchaHandler {
         return targetImage
     }
 
-    private fun recognizeCaptchaGapNative(imageView: ImageView): Pair<Int, Float>? {
+    private suspend fun recognizeCaptchaGapNative(view: View): Pair<Int, Float>? {
         return try {
-            val bitmap = getBitmapFromView(imageView) ?: return null
+            // 1. 从传入的 View 中获取 Bitmap (如果是全屏则传入 DecorView)
+            val bitmap = getBitmapFromView(view) ?: return null
 
-            // 调用 Kotlin 实现的 TFLite 识别
-            val (x1, conf) = sliderDetector!!.identifyOffset(bitmap)
+            saveDebugBitmap(bitmap, "input_to_model")
 
-            Log.record(TAG, "TFLite 识别成功: x1=$x1, conf=$conf")
+            // 2. 直接调用 TFLite 识别全图中的缺口位置
+            // 根据你的演示截图，模型在全图中也能返回坐标
+            val recognitionResult = SliderTFLite.identifyShared(view.context.applicationContext, bitmap) ?: return null
+            val x1 = recognitionResult.targetX.toInt()
+            val conf = recognitionResult.confidence
 
-            // 注意：identifyOffset 返回的 x1 是相对于传入 bitmap 的坐标
-            // 如果 bitmap 是直接从 View 截取的，那么这个 x1 就是 View 坐标系下的
+            Log.record(TAG, "TFLite 识别成功: 目标X=$x1, 置信度=$conf")
+
+            // 因为是 1:1 截图，bitmap 的坐标系与屏幕物理像素坐标系是一致的
             return Pair(x1, conf)
         } catch (e: Exception) {
-            Log.record(TAG, "TFLite 调用失败: ${e.message}")
+            Log.record(TAG, "TFLite 识别过程异常: ${e.message}")
             null
         }
     }
@@ -350,36 +750,99 @@ abstract class BaseCaptchaHandler {
         return executeSlide(sliderView, startX, startY, endX, endY)
     }
 
-    // 真正的滑动执行和结果检查
+    // 真正的滑动执行和结果检查（系统级输入优先，本地 dispatch 备选）
     private suspend fun executeSlide(sliderView: View, startX: Float, startY: Float, endX: Float, endY: Float): Boolean {
         val slideDuration = Random.nextLong(SLIDE_DURATION_MIN, SLIDE_DURATION_MAX + 1)
         
         Log.record(TAG, "执行滑动: ($startX, $startY) -> ($endX, $endY), 时长: $slideDuration")
 
+        // 路径A: 系统级 input swipe（优先，WebView/HTML5 更可靠）
         val swipeStartTime = System.currentTimeMillis()
-        ApplicationHook.sendBroadcastShell(
-            getSlidePathKey(),
-            "input swipe ${startX.toInt()} ${startY.toInt()} ${endX.toInt()} ${endY.toInt()} $slideDuration"
-        )
-        
-        MotionEventSimulator.simulateSwipe(
-            view = sliderView,
-            startX = startX,
-            startY = startY,
-            endX = endX,
-            endY = endY,
-            duration = slideDuration
-        )
-        Log.record(TAG, "滑动执行耗时: ${System.currentTimeMillis() - swipeStartTime}ms")
+        val systemSwipeSuccess = SystemInputSwiper.swipe(startX, startY, endX, endY, slideDuration)
+        val systemSwipeTime = System.currentTimeMillis() - swipeStartTime
+        Log.record(TAG, "[滑动路径] 系统级输入: success=$systemSwipeSuccess, 耗时=${systemSwipeTime}ms")
+
+        // 路径B: 本地 dispatch（备选/补充，当系统级不可用时降级）
+        if (!systemSwipeSuccess) {
+            Log.record(TAG, "[滑动路径] 系统级输入失败，降级为本地 dispatch 路径")
+            val localStartTime = System.currentTimeMillis()
+            MotionEventSimulator.simulateSwipe(
+                view = sliderView,
+                startX = startX,
+                startY = startY,
+                endX = endX,
+                endY = endY,
+                duration = slideDuration
+            )
+            Log.record(TAG, "[滑动路径] 本地 dispatch 完成，耗时=${System.currentTimeMillis() - localStartTime}ms")
+        }
 
         delay(POST_SLIDE_CHECK_DELAY_MS)
         val checkStartTime = System.currentTimeMillis()
-        val result = checkCaptchaTextGone()
-        Log.record(TAG, "结果检查耗时: ${System.currentTimeMillis() - checkStartTime}ms, 最终结果: $result")
+        val result = checkCaptchaTextGoneLegacyOnly()
+        Log.record(TAG, "[滑动判定] 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 路径=${if(systemSwipeSuccess)"系统级" else "本地dispatch"}, 结果=$result")
         return result
     }
 
-    private fun checkCaptchaTextGone(): Boolean {
+    /**
+     * 在指定 View 上执行滑动（全屏截图模式）。
+     * 模型返回的坐标是 View 局部坐标系，需要转换为屏幕坐标。
+     */
+    private suspend fun executeSlideOnView(
+        view: View,
+        localStartX: Float,
+        localStartY: Float,
+        localEndX: Float,
+        localEndY: Float,
+        beforeSnapshot: CaptchaVisualSnapshot,
+        cropTop: Int
+    ): Boolean {
+        // 将 View 局部坐标转换为屏幕坐标
+        val viewLocation = IntArray(2)
+        view.getLocationOnScreen(viewLocation)
+        val screenStartX = localStartX + viewLocation[0]
+        val screenStartY = localStartY + viewLocation[1]
+        val screenEndX = localEndX + viewLocation[0]
+        val screenEndY = localEndY + viewLocation[1]
+
+        val slideDuration = Random.nextLong(SLIDE_DURATION_MIN, SLIDE_DURATION_MAX + 1)
+
+        Log.record(TAG, "执行滑动(全屏模式): 局部(${localStartX.toInt()},${localStartY.toInt()})->(${localEndX.toInt()},${localEndY.toInt()}), 屏幕(${screenStartX.toInt()},${screenStartY.toInt()})->(${screenEndX.toInt()},${screenEndY.toInt()}), 时长: ${slideDuration}ms")
+
+        // 路径A: 系统级 input swipe（优先，WebView/HTML5 验证码更可靠）
+        val swipeStartTime = System.currentTimeMillis()
+        val systemSwipeSuccess = SystemInputSwiper.swipe(screenStartX, screenStartY, screenEndX, screenEndY, slideDuration)
+        val systemSwipeTime = System.currentTimeMillis() - swipeStartTime
+        Log.record(TAG, "[滑动路径] 系统级输入: success=$systemSwipeSuccess, 耗时=${systemSwipeTime}ms")
+
+        // 路径B: 本地 dispatch（当系统级不可用时降级）
+        if (!systemSwipeSuccess) {
+            Log.record(TAG, "[滑动路径] 系统级输入失败，降级为本地 dispatch 路径")
+            val localStartTime = System.currentTimeMillis()
+            MotionEventSimulator.simulateSwipe(
+                view = view,
+                startX = screenStartX,
+                startY = screenStartY,
+                endX = screenEndX,
+                endY = screenEndY,
+                duration = slideDuration
+            )
+            Log.record(TAG, "[滑动路径] 本地 dispatch 完成，耗时=${System.currentTimeMillis() - localStartTime}ms")
+        }
+
+        delay(POST_SLIDE_CHECK_DELAY_MS)
+        val checkStartTime = System.currentTimeMillis()
+        Log.record(TAG, "[截图复核] 滑动后开始截图验证...")
+        var result = verifyCaptchaSolvedByScreenshotOnce(view, beforeSnapshot, cropTop)
+        if (!result) {
+            Log.record(TAG, "[截图复核] 首次验证失败，尝试校正滑动...")
+            result = attemptCorrectiveSwipeIfNeeded(view, cropTop)
+        }
+        Log.record(TAG, "[滑动判定] 路径=${if(systemSwipeSuccess)"系统级" else "本地dispatch"}, 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 最终结果=$result")
+        return result
+    }
+
+    private fun checkCaptchaTextGoneLegacyOnly(): Boolean {
         // 检查旧版和新版文本是否都不存在了
         val oldText = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH)
         val newText = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
@@ -391,5 +854,276 @@ abstract class BaseCaptchaHandler {
             Log.record(TAG, "验证码文本仍然存在，滑动可能失败。")
             false
         }
+    }
+
+    private suspend fun verifyCaptchaSolvedByScreenshotOnce(
+        view: View,
+        beforeSnapshot: CaptchaVisualSnapshot,
+        cropTop: Int
+    ): Boolean {
+        val oldText = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH)
+        val newText = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
+        val textStillVisible = oldText != null || newText != null
+
+        val afterFullBitmap = getBitmapFromView(view) ?: run {
+            Log.record(TAG, "滑动后截图失败，按失败处理")
+            return false
+        }
+        saveDebugBitmap(afterFullBitmap, "post_slide_full_decorview")
+
+        val safeCropTop = cropTop.coerceIn(0, (afterFullBitmap.height - 1).coerceAtLeast(0))
+        val afterCroppedBitmap = Bitmap.createBitmap(
+            afterFullBitmap,
+            0,
+            safeCropTop,
+            afterFullBitmap.width,
+            afterFullBitmap.height - safeCropTop
+        )
+        saveDebugBitmap(afterCroppedBitmap, "post_slide_cropped_captcha_area")
+
+        val afterRecognition = try {
+            SliderTFLite.identifyShared(view.context.applicationContext, afterCroppedBitmap)
+        } catch (e: Exception) {
+            Log.record(TAG, "滑动后二次识别异常: ${e.message}")
+            null
+        }
+
+        val beforeRecognition = beforeSnapshot.recognitionResult
+        val diffRatio = calculateBitmapDifferenceRatio(beforeSnapshot.croppedBitmap, afterCroppedBitmap)
+
+        Log.record(
+            TAG,
+            "截图校验: textStillVisible=$textStillVisible, diffRatio=$diffRatio, beforeRecognition=${formatRecognition(beforeRecognition)}, afterRecognition=${formatRecognition(afterRecognition)}"
+        )
+
+        if (afterRecognition != null) {
+            Log.record(TAG, "截图校验失败：滑动后仍可识别到滑块/缺口，判定验证码未通过")
+            return false
+        }
+
+        if (diffRatio < 0.015f) {
+            Log.record(TAG, "截图校验失败：滑动前后画面变化过小，疑似误报成功")
+            return false
+        }
+
+        if (textStillVisible) {
+            Log.record(TAG, "截图校验失败：验证码提示文本仍存在")
+            return false
+        }
+
+        Log.record(TAG, "截图校验通过：滑动后未再识别到验证码，且页面状态已变化")
+        return true
+    }
+
+    private suspend fun attemptCorrectiveSwipeIfNeeded(view: View, cropTop: Int): Boolean {
+        val probeFullBitmap = getBitmapFromView(view) ?: return false
+        saveDebugBitmap(probeFullBitmap, "correction_probe_full_decorview")
+
+        val safeCropTop = cropTop.coerceIn(0, (probeFullBitmap.height - 1).coerceAtLeast(0))
+        val probeCroppedBitmap = Bitmap.createBitmap(
+            probeFullBitmap,
+            0,
+            safeCropTop,
+            probeFullBitmap.width,
+            probeFullBitmap.height - safeCropTop
+        )
+        saveDebugBitmap(probeCroppedBitmap, "correction_probe_cropped_captcha_area")
+
+        val probeRecognition = try {
+            SliderTFLite.identifyShared(view.context.applicationContext, probeCroppedBitmap)
+        } catch (e: Exception) {
+            Log.record(TAG, "校正探测识别异常: ${e.message}")
+            null
+        } ?: run {
+            Log.record(TAG, "校正探测未识别到可继续修正的目标")
+            return false
+        }
+
+        val sliderHandle = detectSliderHandle(probeFullBitmap, cropTop, probeRecognition) ?: run {
+            Log.record(TAG, "校正探测未定位到滑块手柄")
+            return false
+        }
+
+        val correctionDistance = estimateCorrectionDistance(probeRecognition)
+        if (kotlin.math.abs(correctionDistance) !in 4f..36f) {
+            Log.record(TAG, "校正距离超出允许范围: $correctionDistance")
+            return false
+        }
+
+        val correctionEndX = sliderHandle.centerX + correctionDistance
+        val correctionEndY = sliderHandle.centerY
+        val correctionDuration = Random.nextLong(
+            CORRECTIVE_SLIDE_DURATION_MIN,
+            CORRECTIVE_SLIDE_DURATION_MAX
+        )
+
+        Log.record(
+            TAG,
+            "[校正滑动] handle=(${sliderHandle.centerX.toInt()},${sliderHandle.centerY.toInt()}), correctionDistance=${correctionDistance.toInt()}, 路径: 系统级优先"
+        )
+
+        // 校正滑动也优先使用系统级输入
+        val correctionSystemSuccess = SystemInputSwiper.swipe(
+            sliderHandle.centerX, sliderHandle.centerY,
+            correctionEndX, correctionEndY, correctionDuration
+        )
+        Log.record(TAG, "[校正滑动] 系统级输入: success=$correctionSystemSuccess")
+
+        if (!correctionSystemSuccess) {
+            Log.record(TAG, "[校正滑动] 系统级输入失败，降级为本地 dispatch")
+            MotionEventSimulator.simulateSwipe(
+                view = view,
+                startX = sliderHandle.centerX,
+                startY = sliderHandle.centerY,
+                endX = correctionEndX,
+                endY = correctionEndY,
+                duration = correctionDuration
+            )
+        }
+
+        delay(700L)
+        return verifyCaptchaSolvedByScreenshotOnce(
+            view = view,
+            beforeSnapshot = CaptchaVisualSnapshot(
+                fullBitmap = probeFullBitmap,
+                croppedBitmap = probeCroppedBitmap,
+                recognitionResult = probeRecognition
+            ),
+            cropTop = cropTop
+        )
+    }
+
+    private fun estimateCorrectionDistance(recognitionResult: SliderTFLite.SlideRecognitionResult): Float {
+        val rawDistance = recognitionResult.targetX - recognitionResult.sliderX
+        return if (kotlin.math.abs(rawDistance) < 1f) {
+            12f
+        } else if (rawDistance > 0f) {
+            rawDistance + 8f
+        } else {
+            rawDistance - 8f
+        }
+    }
+
+    private fun detectSliderHandle(
+        fullBitmap: Bitmap,
+        cropTop: Int,
+        recognitionResult: SliderTFLite.SlideRecognitionResult?
+    ): SliderHandleDetection? {
+        val searchTop = if (recognitionResult != null) {
+            (cropTop + recognitionResult.sliderY + 120f).toInt().coerceIn(0, fullBitmap.height - 1)
+        } else {
+            maxOf(cropTop + 40, fullBitmap.height * 55 / 100).coerceIn(0, fullBitmap.height - 1)
+        }
+        val searchBottom = (fullBitmap.height - 140).coerceAtLeast(searchTop + 1).coerceAtMost(fullBitmap.height)
+        val searchLeft = 0
+        val searchRight = (fullBitmap.width * 45 / 100).coerceAtMost(fullBitmap.width)
+
+        var minX = Int.MAX_VALUE
+        var minY = Int.MAX_VALUE
+        var maxX = -1
+        var maxY = -1
+        var pixelCount = 0
+
+        var y = searchTop
+        while (y < searchBottom) {
+            var x = searchLeft
+            while (x < searchRight) {
+                val pixel = fullBitmap.getPixel(x, y)
+                if (isLikelySliderHandleBlue(pixel)) {
+                    if (x < minX) minX = x
+                    if (y < minY) minY = y
+                    if (x > maxX) maxX = x
+                    if (y > maxY) maxY = y
+                    pixelCount++
+                }
+                x += 1
+            }
+            y += 1
+        }
+
+        if (pixelCount < 1200 || maxX <= minX || maxY <= minY) {
+            Log.record(
+                TAG,
+                "滑块手柄检测失败: searchRegion=($searchLeft,$searchTop,$searchRight,$searchBottom), pixelCount=$pixelCount"
+            )
+            return null
+        }
+
+        val width = maxX - minX
+        val height = maxY - minY
+        if (width !in 60..220 || height !in 60..220) {
+            Log.record(
+                TAG,
+                "滑块手柄检测失败: boundsSize=${width}x$height, pixelCount=$pixelCount"
+            )
+            return null
+        }
+
+        val aspectRatio = width.toFloat() / height.toFloat()
+        if (aspectRatio !in 0.75f..1.35f) {
+            Log.record(
+                TAG,
+                "滑块手柄检测失败: aspectRatio=$aspectRatio, boundsSize=${width}x$height, pixelCount=$pixelCount"
+            )
+            return null
+        }
+
+        return SliderHandleDetection(
+            centerX = (minX + maxX) / 2f,
+            centerY = (minY + maxY) / 2f,
+            left = minX,
+            top = minY,
+            right = maxX,
+            bottom = maxY,
+            pixelCount = pixelCount
+        )
+    }
+
+    private fun isLikelySliderHandleBlue(pixel: Int): Boolean {
+        val red = android.graphics.Color.red(pixel)
+        val green = android.graphics.Color.green(pixel)
+        val blue = android.graphics.Color.blue(pixel)
+        return blue >= 170 && green >= 80 && red <= 120 && blue - red >= 70 && blue - green >= 25
+    }
+
+    private fun formatRecognition(result: SliderTFLite.SlideRecognitionResult?): String {
+        return if (result == null) {
+            "none"
+        } else {
+            "slider=(${result.sliderX.toInt()},${result.sliderY.toInt()}), target=(${result.targetX.toInt()},${result.targetY.toInt()}), confidence=${result.confidence}, candidates=${result.candidateCount}"
+        }
+    }
+
+    private fun isMainThread(): Boolean {
+        return Looper.myLooper() == Looper.getMainLooper()
+    }
+
+    private fun calculateBitmapDifferenceRatio(before: Bitmap, after: Bitmap): Float {
+        if (before.width != after.width || before.height != after.height) {
+            return 1f
+        }
+
+        val sampleStepX = maxOf(1, before.width / 48)
+        val sampleStepY = maxOf(1, before.height / 48)
+        var totalDiff = 0L
+        var sampleCount = 0
+
+        var y = 0
+        while (y < before.height) {
+            var x = 0
+            while (x < before.width) {
+                val beforePixel = before.getPixel(x, y)
+                val afterPixel = after.getPixel(x, y)
+                totalDiff += kotlin.math.abs(android.graphics.Color.red(beforePixel) - android.graphics.Color.red(afterPixel))
+                totalDiff += kotlin.math.abs(android.graphics.Color.green(beforePixel) - android.graphics.Color.green(afterPixel))
+                totalDiff += kotlin.math.abs(android.graphics.Color.blue(beforePixel) - android.graphics.Color.blue(afterPixel))
+                sampleCount++
+                x += sampleStepX
+            }
+            y += sampleStepY
+        }
+
+        if (sampleCount == 0) return 0f
+        return totalDiff.toFloat() / (sampleCount * 255f * 3f)
     }
 }

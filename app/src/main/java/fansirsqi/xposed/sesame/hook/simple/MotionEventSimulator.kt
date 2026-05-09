@@ -4,10 +4,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 /**
@@ -17,6 +14,8 @@ import kotlin.random.Random
 object MotionEventSimulator {
 
     private const val TAG = "MotionEventSimulator"
+
+    private data class LocalPoint(val x: Float, val y: Float)
 
     /**
      * 异步模拟一个从起点到终点的滑动操作.
@@ -28,7 +27,7 @@ object MotionEventSimulator {
      * @param endY 滑动的屏幕绝对 Y 坐标终点.
      * @param duration 滑动动画的总时长 (毫秒).
      */
-        fun simulateSwipe(
+    suspend fun simulateSwipe(
         view: View,
         startX: Float,
         startY: Float,
@@ -36,39 +35,44 @@ object MotionEventSimulator {
         endY: Float,
         duration: Long = 800L
     ) {
-        CoroutineScope(Dispatchers.Main).launch {
-            if (!view.isShown || !view.isEnabled) return@launch
-            
-            val downTime = SystemClock.uptimeMillis()
-            try {
-                // 1. ACTION_DOWN
-                dispatchTouchEvent(view, MotionEvent.ACTION_DOWN, startX, startY, downTime, downTime)
-                delay(Random.nextLong(50, 100)) // 模拟按压瞬间的反应时间
+        if (!view.isShown || !view.isEnabled) return
 
-                // 2. 生成拟人化轨迹点
-                val distance = endX - startX
-                val tracks = generateHumanLikeTracks(distance)
-                
-                var lastEventTime = downTime
-                tracks.forEach { (relX, relY) ->
-                    val currentX = startX + relX
-                    // 在 Y 轴加入随机微抖动
-                    val currentY = startY + relY + Random.nextInt(-2, 3)
-                    
-                    lastEventTime += Random.nextLong(10, 25) // 随机采样间隔
-                    dispatchTouchEvent(view, MotionEvent.ACTION_MOVE, currentX, currentY, downTime, lastEventTime)
-                    
-                    // 根据当前阶段控制延迟，模拟速度变化
-                    delay(Random.nextLong(10, 20))
-                }
+        val localStart = toLocalPoint(view, startX, startY)
+        val localEnd = toLocalPoint(view, endX, endY)
 
-                // 3. ACTION_UP (在最终目标点抬起)
-                val finalUpTime = lastEventTime + Random.nextLong(30, 80)
-                dispatchTouchEvent(view, MotionEvent.ACTION_UP, endX, endY, downTime, finalUpTime)
-                
-            } catch (e: Throwable) {
-                Log.e(TAG, "滑动异常", e)
+        Log.d(
+            TAG,
+            "simulateSwipe screen=($startX,$startY)->($endX,$endY), local=(${localStart.x},${localStart.y})->(${localEnd.x},${localEnd.y}), duration=$duration"
+        )
+
+        val downTime = SystemClock.uptimeMillis()
+        try {
+            // 1. ACTION_DOWN
+            dispatchTouchEvent(view, MotionEvent.ACTION_DOWN, localStart.x, localStart.y, downTime, downTime)
+            delay(Random.nextLong(80, 140)) // 模拟按压瞬间的反应时间
+
+            // 2. 生成拟人化轨迹点
+            val distance = localEnd.x - localStart.x
+            val tracks = generateHumanLikeTracks(distance)
+            val stepDelay = if (tracks.isEmpty()) 12L else (duration / tracks.size).coerceIn(8L, 28L)
+
+            var lastEventTime = downTime
+            tracks.forEach { (relX, relY) ->
+                val currentX = localStart.x + relX
+                // 在 Y 轴加入随机微抖动
+                val currentY = localStart.y + relY + Random.nextInt(-2, 3)
+
+                lastEventTime += stepDelay + Random.nextLong(0, 8)
+                dispatchTouchEvent(view, MotionEvent.ACTION_MOVE, currentX, currentY, downTime, lastEventTime)
+                delay(stepDelay)
             }
+
+            // 3. ACTION_UP (在最终目标点抬起)
+            val finalUpTime = lastEventTime + Random.nextLong(60, 120)
+            delay(Random.nextLong(50, 90))
+            dispatchTouchEvent(view, MotionEvent.ACTION_UP, localEnd.x, localEnd.y, downTime, finalUpTime)
+        } catch (e: Throwable) {
+            Log.e(TAG, "滑动异常", e)
         }
     }
 
@@ -132,5 +136,14 @@ object MotionEventSimulator {
         val event = MotionEvent.obtain(downTime, eventTime, action, 1, properties, cords, 0, 0, 1f, 1f, 0, 0, 0, 0)
         view.dispatchTouchEvent(event)
         event.recycle()
+    }
+
+    private fun toLocalPoint(view: View, screenX: Float, screenY: Float): LocalPoint {
+        val location = IntArray(2)
+        view.getLocationOnScreen(location)
+        return LocalPoint(
+            x = screenX - location[0],
+            y = screenY - location[1]
+        )
     }
 }

@@ -304,33 +304,47 @@ object HookUtil {
         try {
             val assetManagerClass = android.content.res.AssetManager::class.java
 
+            fun tryRedirectModel(param: XC_MethodHook.MethodHookParam) {
+                val fileName = param.args.getOrNull(0) as? String ?: return
+                if (fileName != AssetUtil.SLIDER_MODEL) return
+
+                val modelFile = AssetUtil.modelPrivateFile
+                if (modelFile != null && modelFile.exists()) {
+                    val pfd = android.os.ParcelFileDescriptor.open(
+                        modelFile,
+                        android.os.ParcelFileDescriptor.MODE_READ_ONLY
+                    )
+                    val afd = android.content.res.AssetFileDescriptor(pfd, 0, modelFile.length())
+                    param.result = afd
+                    Log.record(TAG, "成功拦截 Asset 加载：重定向 ${AssetUtil.SLIDER_MODEL} 到 ${modelFile.absolutePath}")
+                } else {
+                    Log.error(TAG, "拦截失败：私有模型文件不存在")
+                }
+            }
+
+            XposedHelpers.findAndHookMethod(
+                assetManagerClass,
+                "openFd",
+                String::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        tryRedirectModel(param)
+                    }
+                }
+            )
+
             XposedHelpers.findAndHookMethod(
                 assetManagerClass,
                 "openAssetFd",
                 String::class.java,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        val fileName = param.args[0] as String
-                        // 拦截 Slider.java 内部写死的路径 "slider.tflite"
-                        if (fileName == "slider.tflite") {
-                            val modelFile = AssetUtil.modelPrivateFile
-                            if (modelFile != null && modelFile.exists()) {
-                                // 创建一个指向私有文件的 AssetFileDescriptor
-                                val pfd = android.os.ParcelFileDescriptor.open(
-                                    modelFile,
-                                    android.os.ParcelFileDescriptor.MODE_READ_ONLY
-                                )
-                                // 返回自定义的 AssetFileDescriptor，绕过真正的 Assets
-                                val afd = android.content.res.AssetFileDescriptor(pfd, 0, modelFile.length())
-                                param.result = afd
-                                Log.record(TAG, "成功拦截 Asset 加载：重定向 slider.tflite 到 ${modelFile.absolutePath}")
-                            } else {
-                                Log.error(TAG, "拦截失败：私有模型文件不存在")
-                            }
-                        }
+                        tryRedirectModel(param)
                     }
                 }
             )
+
+            Log.record(TAG, "Hook AssetManager(openFd/openAssetFd) 成功")
         } catch (e: Exception) {
             Log.printStackTrace(TAG, "Hook AssetManager 失败", e)
         }

@@ -11,6 +11,7 @@ import android.view.View
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.hook.simple.xpcompat.CompatHelpers
+import fansirsqi.xposed.sesame.util.Log as SesameLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -81,9 +82,11 @@ object SimplePageManager {
             TAG,
             "启用窗口监控被调用，窗口监控已启用: $windowMonitorEnabled, 类加载器: ${mClassLoader?.javaClass?.name}"
         )
+        SesameLog.record(TAG, "启用窗口监控被调用，窗口监控已启用: $windowMonitorEnabled")
         if (!windowMonitorEnabled) {
             enableWindowMonitor()
             windowMonitorEnabled = true
+            SesameLog.record(TAG, "窗口监控初始化完成")
         }
     }
 
@@ -145,6 +148,7 @@ object SimplePageManager {
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         topActivity = param.args[0] as Activity
+                        SesameLog.record(TAG, "Activity resumed: ${topActivity?.javaClass?.name}")
                         if (mContextRef?.get() == null) {
                             mContextRef = WeakReference(topActivity?.applicationContext)
                         }
@@ -249,19 +253,23 @@ object SimplePageManager {
     private fun triggerPendingActivityHandler(source: String) {
         val activity = topActivity ?: run {
             Log.i(TAG, "无法从 $source 触发处理器，未找到顶层 Activity")
+            SesameLog.record(TAG, "无法从 $source 触发处理器，未找到顶层 Activity")
             return
         }
         val handler = activityFocusHandlerMap[activity.javaClass.name]
         if (handler == null) {
             Log.d(TAG, "未找到 ${activity.javaClass.name} 的处理器，来源: $source")
+            SesameLog.record(TAG, "未找到 ${activity.javaClass.name} 的处理器，来源: $source")
             return
         }
         if (hasPendingActivityTask) {
             Log.d(TAG, "跳过从 $source 触发，已有待处理任务")
+            SesameLog.record(TAG, "跳过从 $source 触发，已有待处理任务")
             return
         }
         hasPendingActivityTask = true
         Log.i(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${taskDuration}ms")
+        SesameLog.record(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${taskDuration}ms")
         triggerActivityActive(activity, handler, 0)
     }
 
@@ -283,25 +291,30 @@ object SimplePageManager {
                 hasPendingActivityTask = false
                 val startTime = System.currentTimeMillis()
                 Log.d(TAG, "开始执行验证码处理器，第${triggerCount + 1}次尝试")
+                SesameLog.record(TAG, "开始执行验证码处理器，第${triggerCount + 1}次尝试")
                 val result = activityFocusHandler.handleActivity(activity, SimpleViewImage(activity.window.decorView))
                 val endTime = System.currentTimeMillis()
                 Log.d(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
+                SesameLog.record(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
                 if (result) {
                     return@launch  // 处理成功，结束重试
                 }
             } catch (throwable: Throwable) {
                 Log.e(TAG, "处理 Activity 出错: ${activity.javaClass.name}", throwable)
+                SesameLog.record(TAG, "处理 Activity 出错: ${activity.javaClass.name}: ${throwable.message}")
             }
             
             // 限制重试次数并增加重试间隔
             if (triggerCount >= 3) {  // 从10次减少到3次
                 Log.w(TAG, "Activity 事件触发失败次数过多(${triggerCount + 1}次)，停止重试")
+                SesameLog.record(TAG, "Activity 事件触发失败次数过多(${triggerCount + 1}次)，停止重试")
                 return@launch
             }
             
             // 递增重试延迟：100ms -> 200ms -> 300ms
             val retryDelay = (triggerCount + 1) * 100L
             Log.d(TAG, "第${triggerCount + 1}次处理失败，${retryDelay}ms后重试")
+            SesameLog.record(TAG, "第${triggerCount + 1}次处理失败，${retryDelay}ms后重试")
             delay(retryDelay)
             triggerActivityActive(activity, activityFocusHandler, triggerCount + 1)
         }

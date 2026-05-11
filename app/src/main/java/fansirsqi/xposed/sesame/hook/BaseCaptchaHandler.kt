@@ -14,7 +14,6 @@ import fansirsqi.xposed.sesame.hook.simple.SimplePageManager
 import fansirsqi.xposed.sesame.hook.simple.SimpleViewImage
 import fansirsqi.xposed.sesame.hook.simple.ViewHierarchyAnalyzer
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
-import fansirsqi.xposed.sesame.hook.simple.SystemInputSwiper
 import fansirsqi.xposed.sesame.util.CommandUtil
 import fansirsqi.xposed.sesame.util.Log
 import kotlinx.coroutines.delay
@@ -65,7 +64,8 @@ private data class LightweightCaptchaPreCheckResult(
     val sliderHandle: SliderHandleDetection?,
     val fullBitmap: Bitmap?,
     val croppedBitmap: Bitmap?,
-    val cropTop: Int
+    val cropTop: Int,
+    val cropBottom: Int
 )
 
 /**
@@ -142,13 +142,18 @@ abstract class BaseCaptchaHandler {
             )
 
             val textAnchor = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
-            if (textAnchor == null) {
-                Log.record(TAG, "[前置跳过] reason=text-anchor-missing")
-                return false
-            }
+            val anchorText = textAnchor
+                ?.getText()
+                ?.take(24)
+                ?.toString()
+                ?.takeIf { it.isNotBlank() }
+            val hasTextAnchor = !anchorText.isNullOrBlank()
 
-            val anchorText = textAnchor.getText()?.toString()?.take(24).orEmpty()
-            Log.record(TAG, "[前置命中] text-anchor=$anchorText")
+            if (hasTextAnchor) {
+                Log.record(TAG, "[前置命中] text-anchor=$anchorText")
+            } else {
+                Log.record(TAG, "[前置提示] text-anchor-missing, fallback=visual-precheck")
+            }
 
             // 预连接 CommandService（利用渲染等待时间预热 shell 服务）
             val context = SimplePageManager.getContext()
@@ -167,11 +172,23 @@ abstract class BaseCaptchaHandler {
                 anchorText = anchorText
             )
             if (!lightweightPreCheck.passed) {
+                val skipReason = if (hasTextAnchor) {
+                    "normal-page-skip"
+                } else {
+                    "text-anchor-missing and precheck-fail"
+                }
                 Log.record(
                     TAG,
-                    "[前置跳过] 判定为普通页并跳过: ${lightweightPreCheck.failReasons.joinToString("; ")}; 通过项=${lightweightPreCheck.passReasons.joinToString(", ")}"
+                    "[前置跳过] reason=$skipReason; fail=${lightweightPreCheck.failReasons.joinToString("; ")}; pass=${lightweightPreCheck.passReasons.joinToString(", ")}"
                 )
                 return false
+            }
+
+            if (!hasTextAnchor) {
+                Log.record(
+                    TAG,
+                    "[前置放行] reason=text-anchor-missing but visual-precheck-pass; pass=${lightweightPreCheck.passReasons.joinToString(", ")}"
+                )
             }
 
             val fullBitmap = lightweightPreCheck.fullBitmap ?: run {
@@ -183,6 +200,7 @@ abstract class BaseCaptchaHandler {
                 return false
             }
             val cropTop = lightweightPreCheck.cropTop
+            val cropBottom = lightweightPreCheck.cropBottom
             val detectedHandle = lightweightPreCheck.sliderHandle ?: run {
                 Log.record(TAG, "轻量前置检测未命中滑块手柄")
                 return false
@@ -215,16 +233,21 @@ abstract class BaseCaptchaHandler {
                 sliderHandle = detectedHandle
             )
             if (!preCheck.passed) {
+                val skipReason = if (hasTextAnchor) {
+                    "normal-page-skip"
+                } else {
+                    "text-anchor-missing and precheck-fail"
+                }
                 Log.record(
                     TAG,
-                    "[前置检测失败] 判定为普通页并跳过: ${preCheck.failReasons.joinToString("; ")}; 通过项=${preCheck.passReasons.joinToString(", ")}"
+                    "[前置检测失败] reason=$skipReason; fail=${preCheck.failReasons.joinToString("; ")}; pass=${preCheck.passReasons.joinToString(", ")}"
                 )
                 return false
             }
 
             Log.record(
                 TAG,
-                "[前置检测通过] 判定为滑块验证码页: ${preCheck.passReasons.joinToString(", ")}"
+                "[前置检测通过] reason=${if (hasTextAnchor) "captcha-precheck-pass" else "text-anchor-missing but visual-precheck-pass"}; 判定为滑块验证码页: ${preCheck.passReasons.joinToString(", ")}"
             )
 
             Log.record(TAG, "滑动参数: 起点=(${sliderLocalX.toInt()},${sliderLocalY.toInt()}), 终点=(${targetLocalX.toInt()},${targetLocalY.toInt()}), 距离=${distance.toInt()}px")
@@ -258,7 +281,8 @@ abstract class BaseCaptchaHandler {
                 localEndX = actualEndX,
                 localEndY = actualEndY,
                 beforeSnapshot = beforeSnapshot,
-                cropTop = cropTop
+                cropTop = cropTop,
+                cropBottom = cropBottom
             )
 
         } catch (e: Exception) {
@@ -434,13 +458,13 @@ abstract class BaseCaptchaHandler {
     private fun evaluateNewCaptchaPreCheck(
         croppedBitmap: Bitmap,
         recognitionResult: SliderTFLite.SlideRecognitionResult,
-        anchorText: String,
+        anchorText: String?,
         sliderHandle: SliderHandleDetection
     ): CaptchaPreCheckResult {
         val passReasons = mutableListOf<String>()
         val failReasons = mutableListOf<String>()
 
-        passReasons += "text-anchor=$anchorText"
+        passReasons += formatAnchorReason(anchorText)
         passReasons += "blueHandle=(${sliderHandle.left},${sliderHandle.top},${sliderHandle.right},${sliderHandle.bottom})"
 
         if (recognitionResult.candidateCount >= 2) {
@@ -497,11 +521,11 @@ abstract class BaseCaptchaHandler {
 
     private fun evaluateLightweightCaptchaPreCheck(
         decorView: View,
-        anchorText: String
+        anchorText: String?
     ): LightweightCaptchaPreCheckResult {
         val passReasons = mutableListOf<String>()
         val failReasons = mutableListOf<String>()
-        passReasons += "text-anchor=$anchorText"
+        passReasons += formatAnchorReason(anchorText)
 
         val fullBitmap = getBitmapFromView(decorView)
         if (fullBitmap == null) {
@@ -513,25 +537,41 @@ abstract class BaseCaptchaHandler {
                 sliderHandle = null,
                 fullBitmap = null,
                 croppedBitmap = null,
-                cropTop = 0
+                cropTop = 0,
+                cropBottom = 0
             )
         }
 
         saveDebugBitmap(fullBitmap, "full_decorview")
 
-        val cropTop = fullBitmap.height * 40 / 100
-        val croppedBitmap = Bitmap.createBitmap(fullBitmap, 0, cropTop, fullBitmap.width, fullBitmap.height - cropTop)
-        Log.record(TAG, "[前置检测] 裁剪区域: y=$cropTop, size=${croppedBitmap.width}x${croppedBitmap.height}")
-        saveDebugBitmap(croppedBitmap, "cropped_captcha_area")
-
-        val sliderHandle = detectSliderHandle(fullBitmap, cropTop, null)
+        val initialCropTop = fullBitmap.height * 40 / 100
+        val sliderHandle = detectSliderHandle(fullBitmap, initialCropTop, null)
         if (sliderHandle != null) {
             passReasons += "blueHandle=(${sliderHandle.left},${sliderHandle.top},${sliderHandle.right},${sliderHandle.bottom})"
         } else {
             failReasons += "blueHandle-missing"
         }
 
+        val cropBounds = buildCaptchaCropBounds(fullBitmap, sliderHandle)
+        val cropTop = cropBounds.first
+        val cropBottom = cropBounds.second
+        val croppedBitmap = Bitmap.createBitmap(
+            fullBitmap,
+            0,
+            cropTop,
+            fullBitmap.width,
+            cropBottom - cropTop
+        )
+        Log.record(
+            TAG,
+            "[前置检测] 裁剪区域: top=$cropTop, bottom=$cropBottom, size=${croppedBitmap.width}x${croppedBitmap.height}"
+        )
+        saveDebugBitmap(croppedBitmap, "cropped_captcha_area")
+
         sliderHandle?.let {
+            val handleWidth = it.right - it.left
+            val handleHeight = it.bottom - it.top
+
             val handleXRatio = it.centerX / fullBitmap.width.toFloat()
             if (handleXRatio <= 0.42f) {
                 passReasons += "handleXRatio=${"%.2f".format(handleXRatio)}"
@@ -545,17 +585,32 @@ abstract class BaseCaptchaHandler {
             } else {
                 failReasons += "handleYRatio=${"%.2f".format(handleYRatio)} out-of-range"
             }
+
+            if (anchorText.isNullOrBlank()) {
+                if (it.pixelCount >= 1400) {
+                    passReasons += "handlePixels=${it.pixelCount}"
+                } else {
+                    failReasons += "handlePixels=${it.pixelCount}<1400"
+                }
+
+                if (handleWidth in 68..190 && handleHeight in 68..190) {
+                    passReasons += "handleSize=${handleWidth}x${handleHeight}"
+                } else {
+                    failReasons += "handleSize=${handleWidth}x${handleHeight} out-of-range"
+                }
+            }
         }
 
         return LightweightCaptchaPreCheckResult(
             passed = failReasons.isEmpty(),
             passReasons = passReasons,
             failReasons = failReasons,
-            sliderHandle = sliderHandle,
-            fullBitmap = fullBitmap,
-            croppedBitmap = croppedBitmap,
-            cropTop = cropTop
-        )
+                sliderHandle = sliderHandle,
+                fullBitmap = fullBitmap,
+                croppedBitmap = croppedBitmap,
+                cropTop = cropTop,
+                cropBottom = cropBottom
+            )
     }
 
     /*
@@ -756,31 +811,21 @@ abstract class BaseCaptchaHandler {
         
         Log.record(TAG, "执行滑动: ($startX, $startY) -> ($endX, $endY), 时长: $slideDuration")
 
-        // 路径A: 系统级 input swipe（优先，WebView/HTML5 更可靠）
-        val swipeStartTime = System.currentTimeMillis()
-        val systemSwipeSuccess = SystemInputSwiper.swipe(startX, startY, endX, endY, slideDuration)
-        val systemSwipeTime = System.currentTimeMillis() - swipeStartTime
-        Log.record(TAG, "[滑动路径] 系统级输入: success=$systemSwipeSuccess, 耗时=${systemSwipeTime}ms")
-
-        // 路径B: 本地 dispatch（备选/补充，当系统级不可用时降级）
-        if (!systemSwipeSuccess) {
-            Log.record(TAG, "[滑动路径] 系统级输入失败，降级为本地 dispatch 路径")
-            val localStartTime = System.currentTimeMillis()
-            MotionEventSimulator.simulateSwipe(
-                view = sliderView,
-                startX = startX,
-                startY = startY,
-                endX = endX,
-                endY = endY,
-                duration = slideDuration
-            )
-            Log.record(TAG, "[滑动路径] 本地 dispatch 完成，耗时=${System.currentTimeMillis() - localStartTime}ms")
-        }
+        val localStartTime = System.currentTimeMillis()
+        MotionEventSimulator.simulateSwipe(
+            view = sliderView,
+            startX = startX,
+            startY = startY,
+            endX = endX,
+            endY = endY,
+            duration = slideDuration
+        )
+        Log.record(TAG, "[滑动路径] path=local-dispatch-only, 耗时=${System.currentTimeMillis() - localStartTime}ms")
 
         delay(POST_SLIDE_CHECK_DELAY_MS)
         val checkStartTime = System.currentTimeMillis()
         val result = checkCaptchaTextGoneLegacyOnly()
-        Log.record(TAG, "[滑动判定] 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 路径=${if(systemSwipeSuccess)"系统级" else "本地dispatch"}, 结果=$result")
+        Log.record(TAG, "[滑动判定] 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 路径=local-dispatch-only, 结果=$result")
         return result
     }
 
@@ -795,7 +840,8 @@ abstract class BaseCaptchaHandler {
         localEndX: Float,
         localEndY: Float,
         beforeSnapshot: CaptchaVisualSnapshot,
-        cropTop: Int
+        cropTop: Int,
+        cropBottom: Int
     ): Boolean {
         // 将 View 局部坐标转换为屏幕坐标
         val viewLocation = IntArray(2)
@@ -809,36 +855,26 @@ abstract class BaseCaptchaHandler {
 
         Log.record(TAG, "执行滑动(全屏模式): 局部(${localStartX.toInt()},${localStartY.toInt()})->(${localEndX.toInt()},${localEndY.toInt()}), 屏幕(${screenStartX.toInt()},${screenStartY.toInt()})->(${screenEndX.toInt()},${screenEndY.toInt()}), 时长: ${slideDuration}ms")
 
-        // 路径A: 系统级 input swipe（优先，WebView/HTML5 验证码更可靠）
-        val swipeStartTime = System.currentTimeMillis()
-        val systemSwipeSuccess = SystemInputSwiper.swipe(screenStartX, screenStartY, screenEndX, screenEndY, slideDuration)
-        val systemSwipeTime = System.currentTimeMillis() - swipeStartTime
-        Log.record(TAG, "[滑动路径] 系统级输入: success=$systemSwipeSuccess, 耗时=${systemSwipeTime}ms")
-
-        // 路径B: 本地 dispatch（当系统级不可用时降级）
-        if (!systemSwipeSuccess) {
-            Log.record(TAG, "[滑动路径] 系统级输入失败，降级为本地 dispatch 路径")
-            val localStartTime = System.currentTimeMillis()
-            MotionEventSimulator.simulateSwipe(
-                view = view,
-                startX = screenStartX,
-                startY = screenStartY,
-                endX = screenEndX,
-                endY = screenEndY,
-                duration = slideDuration
-            )
-            Log.record(TAG, "[滑动路径] 本地 dispatch 完成，耗时=${System.currentTimeMillis() - localStartTime}ms")
-        }
+        val localStartTime = System.currentTimeMillis()
+        MotionEventSimulator.simulateSwipe(
+            view = view,
+            startX = screenStartX,
+            startY = screenStartY,
+            endX = screenEndX,
+            endY = screenEndY,
+            duration = slideDuration
+        )
+        Log.record(TAG, "[滑动路径] path=local-dispatch-only, 耗时=${System.currentTimeMillis() - localStartTime}ms")
 
         delay(POST_SLIDE_CHECK_DELAY_MS)
         val checkStartTime = System.currentTimeMillis()
         Log.record(TAG, "[截图复核] 滑动后开始截图验证...")
-        var result = verifyCaptchaSolvedByScreenshotOnce(view, beforeSnapshot, cropTop)
+        var result = verifyCaptchaSolvedByScreenshotOnce(view, beforeSnapshot, cropTop, cropBottom)
         if (!result) {
             Log.record(TAG, "[截图复核] 首次验证失败，尝试校正滑动...")
-            result = attemptCorrectiveSwipeIfNeeded(view, cropTop)
+            result = attemptCorrectiveSwipeIfNeeded(view, cropTop, cropBottom)
         }
-        Log.record(TAG, "[滑动判定] 路径=${if(systemSwipeSuccess)"系统级" else "本地dispatch"}, 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 最终结果=$result")
+        Log.record(TAG, "[滑动判定] 路径=local-dispatch-only, 检查耗时=${System.currentTimeMillis() - checkStartTime}ms, 最终结果=$result")
         return result
     }
 
@@ -859,7 +895,8 @@ abstract class BaseCaptchaHandler {
     private suspend fun verifyCaptchaSolvedByScreenshotOnce(
         view: View,
         beforeSnapshot: CaptchaVisualSnapshot,
-        cropTop: Int
+        cropTop: Int,
+        cropBottom: Int
     ): Boolean {
         val oldText = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH)
         val newText = SimplePageManager.tryGetTopView(NEW_SLIDE_VERIFY_TEXT_XPATH)
@@ -872,12 +909,13 @@ abstract class BaseCaptchaHandler {
         saveDebugBitmap(afterFullBitmap, "post_slide_full_decorview")
 
         val safeCropTop = cropTop.coerceIn(0, (afterFullBitmap.height - 1).coerceAtLeast(0))
+        val safeCropBottom = cropBottom.coerceIn(safeCropTop + 1, afterFullBitmap.height)
         val afterCroppedBitmap = Bitmap.createBitmap(
             afterFullBitmap,
             0,
             safeCropTop,
             afterFullBitmap.width,
-            afterFullBitmap.height - safeCropTop
+            safeCropBottom - safeCropTop
         )
         saveDebugBitmap(afterCroppedBitmap, "post_slide_cropped_captcha_area")
 
@@ -897,8 +935,12 @@ abstract class BaseCaptchaHandler {
         )
 
         if (afterRecognition != null) {
-            Log.record(TAG, "截图校验失败：滑动后仍可识别到滑块/缺口，判定验证码未通过")
-            return false
+            if (isSolvedResidualDetection(beforeRecognition, afterRecognition, afterCroppedBitmap)) {
+                Log.record(TAG, "截图校验命中 residual-target-only，按验证通过处理")
+            } else {
+                Log.record(TAG, "截图校验失败：滑动后仍可识别到滑块/缺口，判定验证码未通过")
+                return false
+            }
         }
 
         if (diffRatio < 0.015f) {
@@ -915,17 +957,18 @@ abstract class BaseCaptchaHandler {
         return true
     }
 
-    private suspend fun attemptCorrectiveSwipeIfNeeded(view: View, cropTop: Int): Boolean {
+    private suspend fun attemptCorrectiveSwipeIfNeeded(view: View, cropTop: Int, cropBottom: Int): Boolean {
         val probeFullBitmap = getBitmapFromView(view) ?: return false
         saveDebugBitmap(probeFullBitmap, "correction_probe_full_decorview")
 
         val safeCropTop = cropTop.coerceIn(0, (probeFullBitmap.height - 1).coerceAtLeast(0))
+        val safeCropBottom = cropBottom.coerceIn(safeCropTop + 1, probeFullBitmap.height)
         val probeCroppedBitmap = Bitmap.createBitmap(
             probeFullBitmap,
             0,
             safeCropTop,
             probeFullBitmap.width,
-            probeFullBitmap.height - safeCropTop
+            safeCropBottom - safeCropTop
         )
         saveDebugBitmap(probeCroppedBitmap, "correction_probe_cropped_captcha_area")
 
@@ -959,27 +1002,18 @@ abstract class BaseCaptchaHandler {
 
         Log.record(
             TAG,
-            "[校正滑动] handle=(${sliderHandle.centerX.toInt()},${sliderHandle.centerY.toInt()}), correctionDistance=${correctionDistance.toInt()}, 路径: 系统级优先"
+            "[校正滑动] handle=(${sliderHandle.centerX.toInt()},${sliderHandle.centerY.toInt()}), correctionDistance=${correctionDistance.toInt()}, 路径=local-dispatch-only"
         )
 
-        // 校正滑动也优先使用系统级输入
-        val correctionSystemSuccess = SystemInputSwiper.swipe(
-            sliderHandle.centerX, sliderHandle.centerY,
-            correctionEndX, correctionEndY, correctionDuration
+        MotionEventSimulator.simulateSwipe(
+            view = view,
+            startX = sliderHandle.centerX,
+            startY = sliderHandle.centerY,
+            endX = correctionEndX,
+            endY = correctionEndY,
+            duration = correctionDuration
         )
-        Log.record(TAG, "[校正滑动] 系统级输入: success=$correctionSystemSuccess")
-
-        if (!correctionSystemSuccess) {
-            Log.record(TAG, "[校正滑动] 系统级输入失败，降级为本地 dispatch")
-            MotionEventSimulator.simulateSwipe(
-                view = view,
-                startX = sliderHandle.centerX,
-                startY = sliderHandle.centerY,
-                endX = correctionEndX,
-                endY = correctionEndY,
-                duration = correctionDuration
-            )
-        }
+        Log.record(TAG, "[校正滑动] path=local-dispatch-only")
 
         delay(700L)
         return verifyCaptchaSolvedByScreenshotOnce(
@@ -989,8 +1023,45 @@ abstract class BaseCaptchaHandler {
                 croppedBitmap = probeCroppedBitmap,
                 recognitionResult = probeRecognition
             ),
-            cropTop = cropTop
+            cropTop = cropTop,
+            cropBottom = cropBottom
         )
+    }
+
+    private fun buildCaptchaCropBounds(fullBitmap: Bitmap, sliderHandle: SliderHandleDetection?): Pair<Int, Int> {
+        if (sliderHandle == null) {
+            val fallbackTop = (fullBitmap.height * 28 / 100).coerceIn(0, fullBitmap.height - 1)
+            val fallbackBottom = (fullBitmap.height * 88 / 100).coerceIn(fallbackTop + 1, fullBitmap.height)
+            return fallbackTop to fallbackBottom
+        }
+
+        val cropTop = maxOf(0, sliderHandle.top - (fullBitmap.height * 42 / 100))
+        val cropBottom = minOf(fullBitmap.height, sliderHandle.bottom + (fullBitmap.height * 8 / 100))
+        return if (cropBottom - cropTop >= fullBitmap.height * 22 / 100) {
+            cropTop to cropBottom
+        } else {
+            val fallbackTop = (fullBitmap.height * 28 / 100).coerceIn(0, fullBitmap.height - 1)
+            val fallbackBottom = (fullBitmap.height * 88 / 100).coerceIn(fallbackTop + 1, fullBitmap.height)
+            fallbackTop to fallbackBottom
+        }
+    }
+
+    private fun isSolvedResidualDetection(
+        beforeRecognition: SliderTFLite.SlideRecognitionResult?,
+        afterRecognition: SliderTFLite.SlideRecognitionResult,
+        croppedBitmap: Bitmap
+    ): Boolean {
+        val before = beforeRecognition ?: return false
+        if (afterRecognition.candidateCount != 1) return false
+
+        val targetDeltaX = kotlin.math.abs(afterRecognition.sliderX - before.targetX)
+        val targetDeltaY = kotlin.math.abs(afterRecognition.sliderY - before.targetY)
+        val maxDeltaX = maxOf(croppedBitmap.width * 0.12f, 90f)
+        val maxDeltaY = maxOf(croppedBitmap.height * 0.10f, 80f)
+        val collapsedBox = kotlin.math.abs(afterRecognition.targetX - afterRecognition.sliderX) <= 1f &&
+            kotlin.math.abs(afterRecognition.targetY - afterRecognition.sliderY) <= 1f
+
+        return collapsedBox && targetDeltaX <= maxDeltaX && targetDeltaY <= maxDeltaY
     }
 
     private fun estimateCorrectionDistance(recognitionResult: SliderTFLite.SlideRecognitionResult): Float {
@@ -1084,6 +1155,14 @@ abstract class BaseCaptchaHandler {
         val green = android.graphics.Color.green(pixel)
         val blue = android.graphics.Color.blue(pixel)
         return blue >= 170 && green >= 80 && red <= 120 && blue - red >= 70 && blue - green >= 25
+    }
+
+    private fun formatAnchorReason(anchorText: String?): String {
+        return if (anchorText.isNullOrBlank()) {
+            "text-anchor-missing"
+        } else {
+            "text-anchor=$anchorText"
+        }
     }
 
     private fun formatRecognition(result: SliderTFLite.SlideRecognitionResult?): String {

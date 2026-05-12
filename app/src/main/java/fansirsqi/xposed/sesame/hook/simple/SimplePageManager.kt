@@ -42,8 +42,14 @@ object SimplePageManager {
     private val dialogs = ArrayList<WeakReference<android.app.Dialog>>()
     private var windowMonitorEnabled = false
 
+    enum class ActivityHandleResult {
+        HANDLED,
+        SKIP_NON_RETRYABLE,
+        FAILED_RETRYABLE
+    }
+
     interface ActivityFocusHandler {
-        suspend fun handleActivity(activity: Activity, root: SimpleViewImage): Boolean
+        suspend fun handleActivity(activity: Activity, root: SimpleViewImage): ActivityHandleResult
     }
 
     init {
@@ -296,8 +302,19 @@ object SimplePageManager {
                 val endTime = System.currentTimeMillis()
                 Log.d(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
                 SesameLog.record(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
-                if (result) {
-                    return@launch  // 处理成功，结束重试
+                when (result) {
+                    ActivityHandleResult.HANDLED -> {
+                        return@launch
+                    }
+
+                    ActivityHandleResult.SKIP_NON_RETRYABLE -> {
+                        SesameLog.record(TAG, "precheck-skip-non-retryable: ${activity.javaClass.name}, stop retry loop")
+                        return@launch
+                    }
+
+                    ActivityHandleResult.FAILED_RETRYABLE -> {
+                        SesameLog.record(TAG, "captcha-processing-failed-retryable: ${activity.javaClass.name}, retryCount=${triggerCount + 1}")
+                    }
                 }
             } catch (throwable: Throwable) {
                 Log.e(TAG, "处理 Activity 出错: ${activity.javaClass.name}", throwable)

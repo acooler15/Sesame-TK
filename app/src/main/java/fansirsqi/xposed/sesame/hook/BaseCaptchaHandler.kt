@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import fansirsqi.xposed.sesame.hook.simple.MotionEventSimulator
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager
+import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.ActivityHandleResult
 import fansirsqi.xposed.sesame.hook.simple.SimpleViewImage
 import fansirsqi.xposed.sesame.hook.simple.ViewHierarchyAnalyzer
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
@@ -97,7 +98,7 @@ abstract class BaseCaptchaHandler {
 
     protected abstract fun getSlidePathKey(): String
 
-    open suspend fun handleActivity(activity: Activity, root: SimpleViewImage): Boolean {
+    open suspend fun handleActivity(activity: Activity, root: SimpleViewImage): ActivityHandleResult {
         return try {
             // 立即记录开始处理时间
             val startTime = System.currentTimeMillis()
@@ -128,13 +129,29 @@ abstract class BaseCaptchaHandler {
             result
         } catch (e: Exception) {
             Log.error(TAG, "处理验证码页面时发生异常: ${e.stackTraceToString()}")
-            false
+            ActivityHandleResult.FAILED_RETRYABLE
         }
     }
 
+    private fun logPrecheckSkip(skipReason: String, failReasons: List<String>, passReasons: List<String>) {
+        Log.record(
+            TAG,
+            "precheck-skip-non-retryable: reason=$skipReason; fail=${failReasons.joinToString("; ")}; pass=${passReasons.joinToString(", ")}"
+        )
+        Log.record(TAG, "processing-window-released-after-skip: reason=$skipReason")
+    }
+
+    private fun logAcceptedAfterSkip(anchorReason: String) {
+        Log.record(TAG, "real-captcha-accepted-after-previous-skip: reason=$anchorReason")
+    }
+
+    private fun logRetryableFailure(reason: String) {
+        Log.record(TAG, "captcha-processing-failed-retryable: reason=$reason")
+    }
+
     @SuppressLint("SuspiciousIndentation")
-    private suspend fun handleNewVersionCaptcha(activity: Activity): Boolean {
-        if (!captchaProcessingMutex.tryLock()) return true
+    private suspend fun handleNewVersionCaptcha(activity: Activity): ActivityHandleResult {
+        var processingWindowAcquired = false
         try {
             Log.record(
                 TAG,
@@ -177,11 +194,8 @@ abstract class BaseCaptchaHandler {
                 } else {
                     "text-anchor-missing and precheck-fail"
                 }
-                Log.record(
-                    TAG,
-                    "[前置跳过] reason=$skipReason; fail=${lightweightPreCheck.failReasons.joinToString("; ")}; pass=${lightweightPreCheck.passReasons.joinToString(", ")}"
-                )
-                return false
+                logPrecheckSkip(skipReason, lightweightPreCheck.failReasons, lightweightPreCheck.passReasons)
+                return ActivityHandleResult.SKIP_NON_RETRYABLE
             }
 
             if (!hasTextAnchor) {
@@ -191,19 +205,36 @@ abstract class BaseCaptchaHandler {
                 )
             }
 
+            if (!captchaProcessingMutex.tryLock()) {
+                logRetryableFailure("captcha-processing-window-busy")
+                return ActivityHandleResult.FAILED_RETRYABLE
+            }
+            processingWindowAcquired = true
+
+            logAcceptedAfterSkip(
+                if (hasTextAnchor) {
+                    "text-anchor-present and precheck-pass"
+                } else {
+                    "text-anchor-missing but visual-precheck-pass"
+                }
+            )
+
             val fullBitmap = lightweightPreCheck.fullBitmap ?: run {
                 Log.record(TAG, "轻量前置检测未生成 fullBitmap")
-                return false
+                logRetryableFailure("lightweight-precheck-missing-fullBitmap")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
             val croppedBitmap = lightweightPreCheck.croppedBitmap ?: run {
                 Log.record(TAG, "轻量前置检测未生成 croppedBitmap")
-                return false
+                logRetryableFailure("lightweight-precheck-missing-croppedBitmap")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
             val cropTop = lightweightPreCheck.cropTop
             val cropBottom = lightweightPreCheck.cropBottom
             val detectedHandle = lightweightPreCheck.sliderHandle ?: run {
                 Log.record(TAG, "轻量前置检测未命中滑块手柄")
-                return false
+                logRetryableFailure("lightweight-precheck-missing-sliderHandle")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
 
             Log.record(
@@ -212,7 +243,8 @@ abstract class BaseCaptchaHandler {
             )
             val recognitionResult = SliderTFLite.identifyShared(activity.applicationContext, croppedBitmap) ?: run {
                 Log.record(TAG, "裁剪区域模型识别失败，未检测到滑块和缺口")
-                return false
+                logRetryableFailure("model-recognition-null")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
 
             // 将裁剪区域坐标转换为 DecorView 局部坐标
@@ -238,11 +270,8 @@ abstract class BaseCaptchaHandler {
                 } else {
                     "text-anchor-missing and precheck-fail"
                 }
-                Log.record(
-                    TAG,
-                    "[前置检测失败] reason=$skipReason; fail=${preCheck.failReasons.joinToString("; ")}; pass=${preCheck.passReasons.joinToString(", ")}"
-                )
-                return false
+                logPrecheckSkip(skipReason, preCheck.failReasons, preCheck.passReasons)
+                return ActivityHandleResult.SKIP_NON_RETRYABLE
             }
 
             Log.record(
@@ -274,7 +303,7 @@ abstract class BaseCaptchaHandler {
                 croppedBitmap = croppedBitmap,
                 recognitionResult = recognitionResult
             )
-            return executeSlideOnView(
+            return if (executeSlideOnView(
                 view = decorView,
                 localStartX = actualStartX,
                 localStartY = actualStartY,
@@ -283,13 +312,21 @@ abstract class BaseCaptchaHandler {
                 beforeSnapshot = beforeSnapshot,
                 cropTop = cropTop,
                 cropBottom = cropBottom
-            )
+            )) {
+                ActivityHandleResult.HANDLED
+            } else {
+                logRetryableFailure("execute-slide-on-view-failed")
+                ActivityHandleResult.FAILED_RETRYABLE
+            }
 
         } catch (e: Exception) {
             Log.record(TAG, "新版验证码处理出错: ${e.stackTraceToString()}")
-            return false
+            logRetryableFailure("new-version-exception")
+            return ActivityHandleResult.FAILED_RETRYABLE
         } finally {
-            if (captchaProcessingMutex.isLocked) captchaProcessingMutex.unlock()
+            if (processingWindowAcquired) {
+                captchaProcessingMutex.unlock()
+            }
         }
     }
 
@@ -683,18 +720,24 @@ abstract class BaseCaptchaHandler {
     }
 
     @SuppressLint("SuspiciousIndentation")
-    private suspend fun handleLegacySlideCaptcha(activity: Activity): Boolean {
-        if (!captchaProcessingMutex.tryLock()) {
-            Log.record(TAG, "验证码正在处理中，跳过本次处理")
-            return true
-        }
+    private suspend fun handleLegacySlideCaptcha(activity: Activity): ActivityHandleResult {
+        var processingWindowAcquired = false
         try {
             val searchStartTime = System.currentTimeMillis()
             val slideTextInDialog = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH) ?: run {
                 Log.record(TAG, "未找到旧版滑动验证文本，搜索耗时: ${System.currentTimeMillis() - searchStartTime}ms")
-                return false
+                logPrecheckSkip("legacy-text-anchor-missing", listOf("legacy text anchor not found"), emptyList())
+                return ActivityHandleResult.SKIP_NON_RETRYABLE
             }
             Log.record(TAG, "发现旧版滑动验证文本: ${slideTextInDialog.getText()}, 搜索耗时: ${System.currentTimeMillis() - searchStartTime}ms")
+
+            if (!captchaProcessingMutex.tryLock()) {
+                Log.record(TAG, "验证码正在处理中，跳过本次处理")
+                logRetryableFailure("legacy-captcha-processing-window-busy")
+                return ActivityHandleResult.FAILED_RETRYABLE
+            }
+            processingWindowAcquired = true
+            logAcceptedAfterSkip("legacy-text-anchor-present")
             
             // 减少等待时间
             delay(200L) // 从500ms减少到200ms
@@ -703,23 +746,33 @@ abstract class BaseCaptchaHandler {
             val findViewStartTime = System.currentTimeMillis()
             val sliderView = ViewHierarchyAnalyzer.findActualSliderView(slideTextInDialog) ?: run {
                 Log.record(TAG, "无法找到滑块视图，查找耗时: ${System.currentTimeMillis() - findViewStartTime}ms")
-                return false
+                logRetryableFailure("legacy-slider-view-missing")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
             Log.record(TAG, "滑块视图查找耗时: ${System.currentTimeMillis() - findViewStartTime}ms")
             
             val coordStartTime = System.currentTimeMillis()
             val (startX, startY, endX, endY) = calculateLegacySlideCoordinates(activity, sliderView) ?: run {
                 Log.record(TAG, "坐标计算失败，计算耗时: ${System.currentTimeMillis() - coordStartTime}ms")
-                return false
+                logRetryableFailure("legacy-coordinate-calc-failed")
+                return ActivityHandleResult.FAILED_RETRYABLE
             }
             Log.record(TAG, "坐标计算耗时: ${System.currentTimeMillis() - coordStartTime}ms")
             
-            return executeSlide(sliderView, startX, startY, endX, endY)
+            return if (executeSlide(sliderView, startX, startY, endX, endY)) {
+                ActivityHandleResult.HANDLED
+            } else {
+                logRetryableFailure("legacy-execute-slide-failed")
+                ActivityHandleResult.FAILED_RETRYABLE
+            }
         } catch (e: Exception) {
             Log.record(TAG, "旧版处理出错: ${e.stackTraceToString()}")
-            return false
+            logRetryableFailure("legacy-exception")
+            return ActivityHandleResult.FAILED_RETRYABLE
         } finally {
-            captchaProcessingMutex.unlock()
+            if (processingWindowAcquired) {
+                captchaProcessingMutex.unlock()
+            }
         }
     }
 

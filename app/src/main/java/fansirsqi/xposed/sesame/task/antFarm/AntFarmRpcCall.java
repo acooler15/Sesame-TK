@@ -1344,4 +1344,25 @@ public class AntFarmRpcCall {
         }
     }
 
+    /**
+     * 庄园限定活动查询
+     * @return
+     */
+    public static String queryOptionalPlay() {
+        String args1 = "[{\"bizType\":\"ANTFARM\",\"commonDegradeFilterRequest\":{\"appMode\":\"normal\",\"deviceLevel\":\"high\",\"initialized\":true,\"platform\":\"Android\",\"unityDeviceLevel\":\"high\"},\"playTypeList\":[\"TASK_TRIGGER\",\"TOP_UP_COUPON\"],\"recentAppRecordList\":[],\"requestType\":\"NORMAL\",\"sceneCode\":\"ANTFARM_COMMON\",\"source\":\"H5\",\"version\":\"" + VERSION + "\"}]";
+        return RequestManager.requestString("com.alipay.charitygamecenter.queryOptionalPlay", args1);
+    }
+
+    /**
+     * 庄园限定活动领取
+     * @param awardCountForReceive
+     * @param sceneCode
+     * @param taskType
+     * @return
+     */
+    public static String receiveTaskAwardantfarm(int awardCountForReceive, String sceneCode, String taskType) {
+        String args1 = "[{\"awardCountForReceive\":" + awardCountForReceive + ",\"ignoreLimit\":true,\"requestType\":\"RPC\",\"sceneCode\":\"" + sceneCode + "\",\"source\":\"antfarm\",\"taskType\":\"" + taskType + "\"}]";
+        return RequestManager.requestString("com.alipay.antieptask.receiveTaskAwardantfarm", args1);
+    }
+
 }

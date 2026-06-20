@@ -800,6 +800,8 @@ class AntFarm : ModelTask() {
             if (enableDdrawGameCenterAward!!.value) {
                 drawGameCenterAward()
                 tc.countDebug("开宝箱")
+                queryOptionalPlay()
+                tc.countDebug("查询限定活动")
             }
             // 小鸡乐园道具兑换
             if (paradiseCoinExchangeBenefit!!.value) {
@@ -4980,6 +4982,48 @@ class AntFarm : ModelTask() {
         private const val CACHED_FLAG = "farmQuestion::cache" // 是否已缓存明日答案
     }
 
+
+    //乐园限定活动
+    private fun queryOptionalPlay() {
+        try {
+            val jo = JSONObject(AntFarmRpcCall.queryOptionalPlay())
+            if (!ResChecker.checkRes(TAG+"限定活动：", jo)) {
+                return
+            }
+            if (!jo.has("taskTriggerPlayInfo")) {
+                return
+            }
+            val taskTriggerPlayInfo = jo.optJSONObject("taskTriggerPlayInfo")
+            if (!taskTriggerPlayInfo.has("taskList")) {
+                return
+            }
+            val taskList = taskTriggerPlayInfo.getJSONArray("taskList")
+            for (j in 0 until taskList.length()) {
+                val task = taskList.getJSONObject(j)
+                val taskType = task.getString("taskType")
+                val taskStatus = task.getString("taskStatus")
+                val sceneCode = task.getString("sceneCode")
+                val alreadyReceiveAwardCount = task.optInt("alreadyReceiveAwardCount")
+                val awardCount = task.optInt("awardCount")
+                val awardCountForReceive = awardCount - alreadyReceiveAwardCount
+                val bizInfo = task.getJSONObject("bizInfo")
+                val title = bizInfo.getString("title")
+                if (taskStatus == "FINISHED") {
+                    if (awardCountForReceive > 0) {
+                        val joReceived = JSONObject(AntFarmRpcCall.receiveTaskAwardantfarm(awardCountForReceive, sceneCode, taskType))
+                        if (ResChecker.checkRes(TAG+"限定活动：", joReceived)) {
+                            val incAwardCount = joReceived.optInt("incAwardCount")
+                            val taskConfigResultVO = joReceived.optJSONObject("taskConfigResultVO")
+                            val awardType = taskConfigResultVO.getString("awardType")
+                            Log.farm("小鸡乐园🎖️领取[" + title + "]奖励[" + awardType + "*" + incAwardCount + "]")
+                        }
+                    }
+                }
+            }
+        }catch (th: Throwable) {
+            Log.printStackTrace(TAG, "queryOptionalPlay err:", th)
+        }
+    }
     /**
      * 手动触发遣返小鸡
      */

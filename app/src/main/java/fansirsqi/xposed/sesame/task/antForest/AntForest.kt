@@ -997,7 +997,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 }
 
                 doforestgame()
-
+                queryOptionalPlay() // 限时乐园活动
 
                 tc.stop()
             }
@@ -4752,6 +4752,58 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             throw e
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "doforestgame 流程异常", t)
+        }
+    }
+
+    //森林乐园限定活动
+    fun queryOptionalPlay() {
+        try {
+            val jo = JSONObject(AntForestRpcCall.queryOptionalPlay())
+            if (!ResChecker.checkRes(TAG+"森林乐园限定活动", jo)) {
+                return
+            }
+            if (!jo.has("taskTriggerPlayInfo")) {
+                return
+            }
+            val taskTriggerPlayInfo = jo.optJSONObject("taskTriggerPlayInfo")
+            if (!taskTriggerPlayInfo.has("taskList")) {
+                return
+            }
+
+            val taskList = taskTriggerPlayInfo.getJSONArray("taskList")
+            for (j in 0 until taskList.length()) {
+                val task = taskList.getJSONObject(j)
+                val taskStatus = task.getString("taskStatus")
+                val alreadyReceiveAwardCount = task.optInt("alreadyReceiveAwardCount")
+                val awardCount = task.optInt("awardCount")
+                val awardCountForReceive = awardCount - alreadyReceiveAwardCount
+                var awardType = task.optString("awardType", "能量")
+                val bizInfo = task.getJSONObject("bizInfo")
+                val title = bizInfo.getString("title")
+                val source = task.optString("source", "ch_appcenter__chsub_9patch")
+                val sceneCode = task.optString("sceneCode", "")
+                val taskType = task.optString("taskType", "")
+                // 记录任务状态
+                if (taskStatus == "FINISHED") {
+                    if (awardCountForReceive > 0) {
+                        // 领取奖励
+                        val joReceived = JSONObject(AntForestRpcCall.receiveTaskAwardopengreen(source, sceneCode, taskType))
+                        if (ResChecker.checkRes(TAG+"森林乐园限定活动领取奖励", joReceived)) {
+                            val incAwardCount = joReceived.optInt("incAwardCount")
+                            val taskConfigResultVO = joReceived.optJSONObject("taskConfigResultVO")
+                            if (taskConfigResultVO != null) {
+                                awardType = taskConfigResultVO.optString("awardType", awardType)
+                            }
+                            Log.forest("森林乐园🎖️领取[" + title + "]奖励[" + awardType + "*" + incAwardCount + "]")
+                        } else {
+                            Log.i(TAG, "森林乐园❌领取[" + title + "]奖励失败")
+                            Log.e(TAG, "领取奖励失败响应: $joReceived")
+                        }
+                    }
+                }
+            }
+        }catch (e: Exception) {
+            Log.printStackTrace(TAG,"queryOptionalPlay err:", e)
         }
     }
     /**

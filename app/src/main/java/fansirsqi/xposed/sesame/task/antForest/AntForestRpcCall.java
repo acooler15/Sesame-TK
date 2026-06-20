@@ -906,4 +906,10 @@ public class AntForestRpcCall {
                         "}]");
     }
 
+    /** 查询森林乐园限定活动 */
+    public static String queryOptionalPlay() {
+        String args1 = "[{\"bizType\":\"ANTFOREST\",\"commonDegradeFilterRequest\":{\"appMode\":\"normal\",\"deviceLevel\":\"high\",\"platform\":\"Android\",\"unityDeviceLevel\":\"high\"},\"playTypeList\":[\"TASK_TRIGGER\",\"TOP_UP_COUPON\"],\"recentAppRecordList\":[],\"requestType\":\"RPC\",\"sceneCode\":\"ANTFOREST_COMMON\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"version\":\"" + VERSION + "\"}]";
+        return RequestManager.requestString("com.alipay.charitygamecenter.queryOptionalPlay", args1);
+    }
+
 }

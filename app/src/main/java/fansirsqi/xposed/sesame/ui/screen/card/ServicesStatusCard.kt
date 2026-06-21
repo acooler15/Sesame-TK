@@ -64,7 +64,7 @@ fun ServicesStatusCard(
                             Text(text = "滑块验证服务正常", style = MaterialTheme.typography.titleMedium)
                             Text(text = "授权方式: ${status.type}", style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(4.dp))
-                            Text(text = "仅支持版本低于 10.6.58.xxxx的目标应用", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "", style = MaterialTheme.typography.bodySmall)
                         }
                     }
 

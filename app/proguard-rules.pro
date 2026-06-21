@@ -31,3 +31,7 @@
 -keepnames class * implements java.io.Serializable
 -keepclassmembers class * implements java.io.Serializable { *; }
 -dontwarn java.beans.ConstructorProperties, java.beans.Transient
+
+# tensorflow
+-dontwarn org.tensorflow.lite.gpu.GpuDelegateFactory$Options$GpuBackend
+-dontwarn org.tensorflow.lite.gpu.GpuDelegateFactory$Options

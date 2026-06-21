@@ -355,11 +355,23 @@ class AntCooperate : ModelTask() {
             val serverRemaining = miscJo.optJSONObject("combineHandlerVOMap")
                 ?.optJSONObject("teamCanWaterCount")
                 ?.optInt("waterCount", 0) ?: 0
+            // dailyWaterLimit: 服务端返回的今日浇水量限制
+            val dailyWaterLimit = miscJo.optJSONObject("combineHandlerVOMap")
+                ?.optJSONObject("teamCanWaterCount")
+                ?.optInt("dailyWaterLimit", 5000) ?: 5000
 
-            Log.record(TAG, "组队状态检查: 目标剩余${userRemainingQuota}g | 官方剩余${serverRemaining}g | 背包能量${currentEnergy}g")
+            Log.record(TAG, "组队状态检查: 目标剩余${userRemainingQuota}g | 官方剩余${serverRemaining}g | 官方今日限制${dailyWaterLimit}g | 背包能量${currentEnergy}")
 
-            if (serverRemaining < 10) {
+            if (dailyWaterLimit < 10 || serverRemaining < 10) {
                 Log.record(TAG, "官方限制今日无可浇水额度，跳过")
+                Status.setIntFlagToday(StatusFlags.FLAG_TEAM_WATER_DAILY_COUNT, userDailyTarget)
+                return
+            }
+
+            // dailyWaterLimit - serverRemaining：官方日浇水限制-可浇水量=今日已浇水量
+            if (dailyWaterLimit - serverRemaining >= userDailyTarget) {
+                Log.record(TAG, "今日浇水已超过目标，跳过")
+                Status.setIntFlagToday(StatusFlags.FLAG_TEAM_WATER_DAILY_COUNT, dailyWaterLimit - serverRemaining)
                 return
             }
 
@@ -367,6 +379,7 @@ class AntCooperate : ModelTask() {
             // 最终浇水量 = Min(用户剩余配额, 官方剩余配额, 当前背包能量)
             val finalWaterAmount = userRemainingQuota
                 .coerceAtMost(serverRemaining)
+                .coerceAtMost(userDailyTarget - (dailyWaterLimit - serverRemaining))
                 .coerceAtMost(currentEnergy)
 
             // --- 5. 最终校验与执行 ---
@@ -382,7 +395,7 @@ class AntCooperate : ModelTask() {
             if (ResChecker.checkRes(TAG, waterJo)) {
                 Log.forest("组队合种🌲[浇水成功] #${finalWaterAmount}g")
                 // 更新本地统计
-                val newTotal = todayUsed + finalWaterAmount
+                val newTotal = dailyWaterLimit - serverRemaining + finalWaterAmount
                 Status.setIntFlagToday(StatusFlags.FLAG_TEAM_WATER_DAILY_COUNT, newTotal)
                 Log.record(TAG, "今日累计: ${newTotal}g / ${userDailyTarget}g")
             }

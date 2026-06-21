@@ -319,7 +319,18 @@ class AntCooperate : ModelTask() {
             }
 
             var needReturn = false //判断是否要返回个人
-            if (!isTeam(homeJo)) {
+            val queryUserTagStr = AntCooperateRpcCall.queryUserTag()
+            val queryUserTagJo = JSONObject(queryUserTagStr)
+            if (!ResChecker.checkRes(TAG, queryUserTagJo)) {
+                Log.record(TAG, "queryUserTag 返回异常")
+                return
+            }
+            val isInTeam = queryUserTagJo.optJSONObject("tagMap")?.optString("inTeam",null)
+            if (isInTeam == null) {
+                Log.record(TAG, "未获取到用户是否在队伍模式")
+                return
+            }
+            if ("Y" != isInTeam) {
 
                 val updateUserConfigStr = AntCooperateRpcCall.updateUserConfig(true)
                 val userConfigJo = JSONObject(updateUserConfigStr)
@@ -395,20 +406,6 @@ class AntCooperate : ModelTask() {
 
     companion object {
         private val TAG: String = AntCooperate::class.java.getSimpleName()
-
-
-        /**
-         * 判断是否为团队
-         *
-         * @param homeObj 用户主页的JSON对象
-         * @return 是否为团队
-         */
-        private fun isTeam(homeObj: JSONObject): Boolean {
-            // 修复逻辑：
-            // 如果 nextAction 是 "Team"，说明当前在个人主页（显示去组队的入口），因此不是团队模式，应返回 false
-            // 如果 nextAction 是 "Cultivate"，说明当前在团队主页（显示去种树的入口），是团队模式，应返回 true
-            return "Team" != homeObj.optString("nextAction", "")
-        }
 
         /**
          * 合种浇水

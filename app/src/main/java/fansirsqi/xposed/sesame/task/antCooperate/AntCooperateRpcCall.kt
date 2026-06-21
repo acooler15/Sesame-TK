@@ -216,4 +216,15 @@ object AntCooperateRpcCall {
             args
         )
     }
+
+    /**
+     * 获取用户配置
+     */
+    @JvmStatic
+    fun queryUserTag(): String {
+        return RequestManager.requestString(
+            "alipay.antmember.h5.queryUserTag",
+            "[{}]"
+        )
+    }
 }

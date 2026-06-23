@@ -193,51 +193,6 @@ public class ListDialog {
             }
         });
 
-        lv_list.setOnItemLongClickListener((p1, p2, p3, p4) -> {
-            MapperEntity cur = (MapperEntity) p1.getAdapter().getItem(p3);
-            if (cur instanceof CooperateEntity) {
-                new MaterialAlertDialogBuilder(c)
-                        .setTitle("删除 " + cur.name)
-                        .setPositiveButton(c.getString(R.string.ok), (dialog, which) -> {
-                            CooperateMap.getInstance(CooperateMap.class).remove(cur.id);
-                            selectModelFieldFunc.remove(cur.id);
-                            ListAdapter.get(c).exitFind();
-                            ListAdapter.get(c).notifyDataSetChanged();
-                        })
-                        .setNegativeButton(c.getString(R.string.cancel), null)
-                        .show();
-            } else if (!(cur instanceof AreaCode)) {
-                new MaterialAlertDialogBuilder(c)
-                        .setTitle("选项")
-                        .setAdapter(OptionsAdapter.get(c), (dialog, which) -> {
-                            String url = null;
-                            switch (which) {
-                                case 0: url = "alipays://platformapi/startapp?saId=10000007&qrcode=https%3A%2F%2F60000002.h5app.alipay.com%2Fwww%2Fhome.html%3FuserId%3D"; break;
-                                case 1: url = "alipays://platformapi/startapp?saId=10000007&qrcode=https%3A%2F%2F66666674.h5app.alipay.com%2Fwww%2Findex.htm%3Fuid%3D"; break;
-                                case 2: url = "alipays://platformapi/startapp?appId=20000166&actionType=profile&userId="; break;
-                                case 3:
-                                    new MaterialAlertDialogBuilder(c)
-                                            .setTitle("删除 " + cur.name)
-                                            .setPositiveButton(c.getString(R.string.ok), (d2, w2) -> {
-                                                selectModelFieldFunc.remove(cur.id);
-                                                ListAdapter.get(c).exitFind();
-                                                ListAdapter.get(c).notifyDataSetChanged();
-                                            })
-                                            .setNegativeButton(c.getString(R.string.cancel), null)
-                                            .show();
-                                    break;
-                            }
-                            if (url != null) {
-                                Intent it = new Intent(Intent.ACTION_VIEW, Uri.parse(url + cur.id));
-                                c.startActivity(it);
-                            }
-                        })
-                        .setNegativeButton(c.getString(R.string.cancel), null)
-                        .show();
-            }
-            return true;
-        });
-
         return v;
     }
 }

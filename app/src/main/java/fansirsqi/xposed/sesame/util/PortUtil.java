@@ -77,10 +77,6 @@ public class PortUtil {
                     context.sendBroadcast(intent);
                 }
             }
-            if (!StringUtil.isEmpty(userId)) {
-                UserMap.save(userId);
-                CooperateMap.getInstance(CooperateMap.class).save(userId);
-            }
         } catch (Throwable th) {
             Log.printStackTrace(th);
         }

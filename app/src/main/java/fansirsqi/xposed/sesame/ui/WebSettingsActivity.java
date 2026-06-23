@@ -513,9 +513,5 @@ public class WebSettingsActivity extends BaseActivity {
         } else {
             Toast.makeText(context, "配置未修改，无需保存！", Toast.LENGTH_SHORT).show();
         }
-        if (!StringUtil.isEmpty(userId)) {
-            UserMap.save(userId);
-            CooperateMap.getInstance(CooperateMap.class).save(userId);
-        }
     }
 }

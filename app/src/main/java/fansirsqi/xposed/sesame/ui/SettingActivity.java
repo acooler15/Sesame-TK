@@ -239,10 +239,6 @@ public class SettingActivity extends BaseActivity {
                     sendBroadcast(intent);
                 }
             }
-            if (!StringUtil.isEmpty(this.userId)) {
-                UserMap.save(this.userId);
-                CooperateMap.getInstance(CooperateMap.class).save(this.userId);
-            }
         } catch (Throwable th) {
             Log.printStackTrace(th);
         }

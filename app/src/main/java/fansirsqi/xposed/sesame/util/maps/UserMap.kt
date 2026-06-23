@@ -171,7 +171,7 @@ object UserMap {
     @JvmStatic
     @Synchronized
     fun loadSelf(userId: String?) {
-        userMap.clear()
+//        userMap.clear()
         if (userId.isNullOrEmpty()) return
 
         try {

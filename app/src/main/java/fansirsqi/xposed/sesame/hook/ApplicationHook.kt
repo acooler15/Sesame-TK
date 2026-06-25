@@ -54,12 +54,12 @@ import fansirsqi.xposed.sesame.model.BaseModel.Companion.newRpc
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookData
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookDataUrl
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.wakenAtTimeList
+import fansirsqi.xposed.sesame.model.BaseModel.Companion.webViewDebug
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.MainTask
 import fansirsqi.xposed.sesame.task.MainTask.Companion.newInstance
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
 import fansirsqi.xposed.sesame.task.TaskRunnerAdapter
-import fansirsqi.xposed.sesame.task.antForest.AntForest
 import fansirsqi.xposed.sesame.task.customTasks.CustomTask
 import fansirsqi.xposed.sesame.task.customTasks.ManualTask
 import fansirsqi.xposed.sesame.task.customTasks.ManualTaskModel
@@ -187,7 +187,16 @@ class ApplicationHook {
             printStackTrace(TAG, "验证码Hook初始化失败", t)
         }
 
-        // 5. 核心生命周期 Hook
+        // 5. WebView Hook
+        if (webViewDebug.value) {
+            try {
+                WebViewHook.installHook(classLoader!!)
+            } catch (t: Throwable) {
+                printStackTrace(TAG, "WebView Hook初始化失败", t)
+            }
+        }
+
+        // 6. 核心生命周期 Hook
         hookApplicationAttach(packageName)
         hookLauncherResume()
         hookServiceLifecycle(apkPath)

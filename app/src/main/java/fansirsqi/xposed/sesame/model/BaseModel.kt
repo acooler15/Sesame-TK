@@ -54,6 +54,7 @@ class BaseModel : Model() {
             modelFields.addField(debugMode) //是否开启抓包调试模式
             modelFields.addField(sendHookData) //启用Hook数据转发
             modelFields.addField(sendHookDataUrl) //Hook数据转发地址
+            modelFields.addField(webViewDebug) //是否启用WebView Hook
         }
 
         modelFields.addField(batteryPerm) //是否申请目标应用的后台运行权限
@@ -225,6 +226,12 @@ class BaseModel : Model() {
 
         @Getter
         val sendHookDataUrl: StringModelField = StringModelField("sendHookDataUrl", "Hook数据转发地址", "http://127.0.0.1:9527/hook")
+
+        /**
+         * 是否启用 WebView Hook（拦截 XRiver/WebView 中的网络请求 URL 和页面内容）
+         */
+        @Getter
+        val webViewDebug: BooleanModelField = BooleanModelField("webViewDebug", "启用 WebView Hook", false)
 
         /**
          * 清理数据，在模块销毁时调用，清空 Reserve 和 Beach 数据。

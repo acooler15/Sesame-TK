@@ -30,10 +30,6 @@ import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.MemberBenefitsMap
 import fansirsqi.xposed.sesame.util.maps.SesameGiftMap
 import fansirsqi.xposed.sesame.util.maps.UserMap
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -221,25 +217,23 @@ class AntMember : ModelTask() {
                 // 芝麻信用相关检测
                 val isSesameOpened: Boolean = checkSesameCanRun()
 
-                // 并行执行独立任务
-                val deferredTasks = mutableListOf<Deferred<Unit>>()
-
+                // 顺序执行独立任务
                 if (memberSign!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { doMemberSign() })
+                    doMemberSign()
                 }
 
                 if (memberTask!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { doAllMemberAvailableTask() })
+                    doAllMemberAvailableTask()
                 }
 
                 if (memberPointExchangeBenefit!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { memberPointExchangeBenefit() })
+                    memberPointExchangeBenefit()
                 }
                 if (isSesameOpened) {
 
                     // 芝麻粒兑换入口
                     if (sesameGrainExchange!!.value) {
-                        deferredTasks.add(async(Dispatchers.IO) { doSesameGrainExchange() })
+                        doSesameGrainExchange()
                     }
                     if ((sesameTask!!.value || collectSesame!!.value)) {
                         // 芝麻粒福利签到
@@ -255,102 +249,82 @@ class AntMember : ModelTask() {
                             record(TAG, "✅ 芝麻信用任务已完成，今天不再执行")
                         }
                         if (collectSesame!!.value) {
-                            deferredTasks.add(async(Dispatchers.IO) {
-                                collectSesame(
-                                    collectSesameWithOneClick!!.value
-                                )
-                            })
+                            collectSesame(collectSesameWithOneClick!!.value)
                         }
                     }
 
                     // 芝麻炼金
                     if (sesameAlchemy!!.value) {
-                        deferredTasks.add(async(Dispatchers.IO) {
-                            doSesameAlchemy()
-                            // ===== 次日奖励：只有今天还没领过才执行 =====
-                            if (!hasFlagToday(StatusFlags.FLAG_ZMXY_ALCHEMY_NEXT_DAY_AWARD)) {
-                                doSesameAlchemyNextDayAward()
-                            } else record(TAG, "✅ 芝麻粒次日奖励已领取，今天不再执行")
-                        })
+                        doSesameAlchemy()
+                        // ===== 次日奖励：只有今天还没领过才执行 =====
+                        if (!hasFlagToday(StatusFlags.FLAG_ZMXY_ALCHEMY_NEXT_DAY_AWARD)) {
+                            doSesameAlchemyNextDayAward()
+                        } else record(TAG, "✅ 芝麻粒次日奖励已领取，今天不再执行")
                     }
 
                     // 芝麻树
                     if (enableZhimaTree!!.value) {
-                        deferredTasks.add(async(Dispatchers.IO) { doZhimaTree() })
+                        doZhimaTree()
                     }
                 }
 
 
                 //保障金
                 if (collectInsuredGold!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { collectInsuredGold() })
+                    collectInsuredGold()
                 }
 
                 // 【更新】执行黄金票任务，替换旧的 goldTicket()
                 if (enableGoldTicket!!.value || enableGoldTicketConsume!!.value) {
-                    // 传入签到和提取的开关值
-                    deferredTasks.add(async(Dispatchers.IO) {
-                        doGoldTicketTask(
-                            enableGoldTicket!!.value, enableGoldTicketConsume!!.value
-                        )
-                    })
+                    doGoldTicketTask(
+                        enableGoldTicket!!.value, enableGoldTicketConsume!!.value
+                    )
                 }
 
                 if (enableGameCenter!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { enableGameCenter() })
+                    enableGameCenter()
                 }
 
                 if (beanSignIn!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { beanSignIn() })
+                    beanSignIn()
                 }
 
                /* if (annualReview!!.value) {   //年度回顾已下线
-                    deferredTasks.add(async(Dispatchers.IO) { doAnnualReview() })
+                    doAnnualReview()
                 }*/
 
                 if (beanExchangeBubbleBoost!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) { beanExchangeBubbleBoost() })
+                    beanExchangeBubbleBoost()
                 }
 
-
-
                 if (merchantSign!!.value || merchantKmdk!!.value || merchantMoreTask!!.value) {
-                    deferredTasks.add(async(Dispatchers.IO) {
-                        val jo = JSONObject(AntMemberRpcCall.transcodeCheck())
-                        if (!ResChecker.checkRes(TAG, jo)) {
-                            return@async
-                        }
+                    val jo = JSONObject(AntMemberRpcCall.transcodeCheck())
+                    if (!ResChecker.checkRes(TAG, jo)) {
+                        // skip
+                    } else {
                         val data = jo.getJSONObject("data")
                         if (!data.optBoolean("isOpened")) {
                             record(TAG, "商家服务👪未开通")
-                            return@async
-                        }
-                        if (merchantKmdk!!.value) {
-                            if (TimeUtil.isNowAfterTimeStr("0600") && TimeUtil.isNowBeforeTimeStr("1200")) {
-                                kmdkSignIn()
+                        } else {
+                            if (merchantKmdk!!.value) {
+                                if (TimeUtil.isNowAfterTimeStr("0600") && TimeUtil.isNowBeforeTimeStr("1200")) {
+                                    kmdkSignIn()
+                                }
+                                kmdkSignUp()
                             }
-                            kmdkSignUp()
+                            if (merchantSign!!.value) {
+                                doMerchantSign()
+                            }
+                            if (merchantMoreTask!!.value) {
+                                doMerchantMoreTask()
+                            }
                         }
-                        if (merchantSign!!.value) {
-                            doMerchantSign()
-                        }
-                        if (merchantMoreTask!!.value) {
-                            doMerchantMoreTask()
-                        }
-                    })
+                    }
                 }
-
-
-
-
 
                 if (collectStickers!!.value) {
                     queryAndCollectStickers()
                 }
-
-
-                // 等待所有异步任务完成
-                deferredTasks.awaitAll()
 
             } catch (t: Throwable) {
                 Log.printStackTrace(TAG, t)

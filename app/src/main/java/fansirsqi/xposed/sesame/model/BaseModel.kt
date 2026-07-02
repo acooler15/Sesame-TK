@@ -244,7 +244,7 @@ class BaseModel : Model() {
          */
         @Getter
         val unlockShellCommand: StringModelField = StringModelField(
-            "unlockShellCommand", "解锁 Shell 命令(空=关闭)", null
+            "unlockShellCommand", "解锁 Shell 命令(空=关闭)", ""
         )
 
         /**

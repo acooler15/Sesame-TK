@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.Base64
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.widget.ImageView
 import fansirsqi.xposed.sesame.hook.simple.MotionEventSimulator
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager
@@ -15,8 +16,10 @@ import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.ActivityHandleResul
 import fansirsqi.xposed.sesame.hook.simple.SimpleViewImage
 import fansirsqi.xposed.sesame.hook.simple.ViewHierarchyAnalyzer
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
+import fansirsqi.xposed.sesame.hook.simple.SystemInputSwiper
 import fansirsqi.xposed.sesame.util.CommandUtil
 import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.util.UnlockUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import java.io.ByteArrayOutputStream
@@ -152,7 +155,11 @@ abstract class BaseCaptchaHandler {
     @SuppressLint("SuspiciousIndentation")
     private suspend fun handleNewVersionCaptcha(activity: Activity): ActivityHandleResult {
         var processingWindowAcquired = false
+        // 防止处理过程中息屏
+        val originalFlags = activity.window?.attributes?.flags ?: 0
         try {
+            activity.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
             Log.record(
                 TAG,
                 "[新验证码] 开始处理, thread=${Thread.currentThread().name}, isMain=${isMainThread()}"
@@ -172,11 +179,12 @@ abstract class BaseCaptchaHandler {
                 Log.record(TAG, "[前置提示] text-anchor-missing, fallback=visual-precheck")
             }
 
-            // 预连接 CommandService（利用渲染等待时间预热 shell 服务）
+            // 率先触发外部解锁（屏幕不亮时页面不会渲染，后续 delay 白等）
             val context = SimplePageManager.getContext()
             if (context != null) {
                 CommandUtil.connect(context)
                 Log.record(TAG, "已发起 CommandService 预连接")
+                UnlockUtil.triggerUnlock(context)
             }
 
             // 延迟等待渲染，确保截图时验证码已显示
@@ -324,6 +332,12 @@ abstract class BaseCaptchaHandler {
             logRetryableFailure("new-version-exception")
             return ActivityHandleResult.FAILED_RETRYABLE
         } finally {
+            // 恢复原始 Window Flag
+            try {
+                if ((originalFlags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) == 0) {
+                    activity.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            } catch (_: Exception) {}
             if (processingWindowAcquired) {
                 captchaProcessingMutex.unlock()
             }
@@ -697,13 +711,25 @@ abstract class BaseCaptchaHandler {
         }
     }
 
-
+    /**
+     * 获取 View 的截屏 Bitmap，使用 view.draw(canvas) 方式。
+     *
+     * 前提条件：屏幕需处于亮屏且解锁状态（由外部编排层如 AutoJS 保证）。
+     * 模块自身不处理屏幕唤醒/解锁，聚焦于验证码识别与滑动操作。
+     */
     private fun getBitmapFromView(view: View): Bitmap? {
         if (view.width <= 0 || view.height <= 0) return null
-        val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        view.draw(canvas)
-        return bitmap
+
+        return try {
+            val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            view.draw(canvas)
+            Log.record(TAG, "view.draw 截屏成功: ${bitmap.width}x${bitmap.height}")
+            bitmap
+        } catch (e: Exception) {
+            Log.record(TAG, "view.draw 截屏失败: ${e.message}")
+            null
+        }
     }
 
     private fun calculateDistance(gapXInImage: Int, imageRealWidth: Int, bgView: View, sliderView: View): Float {
@@ -722,7 +748,18 @@ abstract class BaseCaptchaHandler {
     @SuppressLint("SuspiciousIndentation")
     private suspend fun handleLegacySlideCaptcha(activity: Activity): ActivityHandleResult {
         var processingWindowAcquired = false
+        // 防止处理过程中息屏
+        val originalFlags = activity.window?.attributes?.flags ?: 0
         try {
+            activity.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+            // 率先触发外部解锁（屏幕不亮时页面不会渲染，后续 View 查找白费）
+            val context = SimplePageManager.getContext()
+            if (context != null) {
+                CommandUtil.connect(context)
+                UnlockUtil.triggerUnlock(context)
+            }
+
             val searchStartTime = System.currentTimeMillis()
             val slideTextInDialog = SimplePageManager.tryGetTopView(OLD_SLIDE_VERIFY_TEXT_XPATH) ?: run {
                 Log.record(TAG, "未找到旧版滑动验证文本，搜索耗时: ${System.currentTimeMillis() - searchStartTime}ms")
@@ -770,6 +807,12 @@ abstract class BaseCaptchaHandler {
             logRetryableFailure("legacy-exception")
             return ActivityHandleResult.FAILED_RETRYABLE
         } finally {
+            // 恢复原始 Window Flag
+            try {
+                if ((originalFlags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) == 0) {
+                    activity.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            } catch (_: Exception) {}
             if (processingWindowAcquired) {
                 captchaProcessingMutex.unlock()
             }
@@ -865,7 +908,7 @@ abstract class BaseCaptchaHandler {
         Log.record(TAG, "执行滑动: ($startX, $startY) -> ($endX, $endY), 时长: $slideDuration")
 
         val localStartTime = System.currentTimeMillis()
-        MotionEventSimulator.simulateSwipe(
+        val dispatched = MotionEventSimulator.simulateSwipe(
             view = sliderView,
             startX = startX,
             startY = startY,
@@ -873,7 +916,18 @@ abstract class BaseCaptchaHandler {
             endY = endY,
             duration = slideDuration
         )
-        Log.record(TAG, "[滑动路径] path=local-dispatch-only, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+
+        if (dispatched) {
+            Log.record(TAG, "[滑动路径] path=view-dispatch, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+        } else {
+            Log.record(TAG, "[滑动路径] view-dispatch 失败(view.isShown=false)，尝试 shell input 兜底")
+            val shellOk = SystemInputSwiper.swipe(startX, startY, endX, endY, slideDuration)
+            if (!shellOk) {
+                Log.record(TAG, "[滑动路径] shell input 兜底也失败")
+                return false
+            }
+            Log.record(TAG, "[滑动路径] path=shell-input, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+        }
 
         delay(POST_SLIDE_CHECK_DELAY_MS)
         val checkStartTime = System.currentTimeMillis()
@@ -909,7 +963,7 @@ abstract class BaseCaptchaHandler {
         Log.record(TAG, "执行滑动(全屏模式): 局部(${localStartX.toInt()},${localStartY.toInt()})->(${localEndX.toInt()},${localEndY.toInt()}), 屏幕(${screenStartX.toInt()},${screenStartY.toInt()})->(${screenEndX.toInt()},${screenEndY.toInt()}), 时长: ${slideDuration}ms")
 
         val localStartTime = System.currentTimeMillis()
-        MotionEventSimulator.simulateSwipe(
+        val dispatched = MotionEventSimulator.simulateSwipe(
             view = view,
             startX = screenStartX,
             startY = screenStartY,
@@ -917,7 +971,18 @@ abstract class BaseCaptchaHandler {
             endY = screenEndY,
             duration = slideDuration
         )
-        Log.record(TAG, "[滑动路径] path=local-dispatch-only, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+
+        if (dispatched) {
+            Log.record(TAG, "[滑动路径] path=view-dispatch, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+        } else {
+            Log.record(TAG, "[滑动路径] view-dispatch 失败(view.isShown=false)，尝试 shell input 兜底")
+            val shellOk = SystemInputSwiper.swipe(screenStartX, screenStartY, screenEndX, screenEndY, slideDuration)
+            if (!shellOk) {
+                Log.record(TAG, "[滑动路径] shell input 兜底也失败")
+                return false
+            }
+            Log.record(TAG, "[滑动路径] path=shell-input, 耗时=${System.currentTimeMillis() - localStartTime}ms")
+        }
 
         delay(POST_SLIDE_CHECK_DELAY_MS)
         val checkStartTime = System.currentTimeMillis()
@@ -1058,7 +1123,7 @@ abstract class BaseCaptchaHandler {
             "[校正滑动] handle=(${sliderHandle.centerX.toInt()},${sliderHandle.centerY.toInt()}), correctionDistance=${correctionDistance.toInt()}, 路径=local-dispatch-only"
         )
 
-        MotionEventSimulator.simulateSwipe(
+        val dispatched = MotionEventSimulator.simulateSwipe(
             view = view,
             startX = sliderHandle.centerX,
             startY = sliderHandle.centerY,
@@ -1066,7 +1131,13 @@ abstract class BaseCaptchaHandler {
             endY = correctionEndY,
             duration = correctionDuration
         )
-        Log.record(TAG, "[校正滑动] path=local-dispatch-only")
+        if (dispatched) {
+            Log.record(TAG, "[校正滑动] path=view-dispatch")
+        } else {
+            Log.record(TAG, "[校正滑动] view-dispatch 失败，尝试 shell input 兜底")
+            SystemInputSwiper.swipe(sliderHandle.centerX, sliderHandle.centerY, correctionEndX, correctionEndY, correctionDuration)
+            Log.record(TAG, "[校正滑动] path=shell-input")
+        }
 
         delay(700L)
         return verifyCaptchaSolvedByScreenshotOnce(

@@ -65,6 +65,8 @@ class BaseModel : Model() {
         modelFields.addField(languageSimplifiedChinese) //是否只显示中文并设置时区
         modelFields.addField(toastOffsetY) //气泡提示的纵向偏移量
         modelFields.addField(toastPerfix)//气泡提示的前缀
+        modelFields.addField(unlockShellCommand) //解锁 Shell 命令（空=关闭）
+        modelFields.addField(unlockWaitSeconds) //解锁等待时间（秒）
         return modelFields
     }
 
@@ -232,6 +234,26 @@ class BaseModel : Model() {
          */
         @Getter
         val webViewDebug: BooleanModelField = BooleanModelField("webViewDebug", "启用 WebView Hook", false)
+
+        /**
+         * 外部解锁 Shell 命令，空字符串表示关闭。
+         * 支持任意 shell 命令，例如：
+         * - 屏幕操作: input keyevent KEYCODE_WAKEUP;wm dismiss-keyguard
+         * - 启动 AutoJS: am start -a org.autojs.autojs.action.start_script
+         * - 组合命令: input keyevent KEYCODE_WAKEUP;sleep 0.5;wm dismiss-keyguard
+         */
+        @Getter
+        val unlockShellCommand: StringModelField = StringModelField(
+            "unlockShellCommand", "解锁 Shell 命令(空=关闭)", null
+        )
+
+        /**
+         * 解锁命令执行后的等待时间（秒），用于等待外部脚本完成解锁操作。
+         */
+        @Getter
+        val unlockWaitSeconds: IntegerModelField = IntegerModelField(
+            "unlockWaitSeconds", "解锁等待时间(秒)", 3, 0, 30
+        )
 
         /**
          * 清理数据，在模块销毁时调用，清空 Reserve 和 Beach 数据。

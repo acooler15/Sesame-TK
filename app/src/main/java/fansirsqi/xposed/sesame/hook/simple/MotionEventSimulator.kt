@@ -20,12 +20,13 @@ object MotionEventSimulator {
     /**
      * 异步模拟一个从起点到终点的滑动操作.
      *
-     * @param view 要在其上执行滑动操作的视图 (通常很滑块本身).
+     * @param view 要在其上执行滑动操作的视图 (通常是滑块本身).
      * @param startX 滑动的屏幕绝对 X 坐标起点.
      * @param startY 滑动的屏幕绝对 Y 坐标起点.
      * @param endX 滑动的屏幕绝对 X 坐标终点.
      * @param endY 滑动的屏幕绝对 Y 坐标终点.
      * @param duration 滑动动画的总时长 (毫秒).
+     * @return true 表示触摸事件已成功派发，false 表示 View 不可交互无法派发.
      */
     suspend fun simulateSwipe(
         view: View,
@@ -34,8 +35,11 @@ object MotionEventSimulator {
         endX: Float,
         endY: Float,
         duration: Long = 800L
-    ) {
-        if (!view.isShown || !view.isEnabled) return
+    ): Boolean {
+        if (!view.isShown || !view.isEnabled) {
+            Log.w(TAG, "simulateSwipe 跳过: view.isShown=${view.isShown}, view.isEnabled=${view.isEnabled}，屏幕可能处于锁屏/息屏状态")
+            return false
+        }
 
         val localStart = toLocalPoint(view, startX, startY)
         val localEnd = toLocalPoint(view, endX, endY)
@@ -73,7 +77,9 @@ object MotionEventSimulator {
             dispatchTouchEvent(view, MotionEvent.ACTION_UP, localEnd.x, localEnd.y, downTime, finalUpTime)
         } catch (e: Throwable) {
             Log.e(TAG, "滑动异常", e)
+            return false
         }
+        return true
     }
 
     /**

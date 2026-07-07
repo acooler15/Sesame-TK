@@ -5,6 +5,10 @@ import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.Log.record
+import java.net.URI
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -62,6 +66,9 @@ object WebViewHook {
 
             // --- 已加载页面尝试提取 HTML (兜底) ---
             hookEvaluateJavascript(classLoader)
+
+            // --- Cookie 捕获 ---
+            hookCookieManager(classLoader)
 
             isInitialized = true
             record(TAG, "WebView Hook安装完成")
@@ -349,6 +356,193 @@ object WebViewHook {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "[SysWV] evaluateJavascript Hook 失败", t)
         }
+    }
+
+    // ============================================================
+    // Cookie 捕获 — Hook CookieManager.setCookie, 输出 Mozilla/Netscape 格式
+    // ============================================================
+    private fun hookCookieManager(classLoader: ClassLoader) {
+        try {
+            // Hook CookieManager.setCookie(String url, String value)
+            XposedHelpers.findAndHookMethod(
+                "android.webkit.CookieManager",
+                classLoader,
+                "setCookie",
+                String::class.java,
+                String::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        try {
+                            val url = param.args[0] as? String ?: return
+                            val cookieStr = param.args[1] as? String ?: return
+                            val mozillaLine = formatCookieToMozilla(url, cookieStr)
+                            if (mozillaLine != null) {
+                                record(TAG, "Cookie[Set]\n$mozillaLine")
+                            }
+                        } catch (t: Throwable) {
+                            Log.printStackTrace(TAG, "Cookie Hook 回调异常", t)
+                        }
+                    }
+                }
+            )
+            record(TAG, "CookieManager.setCookie Hook 安装成功")
+
+            // Hook CookieManager.getCookie(String url) — 记录读取行为
+            XposedHelpers.findAndHookMethod(
+                "android.webkit.CookieManager",
+                classLoader,
+                "getCookie",
+                String::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        try {
+                            val url = param.args[0] as? String ?: return
+                            record(TAG, "Cookie[Get] URL: $url")
+                        } catch (t: Throwable) {
+                            // ignore
+                        }
+                    }
+
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        try {
+                            val result = param.result as? String
+                            if (!result.isNullOrEmpty() && result.length < 3000) {
+                                record(TAG, "Cookie[Get] Result:\n$result")
+                            } else if (!result.isNullOrEmpty()) {
+                                record(TAG, "Cookie[Get] Result (${result.length} chars, truncated):\n${result.take(3000)}...")
+                            }
+                        } catch (t: Throwable) {
+                            // ignore
+                        }
+                    }
+                }
+            )
+            record(TAG, "CookieManager.getCookie Hook 安装成功")
+        } catch (t: Throwable) {
+            Log.printStackTrace(TAG, "CookieManager Hook 失败", t)
+        }
+    }
+
+    /**
+     * 将 setCookie 的原始字符串解析为 Mozilla/Netscape cookies.txt 格式。
+     *
+     * Mozilla/Netscape 格式 (TSV):
+     *   domain\tflag\tpath\tsecure\texpiry\tname\tvalue
+     *
+     * 字段说明:
+     *   domain   - Cookie 所属域名 (如 .example.com)
+     *   flag     - 子域名匹配标记: TRUE(域名以.开头) / FALSE
+     *   path     - Cookie 生效路径 (如 /)
+     *   secure   - 仅 HTTPS: TRUE / FALSE
+     *   expiry   - Unix 时间戳(秒), 0 表示会话 Cookie
+     *   name     - Cookie 名称
+     *   value    - Cookie 值
+     *
+     * @param urlStr 发起请求的完整 URL (用于推导 domain/path)
+     * @param setCookieValue CookieManager.setCookie 的 value 参数
+     *                       例如 "key=val; domain=.example.com; path=/; expires=...; secure"
+     */
+    private fun formatCookieToMozilla(urlStr: String, setCookieValue: String): String? {
+        try {
+            // 1. 解析 name=value (第一个 ; 之前的部分)
+            val parts = setCookieValue.split(";").map { it.trim() }
+            if (parts.isEmpty()) return null
+            val nvPair = parts[0]
+            val eqIdx = nvPair.indexOf('=')
+            if (eqIdx < 0) return null
+            val name = nvPair.substring(0, eqIdx).trim()
+            val value = nvPair.substring(eqIdx + 1)
+
+            // 2. 解析属性 (domain, path, expires, secure)
+            var domain: String? = null
+            var hasLeadingDot = false
+            var path: String? = null
+            var expires: String? = null
+            var isSecure = false
+
+            for (i in 1 until parts.size) {
+                val kv = parts[i].split("=", limit = 2).map { it.trim() }
+                when (kv[0].lowercase(Locale.ROOT)) {
+                    "domain" -> {
+                        val raw = kv.getOrNull(1) ?: ""
+                        hasLeadingDot = raw.startsWith(".")
+                        domain = raw.trimStart('.')
+                    }
+                    "path"   -> path   = kv.getOrNull(1)
+                    "expires"-> expires = kv.getOrNull(1)
+                    "secure" -> isSecure = true
+                    "httponly" -> {}  // Mozilla 格式不包含 HttpOnly 字段
+                    // max-age, samesite 等忽略
+                }
+            }
+
+            // 3. 从 URL 推导缺失的 domain/path
+            if (domain.isNullOrBlank()) {
+                domain = parseDomainFromUrl(urlStr)
+            }
+            if (path.isNullOrBlank()) {
+                path = parsePathFromUrl(urlStr)
+            }
+
+            // 4. 解析过期时间
+            val expiryTimestamp = if (expires.isNullOrBlank()) 0L else parseHttpDate(expires)
+
+            // 5. 构建 Mozilla/Netscape 格式行
+            val flag = if (hasLeadingDot) "TRUE" else "FALSE"
+            val domainStr = domain ?: "unknown"
+            val pathStr = path ?: "/"
+            val secureStr = if (isSecure) "TRUE" else "FALSE"
+
+            return "$domainStr\t$flag\t$pathStr\t$secureStr\t$expiryTimestamp\t$name\t$value"
+        } catch (t: Throwable) {
+            Log.printStackTrace(TAG, "formatCookieToMozilla 异常", t)
+            return null
+        }
+    }
+
+    /** 从 URL 提取域名 (不含端口) */
+    private fun parseDomainFromUrl(url: String): String {
+        return try {
+            URI(url).host ?: "unknown"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+
+    /** 从 URL 提取路径部分 */
+    private fun parsePathFromUrl(url: String): String {
+        return try {
+            val path = URI(url).rawPath
+            if (path.isNullOrEmpty()) "/" else path
+        } catch (e: Exception) {
+            "/"
+        }
+    }
+
+    /**
+     * 解析 HTTP Date 格式 (RFC 1123 / RFC 850 / asctime) 为 Unix 时间戳(秒)。
+     * 返回 0 表示解析失败（视为会话 Cookie）。
+     */
+    private fun parseHttpDate(dateStr: String): Long {
+        val formats = arrayOf(
+            "EEE, dd MMM yyyy HH:mm:ss 'GMT'",  // RFC 1123
+            "EEEE, dd-MMM-yy HH:mm:ss 'GMT'",    // RFC 850
+            "EEE MMM dd HH:mm:ss yyyy",           // asctime
+            "EEE, dd MMM yyyy HH:mm:ss 'UTC'",
+        )
+        for (fmt in formats) {
+            try {
+                val sdf = SimpleDateFormat(fmt, Locale.US)
+                sdf.timeZone = TimeZone.getTimeZone("GMT")
+                val date = sdf.parse(dateStr)
+                if (date != null) {
+                    return date.time / 1000
+                }
+            } catch (_: Exception) {
+                // try next format
+            }
+        }
+        return 0L
     }
 
     // ============================================================

@@ -4,10 +4,12 @@ import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VipDataIdMap
 import org.json.JSONObject
+import java.util.concurrent.atomic.AtomicBoolean
 
 object TokenHooker {
 
     private const val TAG = "TokenHooker"
+    private val missingTokenLogged = AtomicBoolean(false)
 
     /**
      * 方法名 -> handler
@@ -29,6 +31,10 @@ object TokenHooker {
         // currentUserId 是 start 方法传进来的（闭包捕获）
         registerRpcHandler("com.alipay.adexchange.ad.facade.xlightPlugin") { paramsJson ->
             handleAntFarmToken(currentUserId, paramsJson)
+        }
+        // 注册福气鱼池 riskToken 抓取
+        registerRpcHandler("com.alipay.antfishpond.fishpondAngle") { paramsJson ->
+            handleFishPondToken(currentUserId, paramsJson)
         }
 
         Log.record(TAG, "✅ VIP业务监听已启动，当前绑定用户: $currentUserId")
@@ -64,9 +70,12 @@ object TokenHooker {
 
             val token = referInfo.optString("referToken", "")
             if (token.isEmpty()) {
-                Log.error(TAG, "referToken 为空")
+                if (missingTokenLogged.compareAndSet(false, true)) {
+                    Log.record(TAG, "本次广告请求未携带 referToken，已跳过")
+                }
                 return
             }
+            missingTokenLogged.set(false)
 
             // 保存逻辑
             val vipData = IdMapManager.getInstance(VipDataIdMap::class.java)
@@ -81,6 +90,26 @@ object TokenHooker {
 
         } catch (e: Exception) {
             Log.error(TAG, "解析 referToken 异常: ${e.message}")
+        }
+    }
+
+    private fun handleFishPondToken(userId: String, paramsJson: JSONObject) {
+        try {
+            val token = FishPondTokenParser.parse(paramsJson) ?: return
+            val vipData = IdMapManager.getInstance(VipDataIdMap::class.java)
+            vipData.load(userId)
+            if (vipData.get("antfishpond_riskToken") == token) {
+                return
+            }
+
+            vipData.add("antfishpond_riskToken", token)
+            if (vipData.save(userId)) {
+                Log.other(TAG, "捕获到福气鱼池 riskToken 并已保存, uid=$userId")
+            } else {
+                Log.error(TAG, "保存福气鱼池 riskToken 失败, uid=$userId")
+            }
+        } catch (e: Exception) {
+            Log.error(TAG, "解析福气鱼池 riskToken 异常: ${e.message}")
         }
     }
 }

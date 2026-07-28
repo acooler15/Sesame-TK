@@ -19,6 +19,9 @@ import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.FixedOrRangeIntervalLimit
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.IntervalLimit
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.addIntervalLimit
+import fansirsqi.xposed.sesame.data.StatusFlags
+import fansirsqi.xposed.sesame.task.antForest.EnergyPvpChallengePolicy
+import fansirsqi.xposed.sesame.task.antForest.EnergyPvpDecision
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
@@ -137,6 +140,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
 
     private var collectEnergy: BooleanModelField? = null // 收集能量开关
     private var pkEnergy: BooleanModelField? = null // PK能量开关
+    private var energyPvpChallenge: BooleanModelField? = null // 1V1能量挑战开关
     private var energyRain: BooleanModelField? = null // 能量雨开关
     private var advanceTime: IntegerModelField? = null // 提前时间（毫秒）
     private var tryCount: IntegerModelField? = null // 尝试收取次数
@@ -326,6 +330,12 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 "Pk榜收取 | 开关",
                 false
             ).also { pkEnergy = it })
+        modelFields.addField(
+            BooleanModelField(
+                "energyPvpChallenge",
+                "1V1能量挑战 | 领奖",
+                false
+            ).also { energyPvpChallenge = it })
         // 在 ModelFields 定义中修改
         modelFields.addField(
             ChoiceModelField(
@@ -866,6 +876,8 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 }
                 obj
             }
+
+            handleEnergyPvpChallenge()
 
             // 然后执行传统的好友排行榜收取（协程）
             Log.record(TAG, "🚀 执行好友能量收取（协程）")
@@ -5303,5 +5315,113 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "manualUseEnergyRain 异常:", t)
         }
+    }
+
+    private fun handleEnergyPvpChallenge() {
+        if (energyPvpChallenge?.value != true ||
+            Status.hasFlagToday(StatusFlags.FLAG_ANTFOREST_ENERGY_PVP_CHALLENGE_DONE)
+        ) {
+            return
+        }
+
+        try {
+            val entry = parseEnergyPvpResponse(AntForestRpcCall.queryEnergyPvpInfo())
+            val home = parseEnergyPvpResponse(AntForestRpcCall.queryPvpHomeInfo())
+            logEnergyPvpRecord(
+                "当前场次",
+                energyPvpPayload(home)?.optJSONObject("currentEnergyPvpBattleRecord")
+            )
+            logEnergyPvpRecord(
+                "上一场次",
+                energyPvpPayload(home)?.optJSONObject("previousEnergyPvpBattleRecord")
+            )
+
+            when (EnergyPvpChallengePolicy.decide(entry, home)) {
+                EnergyPvpDecision.CLAIM -> {
+                    if (claimEnergyPvpRewards()) {
+                        Status.setFlagToday(
+                            StatusFlags.FLAG_ANTFOREST_ENERGY_PVP_CHALLENGE_DONE
+                        )
+                    }
+                }
+
+                EnergyPvpDecision.RETRY_LATER ->
+                    Log.forest("1V1能量挑战：状态未终结或响应不完整，保留后续重试")
+
+                EnergyPvpDecision.DONE -> {
+                    Log.forest("1V1能量挑战：今日暂无待领取奖励")
+                    Status.setFlagToday(
+                        StatusFlags.FLAG_ANTFOREST_ENERGY_PVP_CHALLENGE_DONE
+                    )
+                }
+            }
+        } catch (t: Throwable) {
+            handleException("handleEnergyPvpChallenge", t)
+        }
+    }
+
+    private fun claimEnergyPvpRewards(): Boolean {
+        val response = parseEnergyPvpResponse(AntForestRpcCall.receivePvpRewards())
+            ?: run {
+                Log.forest("1V1能量挑战领奖响应为空，可能是暂无可领取奖励")
+                return true
+            }
+        if (!ResChecker.checkRes("$TAG 1V1能量挑战领奖失败:", response)) {
+            val code = response.optString("resultCode")
+            val message = response.optString("resultDesc")
+                .ifBlank { response.optString("memo") }
+            if (EnergyPvpChallengePolicy.isTerminalClaimResult(code, message)) {
+                Log.forest("1V1能量挑战奖励已处理：$message")
+                return true
+            }
+            Log.forest("1V1能量挑战领奖失败：$code $message")
+            return false
+        }
+
+        val rewards = energyPvpPayload(response)?.optJSONArray("receivedRewards")
+            ?: response.optJSONArray("receivedRewards")
+        Log.forest(
+            "1V1能量挑战领奖成功：" +
+                EnergyPvpChallengePolicy.summarizeRewards(rewards)
+        )
+        reviewEnergyPvpRecords()
+        return true
+    }
+
+    private fun reviewEnergyPvpRecords() {
+        val response = parseEnergyPvpResponse(
+            AntForestRpcCall.queryPvpBattleRecords(5)
+        ) ?: return
+        if (ResChecker.checkRes("$TAG 复查1V1能量挑战记录失败:", response)) {
+            val hasRewards = energyPvpPayload(response)
+                ?.optBoolean("hasRewards", false)
+                ?: false
+            Log.forest("1V1能量挑战领奖复查：hasRewards=$hasRewards")
+        }
+    }
+
+    private fun parseEnergyPvpResponse(raw: String): JSONObject? {
+        if (raw.isBlank()) {
+            return null
+        }
+        return runCatching { JSONObject(raw) }.getOrNull()
+    }
+
+    private fun energyPvpPayload(response: JSONObject?): JSONObject? {
+        return response?.optJSONObject("data")
+            ?: response?.optJSONObject("result")
+            ?: response
+    }
+
+    private fun logEnergyPvpRecord(label: String, record: JSONObject?) {
+        if (record == null) {
+            return
+        }
+        Log.forest(
+            "1V1能量挑战：$label status=${record.optString("battleStatus")} " +
+                "result=${record.optString("battleResult")} " +
+                "energy=${record.optInt("attackerEnergy")}g:" +
+                "${record.optInt("defenderEnergy")}g"
+        )
     }
 }

@@ -62,10 +62,10 @@
             android:name=".ui.ExtendActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.WebSettingsActivity"
+            android:name=".ui.legacy.WebSettingsActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.SettingActivity"
+            android:name=".ui.legacy.SettingActivity"
             android:exported="false" />
         <!-- RPC 调试 Activity -->
         <activity

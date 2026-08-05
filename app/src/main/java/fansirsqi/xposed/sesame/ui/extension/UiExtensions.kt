@@ -17,8 +17,8 @@ import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import fansirsqi.xposed.sesame.BuildConfig
 import fansirsqi.xposed.sesame.entity.UserEntity
-import fansirsqi.xposed.sesame.ui.SettingActivity
-import fansirsqi.xposed.sesame.ui.WebSettingsActivity
+import fansirsqi.xposed.sesame.ui.legacy.SettingActivity
+import fansirsqi.xposed.sesame.ui.legacy.WebSettingsActivity
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.util.Detector

@@ -401,6 +401,8 @@ core/ → (无内部依赖，最底层)
 | 4.9 | `task/antForest/Healthcare.java` → Kotlin | `Healthcare.java` | Java→Kotlin | 0.2 | 低 | 编译通过 |
 | 4.10 | 各功能域 `*RpcCall.java` → Kotlin | `AntFarmRpcCall`、`DadaDailyRpcCall`、`AntMemberRpcCall`、`AntOceanRpcCall`、`AntDodoRpcCall`、`AntDodo`、`AntOcean`、`Reserve`、`ReserveRpcCall`、`GreenFinance`、`GreenFinanceRpcCall` | Java→Kotlin，逐个迁移 | 3.4 | 中 | 每个文件编译通过 |
 | 4.11 | `task/AnswerAI/` 全部 → Kotlin | 6 个 Java 文件 | Java→Kotlin，去 `@Getter`/`@Setter` | 0.2 | 中 | 编译通过 |
+| 4.12 | `task/antForest/Vitality.java` → Kotlin（遗漏补充） | `Vitality.java` | Java→Kotlin，`object`；4.10 清单遗漏项 | 4.7 | 低 | 编译通过 |
+| 4.13 | `util/maps/ReserveMap.java` → Kotlin（遗漏补充） | `ReserveMap.java` | Java→Kotlin；0.3 改名后未列入 1.15 清单的遗漏项，`thisFileName()` 返回值 `ReserveaMap.json` 为存量数据文件名，**不可改** | 0.3 | 低 | 编译通过 |
 
 ### Phase 5（可选）：JSON/UI 技术栈收敛
 
@@ -646,6 +648,8 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.9 | Healthcare.java → Kotlin | 低 | 完成 | 11bc2b4d |
 | 4.10 | 各功能域 *RpcCall.java → Kotlin | 中 | 完成 | f1d1acea |
 | 4.11 | AnswerAI/ 全部 → Kotlin | 中 | 完成 | 4051a292 |
+| 4.12 | Vitality.java → Kotlin（遗漏补充） | 低 | 完成 | 待回填 |
+| 4.13 | ReserveMap.java → Kotlin（遗漏补充） | 低 | 完成 | 待回填 |
 | — | **Phase 4 完成** | — | — | tag: phase-4-done |
 | 5.1 | 评估 JSON 方案统一 | 低 | 待办 | — |
 | 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |

@@ -18,7 +18,7 @@ import fansirsqi.xposed.sesame.task.TaskCommon;
 import fansirsqi.xposed.sesame.util.GlobalThreadPools;
 import fansirsqi.xposed.sesame.util.Log;
 import fansirsqi.xposed.sesame.util.maps.IdMapManager;
-import fansirsqi.xposed.sesame.util.maps.ReserveaMap;
+import fansirsqi.xposed.sesame.util.maps.ReserveMap;
 import fansirsqi.xposed.sesame.util.RandomUtil;
 import fansirsqi.xposed.sesame.util.ResChecker;
 import fansirsqi.xposed.sesame.data.Status;
@@ -84,13 +84,13 @@ public class Reserve extends ModelTask {
                             String itemId = item.getString("itemId");
                             String itemName = item.getString("itemName");
                             int energy = item.getInt("energy");
-                            IdMapManager.getInstance(ReserveaMap.class).add(itemId, itemName + "(" + energy + "g)");
+                            IdMapManager.getInstance(ReserveMap.class).add(itemId, itemName + "(" + energy + "g)");
                         }
                     }
                     Log.record(TAG, "初始化保护地任务成功。");
                 }
                 // 将筛选结果保存到 ReserveIdMapUtil
-                IdMapManager.getInstance(ReserveaMap.class).save();
+                IdMapManager.getInstance(ReserveMap.class).save();
             } else {
                 // 若 resultCode 不为 SUCCESS，记录错误描述
                 Log.error(jsonResponse.optString("resultDesc", "未知错误"));
@@ -98,11 +98,11 @@ public class Reserve extends ModelTask {
         } catch (JSONException e) {
             // 捕获 JSON 解析错误并记录日志
             Log.printStackTrace(TAG, "JSON 解析错误：" + e.getMessage(),e);
-            IdMapManager.getInstance(ReserveaMap.class).load(); // 若出现异常则加载保存的 ReserveIdMapUtil 备份
+            IdMapManager.getInstance(ReserveMap.class).load(); // 若出现异常则加载保存的 ReserveIdMapUtil 备份
         } catch (Exception e) {
             // 捕获所有其他异常并记录
             Log.printStackTrace(TAG, "初始化保护地任务时出错：" + e.getMessage(),e);
-            IdMapManager.getInstance(ReserveaMap.class).load(); // 加载备份的 ReserveIdMapUtil
+            IdMapManager.getInstance(ReserveMap.class).load(); // 加载备份的 ReserveIdMapUtil
         }
     }
 

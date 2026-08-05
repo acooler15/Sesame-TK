@@ -263,7 +263,7 @@ class BaseModel : Model() {
             try {
                 Log.record(TAG, "🧹清理所有数据")
                 IdMapManager.getInstance(BeachMap::class.java).clear()
-                //            IdMapManager.getInstance(ReserveaMap.class).clear();
+                //            IdMapManager.getInstance(ReserveMap.class).clear();
 //            IdMapManager.getInstance(CooperateMap.class).clear();
 //            IdMapManager.getInstance(MemberBenefitsMap.class).clear();
 //            IdMapManager.getInstance(ParadiseCoinBenefitIdMap.class).clear();

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import fansirsqi.xposed.sesame.util.maps.IdMapManager;
-import fansirsqi.xposed.sesame.util.maps.ReserveaMap;
+import fansirsqi.xposed.sesame.util.maps.ReserveMap;
 /**
  * 表示目标应用保留项的实体类，包含 ID 和名称。
  */
@@ -32,7 +32,7 @@ public class ReserveEntity extends MapperEntity {
             synchronized (ReserveEntity.class) {
                 if (list == null) {
                     List<ReserveEntity> tempList = new ArrayList<>();
-                    Set<Map.Entry<String, String>> idSet = IdMapManager.getInstance(ReserveaMap.class).getMap().entrySet();
+                    Set<Map.Entry<String, String>> idSet = IdMapManager.getInstance(ReserveMap.class).getMap().entrySet();
                     for (Map.Entry<String, String> entry : idSet) {
                         tempList.add(new ReserveEntity(entry.getKey(), entry.getValue()));
                     }

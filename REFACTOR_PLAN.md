@@ -636,7 +636,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 3.7 | ChildTaskExecutor.java → Kotlin | 低 | 完成 | 26def9c7 |
 | — | **Phase 3 完成** | — | — | tag: phase-3-done |
 | 4.1 | RpcVersion.java → Kotlin | 低 | 完成 | 82230649 |
-| 4.2 | RpcBridge.java → Kotlin | 中 | 完成 | — |
+| 4.2 | RpcBridge.java → Kotlin | 中 | 完成 | ab03c1b2 |
 | 4.3 | NewRpcBridge.java → Kotlin | 高 | 待办 | — |
 | 4.4 | OldRpcBridge.java → Kotlin | 高 | 待办 | — |
 | 4.5 | DebugRpc.java → Kotlin | 低 | 待办 | — |

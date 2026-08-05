@@ -651,7 +651,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.12 | Vitality.java → Kotlin（遗漏补充） | 低 | 完成 | 8ec39761 |
 | 4.13 | ReserveMap.java → Kotlin（遗漏补充） | 低 | 完成 | 8ec39761 |
 | — | **Phase 4 完成** | — | — | tag: phase-4-done |
-| 5.1 | 评估 JSON 方案统一 | 低 | 待办 | — |
+| 5.1 | 评估 JSON 方案统一 | 低 | 完成 | — |
 | 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |
 | 5.3 | UI 向 Compose 收敛 | 中 | 待办 | — |
 | 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 待办 | — |
@@ -684,3 +684,44 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `ui/ObjReference.java` | `@Data` | 5.7 |
 
 > **注意**：部分 Kotlin 文件（`RpcEntity.kt`、`VitalityStore.kt`、`VersionHook.kt`、`BaseModel.kt`、`AntFarm.kt`、`ModelTask.kt`）仍在使用 Lombok 注解。迁移对应 Task 时应一并移除 Lombok，改用 Kotlin 原生语法。
+
+---
+
+## 附录：JSON 方案评估报告（Task 5.1）
+
+### 一、现状盘点
+
+| 方案 | 来源 | 使用范围 | 备注 |
+|------|------|---------|------|
+| Jackson 2.20（core/databind/annotations/kotlin-module） | 第三方依赖 | **25 个文件**直接 import；`JsonUtil`（19 个文件调用）与 `JsonHelper` 两个中心封装；注解统计：`@JsonIgnore`×13、`@JsonProperty`×13、`@JsonIgnoreProperties`×7；`TypeReference`×48 | 承担**持久化**职责：`Config` 配置读写、`Status`、ID 映射文件、任务黑名单等 |
+| `org.json`（JSONObject/JSONArray） | Android 平台内置，**零体积成本** | **70 个文件** | 承担 **RPC 响应解析**职责，遍布各功能域 task |
+| `kotlinx.serialization.json` 1.9.0 | 第三方依赖 | **0 处使用** | 依赖已声明但源码零引用，且未应用 `kotlin("plugin.serialization")` 编译插件（`@Serializable` 根本无法编译），属死依赖 |
+| fastjson | toml 中有条目 | **0 处使用** | `libs.versions.toml` 有版本与库条目，`build.gradle.kts` 未引用，属死条目 |
+| Gson | — | 0 | 仅一行注释中提及 |
+
+### 二、Jackson vs kotlinx.serialization 对比
+
+| 维度 | Jackson（现状） | kotlinx.serialization |
+|------|---------------|----------------------|
+| 绑定时机 | 运行时反射绑定，无需注解改造存量类 | 编译期插件生成序列化器，**所有持久化类必须加 `@Serializable`** |
+| 配置容错 | `Config` 依赖 `FAIL_ON_UNKNOWN_PROPERTIES=false`、`UnrecognizedPropertyException` 捕获做配置迁移、`ObjectNode` 树编辑 | 需逐项用 `ignoreUnknownKeys` 等重配，树编辑 API（JsonElement）能力弱，配置迁移逻辑需重写 |
+| 泛型反射 | `TypeReference`/`JavaType` 与 `ModelField<T>` 泛型反射体系（`TypeUtil`）深度耦合 | 不支持运行时泛型反射，`ModelField` 体系无法等价迁移 |
+| 迁移风险 | — | 涉及 25+ 文件、配置持久化兼容性、70 个文件若一并迁移则全项目震动；**项目无单元测试，风险不可控** |
+| 收益 | — | 仅减少约 1.5-2MB 依赖体积，无功能收益 |
+
+### 三、结论
+
+**维持 Jackson（持久化）+ org.json（RPC 解析）的双轨现状，不迁移到 kotlinx.serialization。**
+
+理由：
+1. 硬性规则「行为不变」：`Config` 持久化格式与容错逻辑、`ModelField<T>` 泛型反射均深度绑定 Jackson 运行时能力，kotlinx.serialization 无法等价替代；
+2. `org.json` 是 Android 内置库，70 个文件的 RPC 解析迁移是纯风险零收益；
+3. 项目依赖 Hook 支付宝运行、无单测保护网，技术栈迁移风险收益比严重失衡。
+
+### 四、可行的低风险清理项（建议作为后续独立 Task）
+
+| 清理项 | 风险 | 说明 |
+|--------|------|------|
+| 移除未使用的 `kotlinx-serialization-json` 依赖 | 低 | 源码零引用、编译插件未应用，纯死依赖 |
+| 清理 `libs.versions.toml` 中未引用的 `fastjson` 条目 | 低 | 版本与库条目均为死条目 |
+| `JsonHelper` 与 `JsonUtil` 双 ObjectMapper 并存 | 暂不动 | `JsonHelper.mapper` 未配置 `NON_NULL`，行为与 `JsonUtil.MAPPER` 不一致，合并需逐一核对调用方语义，风险高于收益，建议保持现状 |

@@ -657,7 +657,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 完成 | 11dd5286 |
 | 5.5 | ui/widget/ Java 文件 → Kotlin | 低 | 完成 | 3b4cbcf6 |
 | 5.6 | ui/adapter/ Java 文件 → Kotlin | 低 | 完成 | c8922b13 |
-| 5.7 | ObjReference.java → Kotlin | 低 | 待办 | — |
+| 5.7 | ObjReference.java → Kotlin | 低 | 完成 | 待回填 |
 
 ---
 
@@ -681,7 +681,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `task/AnswerAI/GeminiAI.java` | `@Getter`, `@Setter` | 4.11（已迁移 Kotlin，Lombok 已移除） |
 | `task/antFarm/AntFarm.kt` | `@ToString`（Kotlin 中使用 Lombok） | — |
 | `task/ModelTask.kt` | `@Setter`（Kotlin 中使用 Lombok） | — |
-| `ui/ObjReference.java` | `@Data` | 5.7 |
+| `ui/ObjReference.java` | `@Data` | 5.7（已迁移 Kotlin，Lombok 已移除） |
 
 > **注意**：部分 Kotlin 文件（`RpcEntity.kt`、`VitalityStore.kt`、`VersionHook.kt`、`BaseModel.kt`、`AntFarm.kt`、`ModelTask.kt`）仍在使用 Lombok 注解。迁移对应 Task 时应一并移除 Lombok，改用 Kotlin 原生语法。
 

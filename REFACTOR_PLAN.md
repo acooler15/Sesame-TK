@@ -618,7 +618,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.4 | ModelConfig.java → Kotlin | 中 | 完成 | 7dd4c943 |
 | 2.5 | ModelField.java → Kotlin | 高 | 完成 | bf9a6ed7 |
 | 2.6 | Model.java → Kotlin | 中 | 完成 | 7c87e055 |
-| 2.7 | modelFieldExt/ 全部 → Kotlin | 中 | 待办 | — |
+| 2.7 | modelFieldExt/ 全部 → Kotlin | 中 | 完成 | 205e5fd0 |
 | 2.8 | AlipayUser.java → Kotlin | 低 | 待办 | — |
 | 2.9 | AreaCode.java → Kotlin | 低 | 待办 | — |
 | 2.10 | AlipayBeach.java → Kotlin | 低 | 待办 | — |
@@ -668,7 +668,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `model/ModelConfig.java` | `@Data` | 2.4 |
 | `model/ModelField.java` | `@Data`, `@Getter`, `@Setter` | 2.5 |
 | `model/ModelGroup.java` | `@Getter` | 2.2 |
-| `model/modelFieldExt/IntegerModelField.java` | `@Getter` | 2.7 |
+| `model/modelFieldExt/IntegerModelField.java` | `@Getter` | 2.7（已迁移 Kotlin，Lombok 已移除） |
 | `task/AnswerAI/CustomService.java` | `@Getter`, `@Setter` | 4.11 |
 | `task/AnswerAI/DeepSeek.java` | `@Getter`, `@Setter` | 4.11 |
 | `task/AnswerAI/GeminiAI.java` | `@Getter`, `@Setter` | 4.11 |

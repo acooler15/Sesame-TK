@@ -164,9 +164,6 @@ dependencies {
     // 生命周期和数据绑定
     implementation(libs.androidx.lifecycle.viewmodel.compose) // Compose ViewModel 支持
 
-    // JSON 序列化
-    implementation(libs.kotlinx.serialization.json) // Kotlin JSON 序列化库
-
     // Kotlin 协程依赖 - 异步编程（纯协程调度）
     implementation(libs.kotlinx.coroutines.core)     // 协程核心库
     implementation(libs.kotlinx.coroutines.android)  // Android 协程支持

@@ -592,10 +592,10 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 
 | Task | 标题 | 风险 | 状态 | 提交哈希 |
 |------|------|------|------|----------|
-| 0.1 | 编译基线验证 | 低 | 完成 | — |
-| 0.2 | 修复 TaskExecutor.kt 包名错误 | 低 | 完成 | — |
-| 0.3 | 修复 ReserveaMap 拼写错误 | 低 | 完成 | — |
-| — | **Phase 0 完成** | — | — | tag: phase-0-done（哈希待提交后回填） |
+| 0.1 | 编译基线验证 | 低 | 完成 | 75b9afe6 |
+| 0.2 | 修复 TaskExecutor.kt 包名错误 | 低 | 完成 | 75b9afe6 |
+| 0.3 | 修复 ReserveaMap 拼写错误 | 低 | 完成 | 75b9afe6 |
+| — | **Phase 0 完成** | — | — | tag: phase-0-done |
 | 1.1 | TypeUtil.java → Kotlin | 低 | 待办 | — |
 | 1.2 | StringUtil.java → Kotlin | 低 | 待办 | — |
 | 1.3 | ListUtil.java → Kotlin | 低 | 待办 | — |

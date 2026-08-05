@@ -596,21 +596,22 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 0.2 | 修复 TaskExecutor.kt 包名错误 | 低 | 完成 | 75b9afe6 |
 | 0.3 | 修复 ReserveaMap 拼写错误 | 低 | 完成 | 75b9afe6 |
 | — | **Phase 0 完成** | — | — | tag: phase-0-done |
-| 1.1 | TypeUtil.java → Kotlin | 低 | 完成 | — |
-| 1.2 | StringUtil.java → Kotlin | 低 | 完成 | — |
-| 1.3 | ListUtil.java → Kotlin | 低 | 完成 | — |
-| 1.4 | TimeUtil.java → Kotlin | 低 | 完成 | — |
-| 1.5 | TimeFormatter.java → Kotlin | 低 | 完成 | — |
-| 1.6 | TimeCounter.java → Kotlin | 低 | 完成 | — |
-| 1.7 | RandomUtil.java → Kotlin | 低 | 完成 | — |
-| 1.8 | Average.java → Kotlin | 低 | 完成 | — |
-| 1.9 | CircularFifoQueue.java → Kotlin | 低 | 完成 | — |
-| 1.10 | HanziToPinyin.java → Kotlin | 低 | 完成 | — |
-| 1.11 | LanguageUtil.java → Kotlin | 低 | 完成 | — |
-| 1.12 | PortUtil.java → Kotlin | 低 | 完成 | — |
-| 1.13 | ResChecker.java → Kotlin | 低 | 完成 | — |
-| 1.14 | JsonUtil.java → Kotlin | 中 | 完成 | — |
-| 1.15 | util/maps/ Java 文件 → Kotlin | 低 | 完成 | — |
+| 1.1 | TypeUtil.java → Kotlin | 低 | 完成 | d7d57715 |
+| 1.2 | StringUtil.java → Kotlin | 低 | 完成 | 33d5e6a6 |
+| 1.3 | ListUtil.java → Kotlin | 低 | 完成 | f5048976 |
+| 1.4 | TimeUtil.java → Kotlin | 低 | 完成 | 83906c88 |
+| 1.5 | TimeFormatter.java → Kotlin | 低 | 完成 | 8e058254 |
+| 1.6 | TimeCounter.java → Kotlin | 低 | 完成 | ef868970 |
+| 1.7 | RandomUtil.java → Kotlin | 低 | 完成 | d185dd5f |
+| 1.8 | Average.java → Kotlin | 低 | 完成 | 2f8a7b1f |
+| 1.9 | CircularFifoQueue.java → Kotlin | 低 | 完成 | 6849ce1b |
+| 1.10 | HanziToPinyin.java → Kotlin | 低 | 完成 | 23063675 |
+| 1.11 | LanguageUtil.java → Kotlin | 低 | 完成 | 4ccb5751 |
+| 1.12 | PortUtil.java → Kotlin | 低 | 完成 | d7fd7a38 |
+| 1.13 | ResChecker.java → Kotlin | 低 | 完成 | 08b90a05 |
+| 1.14 | JsonUtil.java → Kotlin | 中 | 完成 | a85f5335 |
+| 1.15 | util/maps/ Java 文件 → Kotlin | 低 | 完成 | 1f746923 |
+| — | **Phase 1 完成** | — | — | tag: phase-1-done |
 | 2.1 | ModelFields.java → Kotlin | 中 | 完成 | eced8b69 |
 | 2.2 | ModelGroup.java → Kotlin | 低 | 待办 | — |
 | 2.3 | ModelType.java → Kotlin | 低 | 待办 | — |

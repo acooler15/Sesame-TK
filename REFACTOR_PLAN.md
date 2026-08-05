@@ -605,7 +605,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 1.7 | RandomUtil.java → Kotlin | 低 | 完成 | — |
 | 1.8 | Average.java → Kotlin | 低 | 完成 | — |
 | 1.9 | CircularFifoQueue.java → Kotlin | 低 | 完成 | — |
-| 1.10 | HanziToPinyin.java → Kotlin | 低 | 待办 | — |
+| 1.10 | HanziToPinyin.java → Kotlin | 低 | 完成 | — |
 | 1.11 | LanguageUtil.java → Kotlin | 低 | 待办 | — |
 | 1.12 | PortUtil.java → Kotlin | 低 | 待办 | — |
 | 1.13 | ResChecker.java → Kotlin | 低 | 待办 | — |

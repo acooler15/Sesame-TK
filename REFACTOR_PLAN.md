@@ -639,7 +639,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.2 | RpcBridge.java → Kotlin | 中 | 完成 | ab03c1b2 |
 | 4.3 | NewRpcBridge.java → Kotlin | 高 | 完成 | b3752a87 |
 | 4.4 | OldRpcBridge.java → Kotlin | 高 | 完成 | ad4fb5cf |
-| 4.5 | DebugRpc.java → Kotlin | 低 | 待办 | — |
+| 4.5 | DebugRpc.java → Kotlin | 低 | 完成 | — |
 | 4.6 | DebugRpcCall.java → Kotlin | 低 | 待办 | — |
 | 4.7 | AntForestRpcCall.java → Kotlin | 中 | 待办 | — |
 | 4.8 | GreenLife.java → Kotlin | 低 | 待办 | — |

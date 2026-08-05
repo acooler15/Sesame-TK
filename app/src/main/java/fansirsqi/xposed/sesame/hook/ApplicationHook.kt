@@ -504,8 +504,7 @@ class ApplicationHook {
             execute({
                 record(TAG, "RPC测试: $intent")
                 try {
-                    val rpc = DebugRpc()
-                    rpc.start(
+                    DebugRpc.start(
                         intent.getStringExtra("method"),
                         intent.getStringExtra("data"),
                         intent.getStringExtra("type")

@@ -644,7 +644,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.7 | AntForestRpcCall.java → Kotlin | 中 | 完成 | 359d781e |
 | 4.8 | GreenLife.java → Kotlin | 低 | 完成 | be7a5755 |
 | 4.9 | Healthcare.java → Kotlin | 低 | 完成 | 11bc2b4d |
-| 4.10 | 各功能域 *RpcCall.java → Kotlin | 中 | 完成 | — |
+| 4.10 | 各功能域 *RpcCall.java → Kotlin | 中 | 完成 | f1d1acea |
 | 4.11 | AnswerAI/ 全部 → Kotlin | 中 | 待办 | — |
 | 5.1 | 评估 JSON 方案统一 | 低 | 待办 | — |
 | 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |
@@ -675,7 +675,6 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `task/AnswerAI/DeepSeek.java` | `@Getter`, `@Setter` | 4.11 |
 | `task/AnswerAI/GeminiAI.java` | `@Getter`, `@Setter` | 4.11 |
 | `task/antFarm/AntFarm.kt` | `@ToString`（Kotlin 中使用 Lombok） | — |
-| `task/antOcean/AntOcean.java` | `@Getter` | 4.10 |
 | `task/ModelTask.kt` | `@Setter`（Kotlin 中使用 Lombok） | — |
 | `ui/ObjReference.java` | `@Data` | 5.7 |
 

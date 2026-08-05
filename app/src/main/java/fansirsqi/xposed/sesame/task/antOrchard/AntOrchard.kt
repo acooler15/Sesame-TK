@@ -91,7 +91,7 @@ class AntOrchard : ModelTask() {
 
     override suspend fun runSuspend() {
         try {
-            Log.record(TAG, "执行开始-$name")
+            Log.record(TAG, "执行开始-${getName()}")
             executeIntervalInt = maxOf(executeInterval.value, 500)
 
             val indexResponse = AntOrchardRpcCall.orchardIndex()
@@ -189,7 +189,7 @@ class AntOrchard : ModelTask() {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "start.run err:", t)
         } finally {
-            Log.record(TAG, "执行结束-$name")
+            Log.record(TAG, "执行结束-${getName()}")
         }
     }
 

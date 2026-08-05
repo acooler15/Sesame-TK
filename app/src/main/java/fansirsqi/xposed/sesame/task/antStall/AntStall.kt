@@ -226,7 +226,7 @@ class AntStall : ModelTask() {
     override fun runJava() {
         try {
             val tc = TimeCounter(TAG)
-            Log.record(TAG, "执行开始-$name")
+            Log.record(TAG, "执行开始-${getName()}")
 
             val homeResponse = AntStallRpcCall.home()
             val homeJson = JSONObject(homeResponse)
@@ -315,7 +315,7 @@ class AntStall : ModelTask() {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "home err:", t)
         } finally {
-            Log.record(TAG, "执行结束-$name")
+            Log.record(TAG, "执行结束-${getName()}")
         }
     }
 

@@ -61,12 +61,12 @@ class EcoProtection : ModelTask() {
 
     override suspend fun runSuspend() {
         try {
-            Log.record(TAG, "开始执行$name")
+            Log.record(TAG, "开始执行${getName()}")
             ancientTree(ancientTreeCityCodeList!!.value)
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "start.run err:",t)
         } finally {
-            Log.record(TAG, "结束执行$name")
+            Log.record(TAG, "结束执行${getName()}")
         }
     }
 

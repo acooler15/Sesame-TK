@@ -33,7 +33,7 @@ public class TaskRunnerAdapter {
      * 构造函数 - 使用所有已注册的模型
      */
     public TaskRunnerAdapter() {
-        List<Model> modelList = Arrays.asList(Model.getModelArray());
+        List<Model> modelList = Arrays.asList(Model.modelArray);
         this.coroutineTaskRunner = new CoroutineTaskRunner(modelList);
     }
 

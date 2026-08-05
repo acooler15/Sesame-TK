@@ -672,7 +672,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         // 1️⃣ 异常等待状态
         val forestPauseTime = RuntimeInfo.getInstance().getLong(RuntimeInfo.RuntimeInfoKey.ForestPauseTime)
         if (forestPauseTime > currentTime) {
-            Log.record(name + "任务-异常等待中，暂不执行检测！")
+            Log.record(getName() + "任务-异常等待中，暂不执行检测！")
             return false
         }
         // -----------------------------
@@ -829,7 +829,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             val tc = TimeCounter(TAG)
             if (showBagList!!.value) showBag()
 
-            Log.record(TAG, "执行开始-蚂蚁$name")
+            Log.record(TAG, "执行开始-蚂蚁${getName()}")
             taskCount.set(0)
             selfId = UserMap.currentUid
 

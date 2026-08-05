@@ -650,7 +650,7 @@ class AntFarm : ModelTask() {
         try {
             val tc = TimeCounter(TAG)
             val userId = UserMap.currentUid
-            Log.record(TAG, "执行开始-蚂蚁$name")
+            Log.record(TAG, "执行开始-蚂蚁${getName()}")
 
             if (enterFarm() == null) {
                 return
@@ -829,7 +829,7 @@ class AntFarm : ModelTask() {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "AntFarm.start.run err:",t)
         } finally {
-            Log.record(TAG, "执行结束-蚂蚁$name")
+            Log.record(TAG, "执行结束-蚂蚁${getName()}")
         }
     }
 

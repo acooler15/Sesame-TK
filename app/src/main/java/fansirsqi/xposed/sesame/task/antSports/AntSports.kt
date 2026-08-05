@@ -241,7 +241,7 @@ class AntSports : ModelTask() {
     /**
      * @brief Xposed 启动时 hook 步数读取逻辑，实现自定义步数同步
      */
-    override fun boot(classLoader: ClassLoader) {
+    override fun boot(classLoader: ClassLoader?) {
         try {
             XposedHelpers.findAndHookMethod(
                 "com.alibaba.health.pedometer.core.datasource.PedometerAgent",
@@ -268,7 +268,7 @@ class AntSports : ModelTask() {
      * @brief 任务主入口
      */
     override fun runJava() {
-        Log.record(TAG, "执行开始-" + name)
+        Log.record(TAG, "执行开始-" + getName())
 
         try {
             val loader = ApplicationHook.classLoader
@@ -350,7 +350,7 @@ class AntSports : ModelTask() {
             Log.record(TAG, "runJava error:")
             Log.printStackTrace(TAG, t)
         } finally {
-            Log.record(TAG, "执行结束-" + name)
+            Log.record(TAG, "执行结束-" + getName())
         }
     }
 

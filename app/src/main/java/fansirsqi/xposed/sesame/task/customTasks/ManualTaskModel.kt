@@ -1,5 +1,6 @@
 package fansirsqi.xposed.sesame.task.customTasks
 
+import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
@@ -50,7 +51,7 @@ class ManualTaskModel : ModelTask() {
         Log.record("ManualTask", "🔍 正在检查运行环境...")
         
         // 检查是否有其他自动任务正在运行 (不包括自己)
-        val otherRunningTasks = modelArray.filterIsInstance<ModelTask>()
+        val otherRunningTasks = Model.modelArray.filterIsInstance<ModelTask>()
             .filter { it != this && it.isRunning }
             .map { it.getName() ?: "未知任务" }
 

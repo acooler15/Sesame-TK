@@ -211,7 +211,7 @@ class AntMember : ModelTask() {
         // 使用协程上下文运行
         runBlocking {
             try {
-                record(TAG, "执行开始-$name")
+                record(TAG, "执行开始-${getName()}")
                 // 异步获取位置信息-for 2101
                 requestLocationSuspend()
                 // 芝麻信用相关检测
@@ -329,7 +329,7 @@ class AntMember : ModelTask() {
             } catch (t: Throwable) {
                 Log.printStackTrace(TAG, t)
             } finally {
-                record(TAG, "执行结束-$name")
+                record(TAG, "执行结束-${getName()}")
             }
         }
     }

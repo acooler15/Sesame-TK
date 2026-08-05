@@ -108,7 +108,7 @@ abstract class ModelTask : Model() {
 
         // 只有蚂蚁森林启用且当前不是蚂蚁森林任务时，才拦截能量时间
         if (getName() != "蚂蚁森林") {
-            val antForest = getModel(AntForest::class.java)
+            val antForest = Model.getModel(AntForest::class.java)
             if (antForest != null && antForest.isEnable) {
                 if (TaskCommon.IS_ENERGY_TIME) {
                     Log.record(getName() ?: "Task", "⏸ 当前为只收能量时间【${BaseModel.energyTime.value}】，停止执行${getName()}任务！")
@@ -597,7 +597,7 @@ abstract class ModelTask : Model() {
         @JvmStatic
         fun stopAllTask() {
             globalTaskScope.launch {
-                for (model in modelArray) {
+                for (model in Model.modelArray) {
                     if (model is ModelTask) {
                         try {
                             model.stopTask()

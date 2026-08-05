@@ -31,17 +31,17 @@ class ModelConfig() : Serializable {
         // 设置模型的简单类名作为唯一标识符
         code = model.javaClass.simpleName
         // 设置模型的名称
-        name = model.name
+        name = model.getName()
         // 设置模型所属组
-        group = model.group
+        group = model.getGroup()
         // 设置模型的图标文件名称（图标位置app/src/main/assets/web/images/icon/model[/selected]，正常状态和选中状态）
         // 无图标定义时使用default.svg
-        icon = model.icon
+        icon = model.getIcon()
         // 获取模型的启用字段，并将其加入到字段列表中
         val enableField = model.enableField
         fields[enableField.code] = enableField
         // 获取模型的其他字段，并将其加入到字段列表中
-        val modelFields = model.fields
+        val modelFields = model.getFields()
         if (modelFields != null) {
             for (entry in modelFields.entries) {
                 val modelField = entry.value

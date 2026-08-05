@@ -85,7 +85,7 @@ class AntCooperate : ModelTask() {
      */
     override suspend fun runSuspend() {
         try {
-            Log.record(TAG, "执行开始-$name")
+            Log.record(TAG, "执行开始-${getName()}")
 
             // 1. 真爱合种
             if (loveCooperateWater.value) {
@@ -196,7 +196,7 @@ class AntCooperate : ModelTask() {
             Log.printStackTrace(TAG, t)
         } finally {
             IdMapManager.getInstance(CooperateMap::class.java).save(UserMap.currentUid)
-            Log.record(TAG, "执行结束-$name")
+            Log.record(TAG, "执行结束-${getName()}")
         }
     }
 

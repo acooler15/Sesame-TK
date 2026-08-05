@@ -722,6 +722,6 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 
 | 清理项 | 风险 | 说明 |
 |--------|------|------|
-| 移除未使用的 `kotlinx-serialization-json` 依赖 | 低 | 源码零引用、编译插件未应用，纯死依赖 |
-| 清理 `libs.versions.toml` 中未引用的 `fastjson` 条目 | 低 | 版本与库条目均为死条目 |
+| 移除未使用的 `kotlinx-serialization-json` 依赖 | 低 | 源码零引用、编译插件未应用，纯死依赖（已完成，d4dab17d） |
+| 清理 `libs.versions.toml` 中未引用的 `fastjson` 条目 | 低 | 版本与库条目均为死条目（已完成，d4dab17d） |
 | `JsonHelper` 与 `JsonUtil` 双 ObjectMapper 并存 | 暂不动 | `JsonHelper.mapper` 未配置 `NON_NULL`，行为与 `JsonUtil.MAPPER` 不一致，合并需逐一核对调用方语义，风险高于收益，建议保持现状 |

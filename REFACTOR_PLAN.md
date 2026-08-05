@@ -654,7 +654,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 5.1 | 评估 JSON 方案统一 | 低 | 完成 | 1a9627f2 |
 | 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |
 | 5.3 | UI 向 Compose 收敛 | 中 | 待办 | — |
-| 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 完成 | — |
+| 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 完成 | 11dd5286 |
 | 5.5 | ui/widget/ Java 文件 → Kotlin | 低 | 待办 | — |
 | 5.6 | ui/adapter/ Java 文件 → Kotlin | 低 | 待办 | — |
 | 5.7 | ObjReference.java → Kotlin | 低 | 待办 | — |

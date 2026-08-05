@@ -622,7 +622,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.8 | AlipayUser.java → Kotlin | 低 | 完成 | 40ae65c0 |
 | 2.9 | AreaCode.java → Kotlin | 低 | 完成 | 5deead3a |
 | 2.10 | AlipayBeach.java → Kotlin | 低 | 完成 | 2390ce57 |
-| 2.11 | CollectEnergyEntity.java → Kotlin | 低 | 待办 | — |
+| 2.11 | CollectEnergyEntity.java → Kotlin | 低 | 完成 | c947d295 |
 | 2.12 | FriendWatch.java → Kotlin | 低 | 待办 | — |
 | 2.13 | ParadiseCoinBenefit.java → Kotlin | 低 | 待办 | — |
 | 2.14 | ReserveEntity.java → Kotlin | 低 | 待办 | — |
@@ -659,7 +659,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 文件 | Lombok 注解 | 迁移 Task |
 |------|-----------|----------|
 | `data/Config.java` | `@Data` | 3.1 |
-| `entity/CollectEnergyEntity.java` | `@Getter` | 2.11 |
+| `entity/CollectEnergyEntity.java` | `@Getter` | 2.11（已迁移 Kotlin，Lombok 已移除） |
 | `entity/FriendWatch.java` | `@Getter`, `@Setter` | 2.12 |
 | `entity/RpcEntity.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |
 | `entity/VitalityStore.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |

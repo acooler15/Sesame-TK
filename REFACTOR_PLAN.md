@@ -648,8 +648,8 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.9 | Healthcare.java → Kotlin | 低 | 完成 | 11bc2b4d |
 | 4.10 | 各功能域 *RpcCall.java → Kotlin | 中 | 完成 | f1d1acea |
 | 4.11 | AnswerAI/ 全部 → Kotlin | 中 | 完成 | 4051a292 |
-| 4.12 | Vitality.java → Kotlin（遗漏补充） | 低 | 完成 | 待回填 |
-| 4.13 | ReserveMap.java → Kotlin（遗漏补充） | 低 | 完成 | 待回填 |
+| 4.12 | Vitality.java → Kotlin（遗漏补充） | 低 | 完成 | 8ec39761 |
+| 4.13 | ReserveMap.java → Kotlin（遗漏补充） | 低 | 完成 | 8ec39761 |
 | — | **Phase 4 完成** | — | — | tag: phase-4-done |
 | 5.1 | 评估 JSON 方案统一 | 低 | 待办 | — |
 | 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |

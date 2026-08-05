@@ -658,6 +658,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 5.5 | ui/widget/ Java 文件 → Kotlin | 低 | 完成 | 3b4cbcf6 |
 | 5.6 | ui/adapter/ Java 文件 → Kotlin | 低 | 完成 | c8922b13 |
 | 5.7 | ObjReference.java → Kotlin | 低 | 完成 | 851c935d |
+| — | **Phase 5 完成** | — | — | tag: phase-5-done |
 
 ---
 

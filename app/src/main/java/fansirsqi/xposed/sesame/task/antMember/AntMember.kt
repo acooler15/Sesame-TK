@@ -200,7 +200,7 @@ class AntMember : ModelTask() {
 
 
         collectStickers = BooleanModelField("CollectStickers", "领取贴纸", false)
-        modelFields.addField(collectStickers)
+        modelFields.addField(collectStickers!!)
 
 
 

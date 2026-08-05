@@ -3389,7 +3389,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             if ("-1" == targetTimeStr) {
                 return
             }
-            val targetTimeCalendar = TimeUtil.getTodayCalendarByTimeStr(targetTimeStr) ?: return
+            val targetTimeCalendar = TimeUtil.getTodayCalendarByTimeStr(targetTimeStr!!) ?: return
             val targetTime = targetTimeCalendar.getTimeInMillis()
             val now = System.currentTimeMillis()
             if (now > targetTime) {

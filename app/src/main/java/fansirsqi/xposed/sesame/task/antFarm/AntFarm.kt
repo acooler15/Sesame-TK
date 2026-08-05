@@ -1035,10 +1035,10 @@ class AntFarm : ModelTask() {
             }
             val sixAmToday = TimeUtil.getTodayCalendarByTimeStr("0600")
             if (now.after(sixAmToday)) {
-                animalWakeUpTimeCalendar.add(Calendar.DAY_OF_MONTH, 1)
+                animalWakeUpTimeCalendar!!.add(Calendar.DAY_OF_MONTH, 1)
             }
 
-            val animalWakeUpTime = animalWakeUpTimeCalendar.timeInMillis
+            val animalWakeUpTime = animalWakeUpTimeCalendar!!.timeInMillis
             val animalSleepTime = animalSleepTimeCalendar.timeInMillis
             val afterSleepTime = now > animalSleepTimeCalendar
             val afterWakeUpTime = now > animalWakeUpTimeCalendar

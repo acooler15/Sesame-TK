@@ -599,7 +599,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 1.1 | TypeUtil.java → Kotlin | 低 | 完成 | — |
 | 1.2 | StringUtil.java → Kotlin | 低 | 完成 | — |
 | 1.3 | ListUtil.java → Kotlin | 低 | 完成 | — |
-| 1.4 | TimeUtil.java → Kotlin | 低 | 待办 | — |
+| 1.4 | TimeUtil.java → Kotlin | 低 | 完成 | — |
 | 1.5 | TimeFormatter.java → Kotlin | 低 | 待办 | — |
 | 1.6 | TimeCounter.java → Kotlin | 低 | 待办 | — |
 | 1.7 | RandomUtil.java → Kotlin | 低 | 待办 | — |

@@ -627,7 +627,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.13 | ParadiseCoinBenefit.java → Kotlin | 低 | 完成 | ae870aeb |
 | 2.14 | ReserveEntity.java → Kotlin | 低 | 完成 | d9bbb755 |
 | — | **Phase 2 完成** | — | — | tag: phase-2-done |
-| 3.1 | Config.java → Kotlin | 高 | 待办 | — |
+| 3.1 | Config.java → Kotlin | 高 | 完成 | b3cce877 |
 | 3.2 | RuntimeInfo.java → Kotlin | 低 | 待办 | — |
 | 3.3 | StatusFlags.java → Kotlin | 低 | 待办 | — |
 | 3.4 | TaskCommon.java → Kotlin | 低 | 待办 | — |

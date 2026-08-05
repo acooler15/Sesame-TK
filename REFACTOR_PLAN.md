@@ -624,7 +624,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.10 | AlipayBeach.java → Kotlin | 低 | 完成 | 2390ce57 |
 | 2.11 | CollectEnergyEntity.java → Kotlin | 低 | 完成 | c947d295 |
 | 2.12 | FriendWatch.java → Kotlin | 低 | 完成 | c6c7a36d |
-| 2.13 | ParadiseCoinBenefit.java → Kotlin | 低 | 待办 | — |
+| 2.13 | ParadiseCoinBenefit.java → Kotlin | 低 | 完成 | ae870aeb |
 | 2.14 | ReserveEntity.java → Kotlin | 低 | 待办 | — |
 | 3.1 | Config.java → Kotlin | 高 | 待办 | — |
 | 3.2 | RuntimeInfo.java → Kotlin | 低 | 待办 | — |

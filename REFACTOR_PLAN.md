@@ -615,7 +615,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.1 | ModelFields.java → Kotlin | 中 | 完成 | eced8b69 |
 | 2.2 | ModelGroup.java → Kotlin | 低 | 完成 | 040493da |
 | 2.3 | ModelType.java → Kotlin | 低 | 完成 | bae9c720 |
-| 2.4 | ModelConfig.java → Kotlin | 中 | 待办 | — |
+| 2.4 | ModelConfig.java → Kotlin | 中 | 完成 | 7dd4c943 |
 | 2.5 | ModelField.java → Kotlin | 高 | 待办 | — |
 | 2.6 | Model.java → Kotlin | 中 | 待办 | — |
 | 2.7 | modelFieldExt/ 全部 → Kotlin | 中 | 待办 | — |

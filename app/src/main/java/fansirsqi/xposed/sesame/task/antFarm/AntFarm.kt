@@ -1550,7 +1550,7 @@ class AntFarm : ModelTask() {
                         continue
                     }
                     val sendTypeInt = sendBackAnimalWay!!.value
-                    user = UserMap.getMaskName(user)
+                    user = UserMap.getMaskName(user) ?: "null"
                     val s = AntFarmRpcCall.sendBackAnimal(
                         SendBackAnimalWay.nickNames[sendTypeInt],
                         animal.animalId,

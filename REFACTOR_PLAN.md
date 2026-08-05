@@ -610,7 +610,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 1.12 | PortUtil.java → Kotlin | 低 | 完成 | — |
 | 1.13 | ResChecker.java → Kotlin | 低 | 完成 | — |
 | 1.14 | JsonUtil.java → Kotlin | 中 | 完成 | — |
-| 1.15 | util/maps/ Java 文件 → Kotlin | 低 | 待办 | — |
+| 1.15 | util/maps/ Java 文件 → Kotlin | 低 | 完成 | — |
 | 2.1 | ModelFields.java → Kotlin | 中 | 完成 | eced8b69 |
 | 2.2 | ModelGroup.java → Kotlin | 低 | 待办 | — |
 | 2.3 | ModelType.java → Kotlin | 低 | 待办 | — |

@@ -15,6 +15,7 @@ import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.ResChecker
 import fansirsqi.xposed.sesame.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.CooperateMap
+import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject
 
@@ -122,7 +123,7 @@ class AntCooperate : ModelTask() {
                         }
 
                         // 3. 记录合种信息到本地 Map
-                        CooperateMap.getInstance(CooperateMap::class.java).add(cooperationId, name)
+                        IdMapManager.getInstance(CooperateMap::class.java).add(cooperationId, name)
 
                         // 4. 检查是否满足“今日是否可浇水”的本地状态缓存
                         if (!Status.canCooperateWaterToday(UserMap.currentUid, cooperationId)) {
@@ -194,7 +195,7 @@ class AntCooperate : ModelTask() {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, t)
         } finally {
-            CooperateMap.getInstance(CooperateMap::class.java).save(UserMap.currentUid)
+            IdMapManager.getInstance(CooperateMap::class.java).save(UserMap.currentUid)
             Log.record(TAG, "执行结束-$name")
         }
     }

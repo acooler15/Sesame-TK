@@ -620,7 +620,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 2.6 | Model.java → Kotlin | 中 | 完成 | 7c87e055 |
 | 2.7 | modelFieldExt/ 全部 → Kotlin | 中 | 完成 | 205e5fd0 |
 | 2.8 | AlipayUser.java → Kotlin | 低 | 完成 | 40ae65c0 |
-| 2.9 | AreaCode.java → Kotlin | 低 | 待办 | — |
+| 2.9 | AreaCode.java → Kotlin | 低 | 完成 | 5deead3a |
 | 2.10 | AlipayBeach.java → Kotlin | 低 | 待办 | — |
 | 2.11 | CollectEnergyEntity.java → Kotlin | 低 | 待办 | — |
 | 2.12 | FriendWatch.java → Kotlin | 低 | 待办 | — |

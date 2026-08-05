@@ -2678,7 +2678,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 // 从 CollectEnergyEntity 中读取是否跳过道具检查的标记
                 val skipPropCheck = collectEnergyEntity.skipPropCheck ?: false
                 usePropBeforeCollectEnergy(userId, skipPropCheck)
-                val rpcEntity = collectEnergyEntity.rpcEntity
+                val rpcEntity = collectEnergyEntity.rpcEntity!!
                 val needDouble = collectEnergyEntity.needDouble
                 val needRetry = collectEnergyEntity.needRetry
                 val tryCount = collectEnergyEntity.addTryCount()

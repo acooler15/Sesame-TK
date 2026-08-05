@@ -72,10 +72,10 @@ class EcoProtection : ModelTask() {
 
     companion object {
         private val TAG: String = EcoProtection::class.java.getSimpleName()
-        private fun ancientTree(ancientTreeCityCodeList: MutableCollection<String>) {
+        private fun ancientTree(ancientTreeCityCodeList: MutableCollection<String?>) {
             try {
                 for (cityCode in ancientTreeCityCodeList) {
-                    if (!canAncientTreeToday(cityCode)) continue
+                    if (!canAncientTreeToday(cityCode!!)) continue
                     ancientTreeProtect(cityCode)
                     sleepCompat(1000L)
                 }

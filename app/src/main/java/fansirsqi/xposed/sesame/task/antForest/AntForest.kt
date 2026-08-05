@@ -1387,7 +1387,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             val notify = notifyFriend!!.value // 获取通知开关状态
 
             for (friendEntry in friendMap.entries) {
-                val uid = friendEntry.key
+                val uid = friendEntry.key!!
                 if (selfId == uid) {
                     continue
                 }
@@ -1439,7 +1439,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             val exchangeList = vitalityExchangeList!!.value
             //            Map<String, Integer> maxLimitList = vitalityExchangeMaxList.value;
             for (entry in exchangeList.entries) {
-                val skuId = entry.key
+                val skuId = entry.key!!
                 val count = entry.value
                 if (count == null || count <= 0) {
                     Log.record(TAG, "无效的count值: skuId=$skuId, count=$count")
@@ -3384,12 +3384,12 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    fun useCardBoot(targetTimeValue: MutableList<String?>, propName: String?, func: Runnable) {
+    fun useCardBoot(targetTimeValue: List<String>, propName: String?, func: Runnable) {
         for (targetTimeStr in targetTimeValue) {
             if ("-1" == targetTimeStr) {
                 return
             }
-            val targetTimeCalendar = TimeUtil.getTodayCalendarByTimeStr(targetTimeStr!!) ?: return
+            val targetTimeCalendar = TimeUtil.getTodayCalendarByTimeStr(targetTimeStr) ?: return
             val targetTime = targetTimeCalendar.getTimeInMillis()
             val now = System.currentTimeMillis()
             if (now > targetTime) {

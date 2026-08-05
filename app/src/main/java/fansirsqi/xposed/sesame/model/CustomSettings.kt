@@ -41,7 +41,7 @@ object CustomSettings {
     val onlyOnceDailyList = SelectModelField(
         "onlyOnceDailyList",
         "每日只运行一次 | 模块选择",
-        LinkedHashSet<String>().apply {
+        LinkedHashSet<String?>().apply {
             add("antOrchard")
             add("antCooperate")
             add("antSports")
@@ -98,7 +98,7 @@ object CustomSettings {
         onlyOnceDaily.setObjectValue(false)
         autoHandleOnceDaily.setObjectValue(false)
         autoHandleOnceDailyTimes.setObjectValue(ListUtil.newArrayList("0600", "2000"))
-        val defaultSet = LinkedHashSet<String>().apply {
+        val defaultSet = LinkedHashSet<String?>().apply {
             add("antOrchard")
             add("antCooperate")
             add("antSports")

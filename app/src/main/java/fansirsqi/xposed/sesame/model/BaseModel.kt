@@ -110,7 +110,7 @@ class BaseModel : Model() {
          */
         @Getter
         val execAtTimeList: ListJoinCommaToStringModelField = ListJoinCommaToStringModelField(
-            "execAtTimeList", "定时执行(关闭:-1)", ListUtil.newArrayList<String?>(
+            "execAtTimeList", "定时执行(关闭:-1)", ListUtil.newArrayList(
                 "0010", "0030", "0100", "0700", "0730", "1200", "1230", "1700", "1730", "2000", "2030", "2359"
             )
         )
@@ -120,7 +120,7 @@ class BaseModel : Model() {
          */
         @Getter
         val wakenAtTimeList: ListJoinCommaToStringModelField = ListJoinCommaToStringModelField(
-            "wakenAtTimeList", "定时唤醒(关闭:-1)", ListUtil.newArrayList<String?>(
+            "wakenAtTimeList", "定时唤醒(关闭:-1)", ListUtil.newArrayList(
                 "0010", "0030", "0100", "0650", "2350" // 添加多个0点后的时间点
             )
         )
@@ -129,14 +129,14 @@ class BaseModel : Model() {
          * 能量收集的时间范围
          */
         @Getter
-        val energyTime: ListJoinCommaToStringModelField = ListJoinCommaToStringModelField("energyTime", "只收能量时间(范围|关闭:-1)", ListUtil.newArrayList<String?>("0700-0730"))
+        val energyTime: ListJoinCommaToStringModelField = ListJoinCommaToStringModelField("energyTime", "只收能量时间(范围|关闭:-1)", ListUtil.newArrayList("0700-0730"))
 
         /**
          * 模块休眠时间范围
          */
         @Getter
         val modelSleepTime: ListJoinCommaToStringModelField =
-            ListJoinCommaToStringModelField("modelSleepTime", "模块休眠时间(范围|关闭:-1)", ListUtil.newArrayList<String?>("0200-0201"))
+            ListJoinCommaToStringModelField("modelSleepTime", "模块休眠时间(范围|关闭:-1)", ListUtil.newArrayList("0200-0201"))
 
         /**
          * 定时任务模式选择

@@ -653,7 +653,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | — | **Phase 4 完成** | — | — | tag: phase-4-done |
 | 5.1 | 评估 JSON 方案统一 | 低 | 完成 | 1a9627f2 |
 | 5.2 | 移除 Lombok 依赖 | 低 | 完成 | 7ad6cd58 |
-| 5.3 | UI 向 Compose 收敛 | 中 | 完成 | — |
+| 5.3 | UI 向 Compose 收敛 | 中 | 完成 | 3fbd89b0 |
 | 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 完成 | 11dd5286 |
 | 5.5 | ui/widget/ Java 文件 → Kotlin | 低 | 完成 | 3b4cbcf6 |
 | 5.6 | ui/adapter/ Java 文件 → Kotlin | 低 | 完成 | c8922b13 |

@@ -629,7 +629,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | — | **Phase 2 完成** | — | — | tag: phase-2-done |
 | 3.1 | Config.java → Kotlin | 高 | 完成 | b3cce877 |
 | 3.2 | RuntimeInfo.java → Kotlin | 低 | 完成 | ea6d30fb |
-| 3.3 | StatusFlags.java → Kotlin | 低 | 待办 | — |
+| 3.3 | StatusFlags.java → Kotlin | 低 | 完成 |  |
 | 3.4 | TaskCommon.java → Kotlin | 低 | 待办 | — |
 | 3.5 | TaskStatus.java → Kotlin | 低 | 待办 | — |
 | 3.6 | TaskRunnerAdapter.java → Kotlin | 低 | 待办 | — |

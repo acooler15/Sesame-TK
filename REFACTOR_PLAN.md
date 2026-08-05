@@ -652,7 +652,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 4.13 | ReserveMap.java → Kotlin（遗漏补充） | 低 | 完成 | 8ec39761 |
 | — | **Phase 4 完成** | — | — | tag: phase-4-done |
 | 5.1 | 评估 JSON 方案统一 | 低 | 完成 | 1a9627f2 |
-| 5.2 | 移除 Lombok 依赖 | 低 | 待办 | — |
+| 5.2 | 移除 Lombok 依赖 | 低 | 完成 | — |
 | 5.3 | UI 向 Compose 收敛 | 中 | 待办 | — |
 | 5.4 | ui/dto/ Java 文件 → Kotlin | 低 | 完成 | 11dd5286 |
 | 5.5 | ui/widget/ Java 文件 → Kotlin | 低 | 完成 | 3b4cbcf6 |
@@ -668,10 +668,10 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `data/Config.java` | `@Data` | 3.1 |
 | `entity/CollectEnergyEntity.java` | `@Getter` | 2.11（已迁移 Kotlin，Lombok 已移除） |
 | `entity/FriendWatch.java` | `@Getter`, `@Setter` | 2.12（已迁移 Kotlin，Lombok 已移除） |
-| `entity/RpcEntity.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |
-| `entity/VitalityStore.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |
-| `hook/VersionHook.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |
-| `model/BaseModel.kt` | `@Getter`（Kotlin 中使用 Lombok） | — |
+| `entity/RpcEntity.kt` | `@Getter`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
+| `entity/VitalityStore.kt` | `@Getter`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
+| `hook/VersionHook.kt` | `@Getter`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
+| `model/BaseModel.kt` | `@Getter`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
 | `model/ModelConfig.java` | `@Data` | 2.4 |
 | `model/ModelField.java` | `@Data`, `@Getter`, `@Setter` | 2.5 |
 | `model/ModelGroup.java` | `@Getter` | 2.2 |
@@ -679,11 +679,11 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | `task/AnswerAI/CustomService.java` | `@Getter`, `@Setter` | 4.11（已迁移 Kotlin，Lombok 已移除） |
 | `task/AnswerAI/DeepSeek.java` | `@Getter`, `@Setter` | 4.11（已迁移 Kotlin，Lombok 已移除） |
 | `task/AnswerAI/GeminiAI.java` | `@Getter`, `@Setter` | 4.11（已迁移 Kotlin，Lombok 已移除） |
-| `task/antFarm/AntFarm.kt` | `@ToString`（Kotlin 中使用 Lombok） | — |
-| `task/ModelTask.kt` | `@Setter`（Kotlin 中使用 Lombok） | — |
+| `task/antFarm/AntFarm.kt` | `@ToString`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
+| `task/ModelTask.kt` | `@Setter`（Kotlin 中使用 Lombok） | 5.2（从未生效，已移除） |
 | `ui/ObjReference.java` | `@Data` | 5.7（已迁移 Kotlin，Lombok 已移除） |
 
-> **注意**：部分 Kotlin 文件（`RpcEntity.kt`、`VitalityStore.kt`、`VersionHook.kt`、`BaseModel.kt`、`AntFarm.kt`、`ModelTask.kt`）仍在使用 Lombok 注解。迁移对应 Task 时应一并移除 Lombok，改用 Kotlin 原生语法。
+> **注意**：Task 5.2 完成前，部分 Kotlin 文件（`RpcEntity.kt`、`VitalityStore.kt`、`VersionHook.kt`、`BaseModel.kt`、`AntFarm.kt`、`ModelTask.kt`）仍在使用 Lombok 注解；由于项目仅配置 `annotationProcessor`（只对 javac 生效），这些注解在 Kotlin 中从未生效，已在 Task 5.2 中全部移除。
 
 ---
 

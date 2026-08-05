@@ -14,7 +14,6 @@ import fansirsqi.xposed.sesame.util.StringUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import lombok.Setter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -417,7 +416,6 @@ abstract class ModelTask : Model() {
         var onCompleted: ((isSuccess: Boolean) -> Unit)? = null,
         var useSmartScheduler: Boolean = true
     ) {
-        @Setter
         var modelTask: ModelTask? = null
         
         /** 协程任务Job */

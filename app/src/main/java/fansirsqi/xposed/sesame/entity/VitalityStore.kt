@@ -2,7 +2,6 @@ package fansirsqi.xposed.sesame.entity
 
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap
-import lombok.Getter
 
 /**
  * @author Byseven
@@ -15,7 +14,6 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
         this.name = n
     }
 
-    @Getter
     enum class ExchangeStatus(val nickName: String) {
         NO_ENOUGH_POINT("活力值不足"),
         NO_ENOUGH_STOCK("库存量不足"),

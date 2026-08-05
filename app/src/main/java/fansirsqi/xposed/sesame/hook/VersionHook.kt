@@ -8,7 +8,6 @@ import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.AlipayVersion
 import fansirsqi.xposed.sesame.util.Log.printStackTrace
 import fansirsqi.xposed.sesame.util.Log.record
-import lombok.Getter
 import kotlin.concurrent.Volatile
 
 /**
@@ -18,13 +17,7 @@ import kotlin.concurrent.Volatile
 object VersionHook {
     private const val TAG = "VersionHook"
 
-    /**
-     * -- GETTER --
-     * 获取已捕获的版本信息
-     *
-     */
     // 缓存捕获的版本信息
-    @Getter
     @Volatile
     private var capturedVersion: AlipayVersion? = null
 

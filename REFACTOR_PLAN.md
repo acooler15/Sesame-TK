@@ -631,7 +631,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 3.2 | RuntimeInfo.java → Kotlin | 低 | 完成 | ea6d30fb |
 | 3.3 | StatusFlags.java → Kotlin | 低 | 完成 | 79ebd023 |
 | 3.4 | TaskCommon.java → Kotlin | 低 | 完成 | 024178d8 |
-| 3.5 | TaskStatus.java → Kotlin | 低 | 完成 | — |
+| 3.5 | TaskStatus.java → Kotlin | 低 | 完成 | bdec88a6 |
 | 3.6 | TaskRunnerAdapter.java → Kotlin | 低 | 待办 | — |
 | 3.7 | ChildTaskExecutor.java → Kotlin | 低 | 待办 | — |
 | 4.1 | RpcVersion.java → Kotlin | 低 | 待办 | — |

@@ -596,7 +596,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 0.2 | 修复 TaskExecutor.kt 包名错误 | 低 | 完成 | 75b9afe6 |
 | 0.3 | 修复 ReserveaMap 拼写错误 | 低 | 完成 | 75b9afe6 |
 | — | **Phase 0 完成** | — | — | tag: phase-0-done |
-| 1.1 | TypeUtil.java → Kotlin | 低 | 待办 | — |
+| 1.1 | TypeUtil.java → Kotlin | 低 | 完成 | — |
 | 1.2 | StringUtil.java → Kotlin | 低 | 待办 | — |
 | 1.3 | ListUtil.java → Kotlin | 低 | 待办 | — |
 | 1.4 | TimeUtil.java → Kotlin | 低 | 待办 | — |

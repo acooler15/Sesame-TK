@@ -607,7 +607,7 @@ refactor(phase-1): [1.4] TimeUtil.java → Kotlin
 | 1.9 | CircularFifoQueue.java → Kotlin | 低 | 完成 | — |
 | 1.10 | HanziToPinyin.java → Kotlin | 低 | 完成 | — |
 | 1.11 | LanguageUtil.java → Kotlin | 低 | 完成 | — |
-| 1.12 | PortUtil.java → Kotlin | 低 | 待办 | — |
+| 1.12 | PortUtil.java → Kotlin | 低 | 完成 | — |
 | 1.13 | ResChecker.java → Kotlin | 低 | 待办 | — |
 | 1.14 | JsonUtil.java → Kotlin | 中 | 待办 | — |
 | 1.15 | util/maps/ Java 文件 → Kotlin | 低 | 待办 | — |

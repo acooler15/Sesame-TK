@@ -82,8 +82,8 @@ import fansirsqi.xposed.sesame.util.ModuleStatus
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.notify.Notify.stop
 import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
-import fansirsqi.xposed.sesame.util.PermissionUtil
-import fansirsqi.xposed.sesame.util.PermissionUtil.checkBatteryPermissions
+import fansirsqi.xposed.sesame.core.permission.PermissionUtil
+import fansirsqi.xposed.sesame.core.permission.PermissionUtil.checkBatteryPermissions
 import fansirsqi.xposed.sesame.util.StatusManager.updateStatus
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap

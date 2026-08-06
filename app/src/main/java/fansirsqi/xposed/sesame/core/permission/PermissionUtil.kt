@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.util
+package fansirsqi.xposed.sesame.core.permission
 import fansirsqi.xposed.sesame.core.log.Log
 
 import android.Manifest

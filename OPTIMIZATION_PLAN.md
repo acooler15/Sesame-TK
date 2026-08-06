@@ -209,8 +209,8 @@ fansirsqi.xposed.sesame
 | 7.4 | core/reflect/ 迁移 | 中 | 完成 | 58eec5a1 |
 | 7.5 | core/util/ 迁移 | 中 | 完成 | 43bcceae |
 | 7.6 | core/threads/ 迁移 | 中 | 完成 | 787946a4 |
-| 7.7 | core/notify/ 迁移 | 中 | 完成 | 待回填 |
-| 7.8 | core/permission/ 迁移 | 低 | 待开始 | — |
+| 7.7 | core/notify/ 迁移 | 中 | 完成 | 00e73f5c |
+| 7.8 | core/permission/ 迁移 | 低 | 完成 | 待回填 |
 | 7.9 | core/store/ 迁移 | 低 | 待开始 | — |
 | 7.10 | core/app/ 迁移 | 高 | 待开始 | — |
 | — | **Phase 7 完成** | — | — | — |

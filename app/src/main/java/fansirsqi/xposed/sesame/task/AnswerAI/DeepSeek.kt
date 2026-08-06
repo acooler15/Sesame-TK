@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.task.AnswerAI
 
-import fansirsqi.xposed.sesame.util.JsonUtil.getValueByPath
+import fansirsqi.xposed.sesame.core.json.JsonUtil.getValueByPath
 import fansirsqi.xposed.sesame.util.Log
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient

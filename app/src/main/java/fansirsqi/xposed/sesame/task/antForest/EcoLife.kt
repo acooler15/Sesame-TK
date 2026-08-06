@@ -5,7 +5,7 @@ import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.DataStore.put
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.RandomUtil
 import fansirsqi.xposed.sesame.util.ResChecker

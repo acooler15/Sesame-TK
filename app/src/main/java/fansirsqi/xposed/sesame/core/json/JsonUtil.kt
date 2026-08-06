@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.util
+package fansirsqi.xposed.sesame.core.json
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonFactory
@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import fansirsqi.xposed.sesame.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.reflect.Type

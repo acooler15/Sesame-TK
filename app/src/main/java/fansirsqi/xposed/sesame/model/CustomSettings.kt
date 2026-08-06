@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.ListUtil
 import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.TimeUtil

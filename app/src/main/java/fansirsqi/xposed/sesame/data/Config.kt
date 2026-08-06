@@ -9,7 +9,7 @@ import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.task.TaskCommon
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.StringUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap

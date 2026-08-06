@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.android.material.button.MaterialButton
 import fansirsqi.xposed.sesame.R
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.TypeUtil
 import org.json.JSONException
 import java.io.Serializable

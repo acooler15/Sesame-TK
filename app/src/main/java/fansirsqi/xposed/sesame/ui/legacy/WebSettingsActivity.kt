@@ -40,7 +40,7 @@ import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.LanguageUtil
 import fansirsqi.xposed.sesame.util.Log
 import fansirsqi.xposed.sesame.util.PortUtil

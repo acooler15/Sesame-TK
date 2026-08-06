@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.util.maps
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
+import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.util.Log
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap

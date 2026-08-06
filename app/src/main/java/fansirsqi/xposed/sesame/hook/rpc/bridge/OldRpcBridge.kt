@@ -23,6 +23,7 @@ class OldRpcBridge : RpcBridge {
     private var getResponseMethod: Method? = null
     private var curH5PageImpl: Any? = null
 
+    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
     override fun getVersion(): RpcVersion {
         return RpcVersion.OLD // 返回 RPC 的版本
     }

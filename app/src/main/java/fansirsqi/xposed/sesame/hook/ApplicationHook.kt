@@ -38,7 +38,6 @@ import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.schedule
 import fansirsqi.xposed.sesame.hook.rpc.bridge.NewRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.OldRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
-import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcVersion
 import fansirsqi.xposed.sesame.hook.rpc.debug.DebugRpc
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.clearIntervalLimit
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
@@ -595,8 +594,6 @@ class ApplicationHook {
         var rpcBridge: RpcBridge? = null
         private val rpcBridgeLock = Any()
 
-        private var rpcVersion: RpcVersion? = null
-
         @Volatile
         var lastExecTime: Long = 0
 
@@ -737,7 +734,6 @@ class ApplicationHook {
                 synchronized(rpcBridgeLock) {
                     rpcBridge = if (newRpc.value) NewRpcBridge() else OldRpcBridge()
                     rpcBridge!!.load()
-                    rpcVersion = rpcBridge!!.getVersion()
                 }
 
                 if (newRpc.value && debugMode.value) {
@@ -803,7 +799,6 @@ class ApplicationHook {
 
                 synchronized(rpcBridgeLock) {
                     if (rpcBridge != null) {
-                        rpcVersion = null
                         rpcBridge!!.unload()
                         rpcBridge = null
                     }

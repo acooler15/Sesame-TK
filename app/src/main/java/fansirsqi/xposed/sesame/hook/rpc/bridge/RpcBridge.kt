@@ -3,6 +3,7 @@ package fansirsqi.xposed.sesame.hook.rpc.bridge
 import fansirsqi.xposed.sesame.entity.RpcEntity
 
 interface RpcBridge {
+    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
     fun getVersion(): RpcVersion
 
     @Throws(Exception::class)

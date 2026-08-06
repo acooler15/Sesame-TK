@@ -67,6 +67,7 @@ class NewRpcBridge : RpcBridge {
         }
     }
 
+    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
     override fun getVersion(): RpcVersion {
         return RpcVersion.NEW
     }

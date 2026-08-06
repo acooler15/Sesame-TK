@@ -49,7 +49,7 @@ import fansirsqi.xposed.sesame.core.notify.Notify.updateLastExecText
 import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeCounter
 import fansirsqi.xposed.sesame.core.util.TimeFormatter
 import fansirsqi.xposed.sesame.core.util.TimeUtil

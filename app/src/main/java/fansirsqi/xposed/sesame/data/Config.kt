@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.task.TaskCommon
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.StringUtil

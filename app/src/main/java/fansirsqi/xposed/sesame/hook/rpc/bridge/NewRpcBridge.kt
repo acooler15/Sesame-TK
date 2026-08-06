@@ -12,7 +12,7 @@ import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.RandomUtil
-import fansirsqi.xposed.sesame.util.SwipeUtil
+import fansirsqi.xposed.sesame.core.app.SwipeUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy

@@ -38,7 +38,7 @@ import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.core.util.StringUtil
-import fansirsqi.xposed.sesame.util.TaskBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeCounter
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.IdMapManager

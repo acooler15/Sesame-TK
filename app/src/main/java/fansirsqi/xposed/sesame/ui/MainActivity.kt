@@ -24,10 +24,10 @@ import fansirsqi.xposed.sesame.ui.screen.MainScreen
 import fansirsqi.xposed.sesame.ui.theme.AppTheme
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
-import fansirsqi.xposed.sesame.util.CommandUtil
+import fansirsqi.xposed.sesame.core.app.CommandUtil
 import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.IconManager
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.app.IconManager
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.permission.PermissionUtil
 import fansirsqi.xposed.sesame.core.notify.ToastUtil

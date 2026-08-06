@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.app
 import android.Manifest
 import android.content.Context
 import android.net.ConnectivityManager

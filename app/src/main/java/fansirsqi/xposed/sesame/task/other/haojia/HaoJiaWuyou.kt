@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.task.other.haojia
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import org.json.JSONObject
 

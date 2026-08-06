@@ -48,7 +48,7 @@ import fansirsqi.xposed.sesame.ui.extension.performNavigationToSettings
 import fansirsqi.xposed.sesame.ui.screen.components.SettingsItem
 import fansirsqi.xposed.sesame.ui.screen.components.UserItemCard
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager.setDynamicColor
-import fansirsqi.xposed.sesame.util.IconManager
+import fansirsqi.xposed.sesame.core.app.IconManager
 
 
 @Composable

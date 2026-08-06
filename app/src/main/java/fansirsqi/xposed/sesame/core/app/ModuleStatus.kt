@@ -1,6 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
-
+package fansirsqi.xposed.sesame.core.app
 import java.io.InputStream
 
 /**

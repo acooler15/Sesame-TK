@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.app
 import android.os.Build
 import android.os.FileObserver
 import kotlinx.coroutines.channels.awaitClose

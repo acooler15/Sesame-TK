@@ -8,7 +8,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.rolling.RollingFileAppender
 import ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy
 import ch.qos.logback.core.util.FileSize
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import org.slf4j.LoggerFactory
 import java.io.File
 

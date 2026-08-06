@@ -16,7 +16,7 @@ import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
-import fansirsqi.xposed.sesame.util.TaskBlacklist.autoAddToBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist.autoAddToBlacklist
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.antOrchard.AntOrchardRpcCall.orchardSpreadManure
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
@@ -24,7 +24,7 @@ import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.log.Log.record
 import fansirsqi.xposed.sesame.core.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.MemberBenefitsMap

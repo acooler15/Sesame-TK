@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.hook.simple
 
-import fansirsqi.xposed.sesame.util.CommandUtil
+import fansirsqi.xposed.sesame.core.app.CommandUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

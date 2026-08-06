@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.entity
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.log.Log
 
 /**

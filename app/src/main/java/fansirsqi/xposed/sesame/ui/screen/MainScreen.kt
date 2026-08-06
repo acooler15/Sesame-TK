@@ -39,7 +39,7 @@ import fansirsqi.xposed.sesame.ui.screen.content.HomeContent
 import fansirsqi.xposed.sesame.ui.screen.content.LogsContent
 import fansirsqi.xposed.sesame.ui.screen.content.SettingsContent
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
-import fansirsqi.xposed.sesame.util.CommandUtil.serviceStatus
+import fansirsqi.xposed.sesame.core.app.CommandUtil.serviceStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

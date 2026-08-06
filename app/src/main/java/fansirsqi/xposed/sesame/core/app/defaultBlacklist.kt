@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.app
 /**
  * 默认黑名单列表（包含常见无法完成的任务）
  *

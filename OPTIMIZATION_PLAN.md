@@ -211,8 +211,8 @@ fansirsqi.xposed.sesame
 | 7.6 | core/threads/ 迁移 | 中 | 完成 | 787946a4 |
 | 7.7 | core/notify/ 迁移 | 中 | 完成 | 00e73f5c |
 | 7.8 | core/permission/ 迁移 | 低 | 完成 | abc2728c |
-| 7.9 | core/store/ 迁移 | 低 | 完成 | 待回填 |
-| 7.10 | core/app/ 迁移 | 高 | 待开始 | — |
+| 7.9 | core/store/ 迁移 | 低 | 完成 | 01f7e14d |
+| 7.10 | core/app/ 迁移 | 高 | 完成 | 待回填（Detector.kt 因 JNI 静态符号绑定 util 包名保留原位） |
 | — | **Phase 7 完成** | — | — | — |
 | 8.1 | ApplicationHook 拆分 | 高 | 待开始 | — |
 | 8.2 | AntForest 拆分 | 高 | 待开始 | — |

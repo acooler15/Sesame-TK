@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.NetworkUtils
+import fansirsqi.xposed.sesame.core.app.NetworkUtils
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import java.util.concurrent.atomic.AtomicInteger

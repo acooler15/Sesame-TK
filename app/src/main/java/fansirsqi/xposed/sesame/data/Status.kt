@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.data
 import com.fasterxml.jackson.databind.JsonMappingException
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.antForest.AntForest
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.StringUtil

@@ -10,8 +10,8 @@ import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist.autoAddToBlacklist
-import fansirsqi.xposed.sesame.util.TaskBlacklist.isTaskInBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist.autoAddToBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist.isTaskInBlacklist
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader

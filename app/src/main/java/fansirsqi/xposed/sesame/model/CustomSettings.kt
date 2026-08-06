@@ -9,8 +9,8 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.ListModelField.ListJoinCommaToStringModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
-import fansirsqi.xposed.sesame.util.FansirsqiUtil
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.FansirsqiUtil
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log

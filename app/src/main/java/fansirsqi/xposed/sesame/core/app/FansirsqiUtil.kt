@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.util
+package fansirsqi.xposed.sesame.core.app
 import fansirsqi.xposed.sesame.core.log.Log
 
 import kotlinx.coroutines.Dispatchers

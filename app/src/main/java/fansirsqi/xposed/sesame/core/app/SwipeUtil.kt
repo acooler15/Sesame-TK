@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.app
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent

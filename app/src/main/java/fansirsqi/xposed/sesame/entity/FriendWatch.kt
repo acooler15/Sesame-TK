@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.entity
 
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.StringUtil

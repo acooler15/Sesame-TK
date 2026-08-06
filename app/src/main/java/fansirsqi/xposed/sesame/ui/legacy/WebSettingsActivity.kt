@@ -39,7 +39,7 @@ import fansirsqi.xposed.sesame.ui.extension.WatermarkInjector
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
-import fansirsqi.xposed.sesame.util.Files
+import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.util.LanguageUtil
 import fansirsqi.xposed.sesame.core.log.Log

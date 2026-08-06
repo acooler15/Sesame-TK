@@ -1,6 +1,6 @@
 @file:JvmName("Files") // 让 Java 调用时类名依然是 Files
 
-package fansirsqi.xposed.sesame.util
+package fansirsqi.xposed.sesame.core.app
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log

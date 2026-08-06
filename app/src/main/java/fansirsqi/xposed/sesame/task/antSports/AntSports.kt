@@ -22,7 +22,7 @@ import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONArray

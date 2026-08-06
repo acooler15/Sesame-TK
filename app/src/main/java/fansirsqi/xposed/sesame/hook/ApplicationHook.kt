@@ -72,8 +72,8 @@ import fansirsqi.xposed.sesame.util.DataStore.init
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.Detector.loadLibrary
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.GlobalThreadPools.execute
-import fansirsqi.xposed.sesame.util.GlobalThreadPools.shutdownAndRestart
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools.execute
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools.shutdownAndRestart
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.log.Log.error
 import fansirsqi.xposed.sesame.core.log.Log.printStackTrace

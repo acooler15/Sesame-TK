@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.task.antForest
 
-import fansirsqi.xposed.sesame.util.CoroutineUtils
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.ResChecker
 import org.json.JSONObject

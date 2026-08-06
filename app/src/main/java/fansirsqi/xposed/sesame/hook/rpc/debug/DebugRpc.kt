@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.hook.rpc.debug
 
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.task.reserve.ReserveRpcCall
-import fansirsqi.xposed.sesame.util.GlobalThreadPools
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.ResChecker
 import org.json.JSONException

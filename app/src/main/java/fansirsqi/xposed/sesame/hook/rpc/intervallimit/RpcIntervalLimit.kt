@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.hook.rpc.intervallimit
 
-import fansirsqi.xposed.sesame.util.GlobalThreadPools
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import java.util.concurrent.ConcurrentHashMap
 

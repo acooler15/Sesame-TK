@@ -1,6 +1,7 @@
 package fansirsqi.xposed.sesame.core.util
+
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.CoroutineUtils
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 
 import android.annotation.SuppressLint
 import java.text.DateFormat

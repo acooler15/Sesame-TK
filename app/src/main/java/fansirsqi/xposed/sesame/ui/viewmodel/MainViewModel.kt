@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.service.LsposedServiceManager
 import fansirsqi.xposed.sesame.ui.screen.DeviceInfoUtil
 import fansirsqi.xposed.sesame.util.AssetUtil
 import fansirsqi.xposed.sesame.util.CommandUtil
-import fansirsqi.xposed.sesame.util.DataStore
+import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.util.DirectoryWatcher
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.util.Files

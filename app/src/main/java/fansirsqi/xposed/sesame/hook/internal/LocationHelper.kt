@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook.internal
 
 import de.robv.android.xposed.XposedHelpers
-import fansirsqi.xposed.sesame.util.DataStore
+import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers

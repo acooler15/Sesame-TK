@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.store
 import android.annotation.SuppressLint
 import android.util.Log
 import com.fasterxml.jackson.core.type.TypeReference

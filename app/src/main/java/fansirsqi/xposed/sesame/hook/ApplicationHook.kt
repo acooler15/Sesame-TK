@@ -68,7 +68,7 @@ import fansirsqi.xposed.sesame.util.AssetUtil.copyStorageSoFileToPrivateDir
 import fansirsqi.xposed.sesame.util.AssetUtil.dexkitDestFile
 import fansirsqi.xposed.sesame.util.AssetUtil.tfliteDestFile
 import fansirsqi.xposed.sesame.util.AssetUtil.tfliteGpuDestFile
-import fansirsqi.xposed.sesame.util.DataStore.init
+import fansirsqi.xposed.sesame.core.store.DataStore.init
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.Detector.loadLibrary
 import fansirsqi.xposed.sesame.util.Files

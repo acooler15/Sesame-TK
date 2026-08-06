@@ -12,7 +12,7 @@ import com.fasterxml.jackson.core.type.TypeReference
 import fansirsqi.xposed.sesame.BuildConfig
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.CustomSettings
-import fansirsqi.xposed.sesame.util.DataStore
+import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.core.log.Log

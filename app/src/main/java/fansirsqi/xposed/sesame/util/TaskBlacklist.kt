@@ -1,4 +1,5 @@
 package fansirsqi.xposed.sesame.util
+import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.core.log.Log
 
 import com.fasterxml.jackson.core.type.TypeReference

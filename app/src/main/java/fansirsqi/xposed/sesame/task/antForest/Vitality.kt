@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.task.antForest
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.VitalityStore.ExchangeStatus
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap

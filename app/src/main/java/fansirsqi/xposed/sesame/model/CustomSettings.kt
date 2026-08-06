@@ -12,9 +12,9 @@ import fansirsqi.xposed.sesame.ui.widget.ListDialog
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.ListUtil
+import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import java.lang.reflect.Field

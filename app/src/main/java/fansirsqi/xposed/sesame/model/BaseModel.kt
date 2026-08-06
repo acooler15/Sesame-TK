@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField.MultiplyIntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.ListModelField.ListJoinCommaToStringModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.StringModelField
-import fansirsqi.xposed.sesame.util.ListUtil
+import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.BeachMap
 import fansirsqi.xposed.sesame.util.maps.IdMapManager

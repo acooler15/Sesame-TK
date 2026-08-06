@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.withSave
 import fansirsqi.xposed.sesame.BuildConfig
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel.Companion.verifuids
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 

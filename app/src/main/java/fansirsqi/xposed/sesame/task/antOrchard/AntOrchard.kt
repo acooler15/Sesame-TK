@@ -15,8 +15,8 @@ import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.task.GameTask
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.RandomUtil
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.TaskBlacklist
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject

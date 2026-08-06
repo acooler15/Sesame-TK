@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.task.antDodo
 
 import org.json.JSONObject
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
 
 object AntDodoRpcCall {
     private const val VERSION = "20241203"

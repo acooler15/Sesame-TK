@@ -7,7 +7,7 @@ import android.content.Intent
 import android.os.Build
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 
 /**
  * 调度器 - 基于 AlarmManager 实现

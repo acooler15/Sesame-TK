@@ -7,9 +7,9 @@ import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.DataStore.put
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.RandomUtil
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject

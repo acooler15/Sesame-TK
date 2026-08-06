@@ -85,7 +85,7 @@ import fansirsqi.xposed.sesame.util.Notify.updateStatusText
 import fansirsqi.xposed.sesame.util.PermissionUtil
 import fansirsqi.xposed.sesame.util.PermissionUtil.checkBatteryPermissions
 import fansirsqi.xposed.sesame.util.StatusManager.updateStatus
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.UserMap.currentUid
 import io.github.libxposed.api.XposedInterface

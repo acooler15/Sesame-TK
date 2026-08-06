@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antStall
 
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.StringUtil
 
 /**
  * @file ReadingDadaRpcCall.kt

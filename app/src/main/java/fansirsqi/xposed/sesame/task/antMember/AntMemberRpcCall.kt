@@ -5,8 +5,8 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.UUID
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.RandomUtil
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 
 object AntMemberRpcCall {
     private fun getUniqueId(): String {

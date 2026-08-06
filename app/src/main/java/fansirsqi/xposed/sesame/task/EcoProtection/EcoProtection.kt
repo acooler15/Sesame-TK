@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.TaskCommon
 import fansirsqi.xposed.sesame.util.GlobalThreadPools.sleepCompat
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date

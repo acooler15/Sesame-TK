@@ -8,7 +8,7 @@ import java.security.NoSuchAlgorithmException
 import java.util.UUID
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
 
 object AntFarmRpcCall {
     private const val VERSION = "1.8.2302070202.46"

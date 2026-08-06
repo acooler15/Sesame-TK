@@ -9,7 +9,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.TaskBlacklist.autoAddToBlacklist
 import fansirsqi.xposed.sesame.util.TaskBlacklist.isTaskInBlacklist
 import org.json.JSONObject

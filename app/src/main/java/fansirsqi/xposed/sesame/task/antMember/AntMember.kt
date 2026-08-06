@@ -23,9 +23,9 @@ import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.log.Log.record
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.TaskBlacklist
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.MemberBenefitsMap
 import fansirsqi.xposed.sesame.util.maps.SesameGiftMap

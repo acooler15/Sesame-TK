@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.util
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream

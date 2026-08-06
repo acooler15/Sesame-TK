@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.util
 /**平均值计算工具类*/
 class Average(size: Int) {
     /** 使用一个循环队列来存储固定数量的数值*/

@@ -41,10 +41,10 @@ import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.LanguageUtil
+import fansirsqi.xposed.sesame.core.util.LanguageUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.PortUtil
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.PortUtil
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import fansirsqi.xposed.sesame.util.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.BeachMap
 import fansirsqi.xposed.sesame.util.maps.CooperateMap

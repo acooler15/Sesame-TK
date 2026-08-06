@@ -10,7 +10,7 @@ import fansirsqi.xposed.sesame.task.antForest.AntForest
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.Notify.setStatusTextExec
 import fansirsqi.xposed.sesame.util.Notify.updateNextExecText
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

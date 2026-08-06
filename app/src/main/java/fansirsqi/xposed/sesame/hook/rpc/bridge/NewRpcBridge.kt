@@ -11,9 +11,9 @@ import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.Notify
-import fansirsqi.xposed.sesame.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.util.SwipeUtil
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.concurrent.atomic.AtomicInteger

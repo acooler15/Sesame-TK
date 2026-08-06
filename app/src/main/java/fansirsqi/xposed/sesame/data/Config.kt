@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.task.TaskCommon
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import java.io.File
 import java.io.IOException

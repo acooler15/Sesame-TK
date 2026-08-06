@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antFishPond
 
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
 import org.json.JSONArray
 import org.json.JSONObject
 

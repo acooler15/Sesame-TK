@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.task.antForest
 
 import android.annotation.SuppressLint
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope

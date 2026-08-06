@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.util
 /** 列表工具类，提供对列表的常用操作。 */
 object ListUtil {
     /**

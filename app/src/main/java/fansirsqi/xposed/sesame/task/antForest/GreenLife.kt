@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.task.antForest
 
 import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import org.json.JSONObject
 
 object GreenLife {

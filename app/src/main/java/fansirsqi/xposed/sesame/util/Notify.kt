@@ -1,4 +1,6 @@
 package fansirsqi.xposed.sesame.util
+import fansirsqi.xposed.sesame.core.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.core.log.Log
 
 //import android.R

@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.task
 
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 
 /**
  * 通用任务工具类

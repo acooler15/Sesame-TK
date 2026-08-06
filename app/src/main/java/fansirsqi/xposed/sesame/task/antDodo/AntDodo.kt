@@ -13,8 +13,8 @@ import fansirsqi.xposed.sesame.task.TaskStatus
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONArray
 import org.json.JSONException

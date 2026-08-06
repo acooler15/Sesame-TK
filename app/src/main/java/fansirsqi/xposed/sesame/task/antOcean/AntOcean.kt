@@ -16,8 +16,8 @@ import fansirsqi.xposed.sesame.task.antForest.AntForestRpcCall
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import fansirsqi.xposed.sesame.util.maps.BeachMap
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap

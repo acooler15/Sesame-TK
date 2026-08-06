@@ -9,7 +9,7 @@ import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.NetworkUtils
 import fansirsqi.xposed.sesame.util.Notify
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import java.util.concurrent.atomic.AtomicInteger
 
 /**

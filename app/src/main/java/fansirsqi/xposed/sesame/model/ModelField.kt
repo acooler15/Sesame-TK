@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.android.material.button.MaterialButton
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.TypeUtil
+import fansirsqi.xposed.sesame.core.reflect.TypeUtil
 import org.json.JSONException
 import java.io.Serializable
 import java.lang.reflect.Type

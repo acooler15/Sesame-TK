@@ -205,8 +205,8 @@ fansirsqi.xposed.sesame
 | — | **Phase 6 完成** | — | — | tag: phase-6-done |
 | 7.1 | 创建 core/ 包结构 | 低 | 完成 | e0c96641 |
 | 7.2 | core/json/ 迁移 | 中 | 完成 | c6158c63 |
-| 7.3 | core/log/ 迁移 | 中 | 完成 | 待回填 |
-| 7.4 | core/reflect/ 迁移 | 中 | 待开始 | — |
+| 7.3 | core/log/ 迁移 | 中 | 完成 | dfbed35a |
+| 7.4 | core/reflect/ 迁移 | 中 | 完成 | 待回填 |
 | 7.5 | core/util/ 迁移 | 中 | 待开始 | — |
 | 7.6 | core/threads/ 迁移 | 中 | 待开始 | — |
 | 7.7 | core/notify/ 迁移 | 中 | 待开始 | — |

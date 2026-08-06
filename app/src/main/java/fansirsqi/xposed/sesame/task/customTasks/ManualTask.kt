@@ -6,7 +6,7 @@ import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.antFarm.AntFarm
 import fansirsqi.xposed.sesame.task.antForest.AntForest
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

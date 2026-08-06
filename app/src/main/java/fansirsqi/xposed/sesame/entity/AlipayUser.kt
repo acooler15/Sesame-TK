@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.entity
 
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.UserMap
 
 /**

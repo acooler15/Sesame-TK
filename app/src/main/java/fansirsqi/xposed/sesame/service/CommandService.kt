@@ -16,7 +16,7 @@ import fansirsqi.xposed.sesame.ICommandService
 import fansirsqi.xposed.sesame.IStatusListener
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.ui.MainActivity
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

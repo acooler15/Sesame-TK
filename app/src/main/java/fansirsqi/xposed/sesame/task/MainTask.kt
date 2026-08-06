@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.task
 
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

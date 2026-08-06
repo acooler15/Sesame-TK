@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.RandomUtil
 
 /**

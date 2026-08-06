@@ -6,7 +6,7 @@ import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.UserEntity
 import fansirsqi.xposed.sesame.util.AssetUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap

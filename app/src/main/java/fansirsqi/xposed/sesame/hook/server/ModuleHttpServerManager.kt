@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.hook.server
 
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fi.iki.elonen.NanoHTTPD
 
 /**

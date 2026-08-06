@@ -11,7 +11,7 @@ import android.view.View
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.hook.simple.xpcompat.CompatHelpers
-import fansirsqi.xposed.sesame.util.Log as SesameLog
+import fansirsqi.xposed.sesame.core.log.Log as SesameLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

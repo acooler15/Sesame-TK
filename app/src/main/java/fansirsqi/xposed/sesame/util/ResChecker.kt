@@ -1,4 +1,5 @@
 package fansirsqi.xposed.sesame.util
+import fansirsqi.xposed.sesame.core.log.Log
 
 import org.json.JSONException
 import org.json.JSONObject

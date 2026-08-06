@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook.internal
 
 import de.robv.android.xposed.XposedHelpers
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 支付宝小程序游戏获取alipayminimark

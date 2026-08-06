@@ -1,4 +1,5 @@
 package fansirsqi.xposed.sesame.util
+import fansirsqi.xposed.sesame.core.log.Log
 
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import java.io.File

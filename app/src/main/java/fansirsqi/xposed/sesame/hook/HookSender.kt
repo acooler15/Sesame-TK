@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook
 
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import okhttp3.MediaType
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

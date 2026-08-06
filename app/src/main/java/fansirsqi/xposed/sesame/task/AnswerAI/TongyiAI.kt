@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.AnswerAI
 
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request

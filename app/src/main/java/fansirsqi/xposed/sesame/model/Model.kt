@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.model
 
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.task.ModelTask
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import java.lang.reflect.InvocationTargetException
 import java.util.Collections
 import java.util.LinkedHashMap

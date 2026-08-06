@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.task.antStall
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.task.AnswerAI.AnswerAI
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import org.json.JSONObject
 
 /**

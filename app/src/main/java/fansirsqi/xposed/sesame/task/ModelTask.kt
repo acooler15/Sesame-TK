@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelType
 import fansirsqi.xposed.sesame.task.antForest.AntForest
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.Notify.setStatusTextExec
 import fansirsqi.xposed.sesame.util.Notify.updateNextExecText
 import fansirsqi.xposed.sesame.util.StringUtil

@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.task.ModelTask
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.VipDataIdMap

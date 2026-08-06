@@ -22,7 +22,7 @@ import fansirsqi.xposed.sesame.ui.legacy.WebSettingsActivity
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ToastUtil
 
 /**

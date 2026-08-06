@@ -1,4 +1,5 @@
 package fansirsqi.xposed.sesame.util
+import fansirsqi.xposed.sesame.core.log.Log
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

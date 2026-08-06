@@ -13,7 +13,7 @@ import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.entity.MapperEntity
 import fansirsqi.xposed.sesame.model.SelectModelFieldFunc
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import java.util.ArrayList
 import java.util.Collections
 import kotlin.math.max

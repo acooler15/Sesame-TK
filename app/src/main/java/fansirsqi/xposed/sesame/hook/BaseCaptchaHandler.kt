@@ -18,7 +18,7 @@ import fansirsqi.xposed.sesame.hook.simple.ViewHierarchyAnalyzer
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
 import fansirsqi.xposed.sesame.hook.simple.SystemInputSwiper
 import fansirsqi.xposed.sesame.util.CommandUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.UnlockUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex

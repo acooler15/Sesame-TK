@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antForest
 
 import fansirsqi.xposed.sesame.data.Status
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject

@@ -4,7 +4,7 @@ import fansirsqi.xposed.sesame.hook.server.handlers.AlipayMiniMarkHandler
 import fansirsqi.xposed.sesame.hook.server.handlers.AuthCodeHandler
 import fansirsqi.xposed.sesame.hook.server.handlers.DebugHandler
 import fansirsqi.xposed.sesame.hook.server.handlers.HttpHandler
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fi.iki.elonen.NanoHTTPD
 import java.io.DataInputStream
 import java.nio.charset.StandardCharsets

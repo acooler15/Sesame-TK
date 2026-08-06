@@ -44,7 +44,7 @@ import fansirsqi.xposed.sesame.ui.ObjReference
 import fansirsqi.xposed.sesame.util.Average
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
 import fansirsqi.xposed.sesame.util.ListUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.Notify.updateLastExecText
 import fansirsqi.xposed.sesame.util.Notify.updateStatusText
 import fansirsqi.xposed.sesame.util.RandomUtil

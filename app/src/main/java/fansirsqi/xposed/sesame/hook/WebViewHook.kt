@@ -3,8 +3,8 @@ package fansirsqi.xposed.sesame.hook
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.Log.record
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.log.Log.record
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Locale

@@ -6,7 +6,7 @@ import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 手动任务模型

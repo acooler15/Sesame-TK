@@ -5,7 +5,7 @@ import android.graphics.*
 import android.os.Looper
 import fansirsqi.xposed.sesame.ml.Slider
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex

@@ -5,7 +5,7 @@ import fansirsqi.xposed.sesame.entity.UserEntity
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 

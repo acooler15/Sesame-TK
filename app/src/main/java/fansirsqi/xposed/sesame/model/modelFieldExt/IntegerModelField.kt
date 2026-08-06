@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.ModelField
 import fansirsqi.xposed.sesame.ui.widget.StringDialog
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * Integer 类型字段类，继承自 ModelField<Integer>

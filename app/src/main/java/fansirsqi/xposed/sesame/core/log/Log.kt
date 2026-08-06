@@ -1,5 +1,4 @@
-package fansirsqi.xposed.sesame.util
-
+package fansirsqi.xposed.sesame.core.log
 import android.content.Context
 import fansirsqi.xposed.sesame.model.BaseModel
 import org.slf4j.Logger

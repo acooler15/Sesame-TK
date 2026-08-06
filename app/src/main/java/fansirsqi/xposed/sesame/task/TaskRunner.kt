@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.CustomSettings
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.customTasks.ManualTask
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.TimeUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException

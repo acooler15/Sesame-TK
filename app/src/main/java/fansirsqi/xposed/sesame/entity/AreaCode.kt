@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 区域代码类，继承自IdAndName。

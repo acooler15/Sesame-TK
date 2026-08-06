@@ -15,7 +15,7 @@ import fansirsqi.xposed.sesame.model.CustomSettings
 import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ToastUtil
 import rikka.shizuku.Shizuku
 

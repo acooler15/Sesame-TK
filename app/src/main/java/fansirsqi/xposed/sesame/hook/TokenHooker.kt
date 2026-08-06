@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.hook
 
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VipDataIdMap
 import org.json.JSONObject

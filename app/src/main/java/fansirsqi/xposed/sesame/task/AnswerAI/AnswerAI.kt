@@ -6,7 +6,7 @@ import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.ChoiceModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.StringModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.TextModelField
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 class AnswerAI : Model() {
 

@@ -204,8 +204,8 @@ fansirsqi.xposed.sesame
 | 6.3 | 合并 JsonHelper 至 JsonUtil | 中 | 完成 | cee08adc |
 | — | **Phase 6 完成** | — | — | tag: phase-6-done |
 | 7.1 | 创建 core/ 包结构 | 低 | 完成 | e0c96641 |
-| 7.2 | core/json/ 迁移 | 中 | 完成 | 待回填 |
-| 7.3 | core/log/ 迁移 | 中 | 待开始 | — |
+| 7.2 | core/json/ 迁移 | 中 | 完成 | c6158c63 |
+| 7.3 | core/log/ 迁移 | 中 | 完成 | 待回填 |
 | 7.4 | core/reflect/ 迁移 | 中 | 待开始 | — |
 | 7.5 | core/util/ 迁移 | 中 | 待开始 | — |
 | 7.6 | core/threads/ 迁移 | 中 | 待开始 | — |

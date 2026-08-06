@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.task
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection

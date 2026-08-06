@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.task.antForest
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.task.GameTask
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ResChecker
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.delay

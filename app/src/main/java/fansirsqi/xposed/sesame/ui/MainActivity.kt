@@ -28,7 +28,7 @@ import fansirsqi.xposed.sesame.util.CommandUtil
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.util.IconManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.PermissionUtil
 import fansirsqi.xposed.sesame.util.ToastUtil
 import kotlinx.coroutines.delay

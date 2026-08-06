@@ -5,7 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.showToast
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.toastPerfix
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ToastUtil
 
 object Toast {

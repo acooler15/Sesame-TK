@@ -3,7 +3,7 @@ package fansirsqi.xposed.sesame.hook.keepalive
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.PowerManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.TimeUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope

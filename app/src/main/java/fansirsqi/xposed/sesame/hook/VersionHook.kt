@@ -6,8 +6,8 @@ import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.AlipayVersion
-import fansirsqi.xposed.sesame.util.Log.printStackTrace
-import fansirsqi.xposed.sesame.util.Log.record
+import fansirsqi.xposed.sesame.core.log.Log.printStackTrace
+import fansirsqi.xposed.sesame.core.log.Log.record
 import kotlin.concurrent.Volatile
 
 /**

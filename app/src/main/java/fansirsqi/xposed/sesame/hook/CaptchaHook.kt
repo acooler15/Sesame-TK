@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook
 
 import de.robv.android.xposed.XposedHelpers
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 验证码触发工具类

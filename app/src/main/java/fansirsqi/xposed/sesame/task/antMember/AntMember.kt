@@ -21,8 +21,8 @@ import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.antOrchard.AntOrchardRpcCall.orchardSpreadManure
 import fansirsqi.xposed.sesame.util.CoroutineUtils
 import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.Log.record
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.log.Log.record
 import fansirsqi.xposed.sesame.util.ResChecker
 import fansirsqi.xposed.sesame.util.TaskBlacklist
 import fansirsqi.xposed.sesame.util.TimeUtil

@@ -6,7 +6,7 @@ import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.util.CoroutineUtils
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.NetworkUtils
 import fansirsqi.xposed.sesame.util.Notify
 import fansirsqi.xposed.sesame.util.TimeUtil

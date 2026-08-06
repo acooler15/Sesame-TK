@@ -10,7 +10,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.other.credit2101.Credit2101
 import fansirsqi.xposed.sesame.task.other.haojia.HaoJiaWuyou
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 class OtherTask : ModelTask() {
     override fun getName(): String {

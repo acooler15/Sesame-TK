@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectAndCountModelField
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.TaskCommon
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ResChecker
 import fansirsqi.xposed.sesame.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.CooperateMap

@@ -11,7 +11,7 @@ import androidx.core.text.HtmlCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.ModelField
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 字符串对话框工具类。

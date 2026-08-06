@@ -11,7 +11,7 @@ import androidx.lifecycle.viewModelScope
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.SesameApplication.Companion.PREFERENCES_KEY
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.ToastUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

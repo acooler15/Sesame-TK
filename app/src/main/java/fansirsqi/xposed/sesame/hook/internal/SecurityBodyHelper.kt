@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.hook.internal
 
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 
 /**
  * 安全组件数据获取助手类

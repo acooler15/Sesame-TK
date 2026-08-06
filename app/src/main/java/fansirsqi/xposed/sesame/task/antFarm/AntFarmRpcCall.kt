@@ -7,7 +7,7 @@ import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.UUID
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.RandomUtil
 
 object AntFarmRpcCall {

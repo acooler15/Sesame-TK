@@ -16,7 +16,7 @@ import fansirsqi.xposed.sesame.util.DirectoryWatcher
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.util.IconManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.StatusManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.Dispatchers

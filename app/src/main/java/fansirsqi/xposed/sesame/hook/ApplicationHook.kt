@@ -74,10 +74,10 @@ import fansirsqi.xposed.sesame.util.Detector.loadLibrary
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.util.GlobalThreadPools.execute
 import fansirsqi.xposed.sesame.util.GlobalThreadPools.shutdownAndRestart
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.Log.error
-import fansirsqi.xposed.sesame.util.Log.printStackTrace
-import fansirsqi.xposed.sesame.util.Log.record
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.log.Log.error
+import fansirsqi.xposed.sesame.core.log.Log.printStackTrace
+import fansirsqi.xposed.sesame.core.log.Log.record
 import fansirsqi.xposed.sesame.util.ModuleStatus
 import fansirsqi.xposed.sesame.util.Notify
 import fansirsqi.xposed.sesame.util.Notify.stop

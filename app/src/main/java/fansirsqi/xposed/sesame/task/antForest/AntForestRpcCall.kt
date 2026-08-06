@@ -7,7 +7,7 @@ import fansirsqi.xposed.sesame.entity.AlipayVersion
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.RandomUtil
 import java.util.UUID
 

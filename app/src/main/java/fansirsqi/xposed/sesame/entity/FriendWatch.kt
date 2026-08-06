@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.entity
 
 import fansirsqi.xposed.sesame.util.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.StringUtil
 import fansirsqi.xposed.sesame.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap

@@ -24,7 +24,7 @@ class OldRpcBridge : RpcBridge {
     private var curH5PageImpl: Any? = null
 
     override fun getVersion(): RpcVersion {
-        return RpcVersion.NEW // 返回 RPC 的版本
+        return RpcVersion.OLD // 返回 RPC 的版本
     }
 
     /**

@@ -27,7 +27,7 @@ object StatusManager {
                 timestamp = System.currentTimeMillis(),
                 packageName = packageName
             )
-            val json = JsonHelper.toJson(status) // 转 JSON 字符串
+            val json = JsonUtil.toJson(status) // 转 JSON 字符串
             Files.write2File(json, getStatusFile())
             Log.d(TAG, "Status updated: $framework")
         } catch (e: Exception) {
@@ -44,11 +44,7 @@ object StatusManager {
             if (!file.exists()) return null
             // if (System.currentTimeMillis() - file.lastModified() > 5 * 60 * 1000) return null
             val json = Files.readFromFile(file)
-            // ❌ 错误写法 (Java 风格):
-            // return JsonHelper.fromJson(json, ModuleRuntimeStatus::class.java)
-            // ✅ 正确写法 (Kotlin reified 泛型):
-            // 直接用尖括号 <类型> 指定，无需传 class 参数
-            return JsonHelper.fromJson<ModuleRuntimeStatus>(json)
+            return JsonUtil.fromJson<ModuleRuntimeStatus>(json)
         } catch (e: Exception) {
             return null
         }

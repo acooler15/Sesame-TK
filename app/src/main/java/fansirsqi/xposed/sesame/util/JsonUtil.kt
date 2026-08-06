@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.type.TypeFactory
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import org.json.JSONArray
 import org.json.JSONObject
 import java.lang.reflect.Type
@@ -21,11 +22,45 @@ object JsonUtil {
     private const val TAG = "JsonUtil"
     private val MAPPER: ObjectMapper = ObjectMapper().apply { // JSON对象映射器
         // 配置 ObjectMapper
+        registerModule(KotlinModule.Builder().build()) // 支持 Kotlin data class 构造器反序列化
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false) // 忽略未知属性
         configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false) // 忽略空对象
         setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL) // 忽略空属性
         setTimeZone(TimeZone.getDefault()) // 设置时区
         dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()) // 设置日期格式
+    }
+
+    /**
+     * 将对象转换为 JSON 字符串
+     *
+     * @param obj 要转换的对象
+     * @return JSON 字符串
+     */
+    fun toJson(obj: Any): String {
+        return MAPPER.writeValueAsString(obj) // 执行序列化
+    }
+
+    /**
+     * 解析 JSON 字符串为指定类型的对象（reified 泛型）
+     *
+     * @param json JSON 字符串
+     * @param <T>  目标类型泛型
+     * @return 解析后的对象
+     */
+    inline fun <reified T> fromJson(json: String): T {
+        return fromJson(json, T::class.java) // 执行反序列化
+    }
+
+    /**
+     * 解析 JSON 字符串为指定类型的对象
+     *
+     * @param json  JSON 字符串
+     * @param clazz 目标类
+     * @param <T>   目标类型泛型
+     * @return 解析后的对象
+     */
+    fun <T> fromJson(json: String, clazz: Class<T>): T {
+        return MAPPER.readValue(json, clazz) // 执行反序列化
     }
 
     @JvmField

@@ -200,8 +200,8 @@ fansirsqi.xposed.sesame
 | Task | 标题 | 风险 | 状态 | 提交哈希 |
 |------|------|------|------|----------|
 | 6.1 | 修复 OldRpcBridge.getVersion() 返回值 | 低 | 完成 | 07228786 |
-| 6.2 | 评估并清理 rpcVersion 死字段 | 低 | 完成 | — |
-| 6.3 | 合并 JsonHelper 至 JsonUtil | 中 | 待开始 | — |
+| 6.2 | 评估并清理 rpcVersion 死字段 | 低 | 完成 | 463ff815 |
+| 6.3 | 合并 JsonHelper 至 JsonUtil | 中 | 完成 | — |
 | — | **Phase 6 完成** | — | — | — |
 | 7.1 | 创建 core/ 包结构 | 低 | 待开始 | — |
 | 7.2 | core/json/ 迁移 | 中 | 待开始 | — |

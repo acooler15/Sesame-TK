@@ -79,9 +79,9 @@ import fansirsqi.xposed.sesame.core.log.Log.error
 import fansirsqi.xposed.sesame.core.log.Log.printStackTrace
 import fansirsqi.xposed.sesame.core.log.Log.record
 import fansirsqi.xposed.sesame.util.ModuleStatus
-import fansirsqi.xposed.sesame.util.Notify
-import fansirsqi.xposed.sesame.util.Notify.stop
-import fansirsqi.xposed.sesame.util.Notify.updateStatusText
+import fansirsqi.xposed.sesame.core.notify.Notify
+import fansirsqi.xposed.sesame.core.notify.Notify.stop
+import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
 import fansirsqi.xposed.sesame.util.PermissionUtil
 import fansirsqi.xposed.sesame.util.PermissionUtil.checkBatteryPermissions
 import fansirsqi.xposed.sesame.util.StatusManager.updateStatus

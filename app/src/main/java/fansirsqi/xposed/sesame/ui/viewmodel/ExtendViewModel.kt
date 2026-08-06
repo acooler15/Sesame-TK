@@ -16,7 +16,7 @@ import fansirsqi.xposed.sesame.util.DataStore
 import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.util.FansirsqiUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import rikka.shizuku.Shizuku
 
 // 定义菜单项数据类

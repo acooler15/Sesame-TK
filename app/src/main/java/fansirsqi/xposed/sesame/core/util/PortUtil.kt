@@ -1,7 +1,8 @@
 package fansirsqi.xposed.sesame.core.util
+import fansirsqi.xposed.sesame.core.notify.Notify
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.ToastUtil
 import fansirsqi.xposed.sesame.core.log.Log
 
 import android.app.Activity

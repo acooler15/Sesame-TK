@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fansirsqi.xposed.sesame.BuildConfig
 import fansirsqi.xposed.sesame.util.CommandUtil
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

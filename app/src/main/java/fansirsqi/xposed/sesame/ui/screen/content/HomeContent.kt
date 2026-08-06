@@ -29,7 +29,7 @@ import fansirsqi.xposed.sesame.ui.screen.card.OneWordCard
 import fansirsqi.xposed.sesame.ui.screen.card.ServicesStatusCard
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
 import fansirsqi.xposed.sesame.util.CommandUtil.ServiceStatus
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 @Composable
 fun HomeContent(

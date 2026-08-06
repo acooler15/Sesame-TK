@@ -6,7 +6,7 @@ import android.os.Looper
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.showToast
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.toastPerfix
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 object Toast {
     private const val TAG: String = "Toast"

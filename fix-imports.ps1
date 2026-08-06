@@ -12,7 +12,7 @@ Get-ChildItem -Path $scanDir -Filter *.kt -File | ForEach-Object {
     $text = [System.IO.File]::ReadAllText($file)
     $needed = @()
     foreach ($cn in $ClassMap.Keys) {
-        if ($text -match "\b$cn\b" -and $text -notmatch "import\s+[\w.]+\.$cn\s*$") {
+        if ($text -match "\b$cn\b" -and $text -notmatch "(?m)^import\s+[\w.]+\.$cn\s*$") {
             $needed += "import $($ClassMap[$cn]).$cn"
         }
     }

@@ -8,8 +8,8 @@ import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelType
 import fansirsqi.xposed.sesame.task.antForest.AntForest
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.Notify.setStatusTextExec
-import fansirsqi.xposed.sesame.util.Notify.updateNextExecText
+import fansirsqi.xposed.sesame.core.notify.Notify.setStatusTextExec
+import fansirsqi.xposed.sesame.core.notify.Notify.updateNextExecText
 import fansirsqi.xposed.sesame.core.util.StringUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex

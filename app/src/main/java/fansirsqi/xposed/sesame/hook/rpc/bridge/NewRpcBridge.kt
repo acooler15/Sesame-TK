@@ -10,7 +10,7 @@ import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.Notify
+import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.util.SwipeUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil

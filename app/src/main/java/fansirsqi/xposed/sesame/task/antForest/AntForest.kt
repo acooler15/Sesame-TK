@@ -45,8 +45,8 @@ import fansirsqi.xposed.sesame.core.util.Average
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.util.Notify.updateLastExecText
-import fansirsqi.xposed.sesame.util.Notify.updateStatusText
+import fansirsqi.xposed.sesame.core.notify.Notify.updateLastExecText
+import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.TaskBlacklist

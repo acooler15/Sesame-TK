@@ -15,7 +15,7 @@ import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.TimeUtil
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import java.lang.reflect.Field
 import java.text.SimpleDateFormat

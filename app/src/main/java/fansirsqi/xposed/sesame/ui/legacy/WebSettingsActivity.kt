@@ -45,7 +45,7 @@ import fansirsqi.xposed.sesame.core.util.LanguageUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.PortUtil
 import fansirsqi.xposed.sesame.core.util.StringUtil
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.BeachMap
 import fansirsqi.xposed.sesame.util.maps.CooperateMap
 import fansirsqi.xposed.sesame.util.maps.IdMapManager

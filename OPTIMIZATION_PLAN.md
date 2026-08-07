@@ -217,7 +217,7 @@ fansirsqi.xposed.sesame
 | — | **Phase 7 完成** | — | — | tag: phase-7-done |
 | 8.1 | ApplicationHook 拆分 | 高 | 完成 | f24b7554 |
 | 8.2 | AntForest 拆分 | 高 | 完成 | a4f8b99b |
-| 8.3 | AntFarm 拆分 | 高 | 待开始 | — |
+| 8.3 | AntFarm 拆分 | 高 | 完成 | 07bc3ddc |
 | 8.4 | AntSports 拆分 | 中 | 待开始 | — |
 | 8.5 | AntMember 拆分 | 中 | 待开始 | — |
 | — | **Phase 8 完成** | — | — | — |

@@ -220,7 +220,7 @@ fansirsqi.xposed.sesame
 | 8.3 | AntFarm 拆分 | 高 | 完成 | 07bc3ddc |
 | 8.4 | AntSports 拆分 | 中 | 完成 | d6add1f3 |
 | 8.5 | AntMember 拆分 | 中 | 完成 | 3b44de25 |
-| — | **Phase 8 完成** | — | — | — |
+| — | **Phase 8 完成** | — | — | tag: phase-8-done |
 | 9.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 待开始 | — |
 | 9.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 待开始 | — |
 | 9.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 待开始 | — |

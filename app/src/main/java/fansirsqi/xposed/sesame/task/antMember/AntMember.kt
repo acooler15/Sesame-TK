@@ -1,11 +1,7 @@
 package fansirsqi.xposed.sesame.task.antMember
 
 import android.annotation.SuppressLint
-import fansirsqi.xposed.sesame.data.Status.Companion.canMemberPointExchangeBenefitToday
-import fansirsqi.xposed.sesame.data.Status.Companion.canMemberSignInToday
 import fansirsqi.xposed.sesame.data.Status.Companion.hasFlagToday
-import fansirsqi.xposed.sesame.data.Status.Companion.memberPointExchangeBenefitToday
-import fansirsqi.xposed.sesame.data.Status.Companion.memberSignInToday
 import fansirsqi.xposed.sesame.data.Status.Companion.setFlagToday
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.entity.MemberBenefit
@@ -27,7 +23,6 @@ import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.core.app.TaskBlacklist
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
-import fansirsqi.xposed.sesame.util.maps.MemberBenefitsMap
 import fansirsqi.xposed.sesame.util.maps.SesameGiftMap
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.delay
@@ -43,6 +38,10 @@ import java.util.regex.Pattern
 import kotlin.math.max
 
 class AntMember : ModelTask() {
+
+    internal val memberBenefitManager = MemberBenefitManager(this)
+    internal val memberPointsManager = MemberPointsManager(this)
+
     override fun getName(): String {
         return "会员"
     }
@@ -58,7 +57,7 @@ class AntMember : ModelTask() {
     private var memberSign: BooleanModelField? = null
     private var memberTask: BooleanModelField? = null
     private var memberPointExchangeBenefit: BooleanModelField? = null
-    private var memberPointExchangeBenefitList: SelectModelField? = null
+    internal var memberPointExchangeBenefitList: SelectModelField? = null
     private var collectSesame: BooleanModelField? = null
     private var collectSesameWithOneClick: BooleanModelField? = null
     private var sesameTask: BooleanModelField? = null
@@ -219,15 +218,15 @@ class AntMember : ModelTask() {
 
                 // 顺序执行独立任务
                 if (memberSign!!.value) {
-                    doMemberSign()
+                    memberPointsManager.doMemberSign()
                 }
 
                 if (memberTask!!.value) {
-                    doAllMemberAvailableTask()
+                    memberPointsManager.doAllMemberAvailableTask()
                 }
 
                 if (memberPointExchangeBenefit!!.value) {
-                    memberPointExchangeBenefit()
+                    memberBenefitManager.memberPointExchangeBenefit()
                 }
                 if (isSesameOpened) {
 
@@ -874,183 +873,7 @@ class AntMember : ModelTask() {
     }
 
     /**
-     * 会员积分0元兑，权益道具兑换
-     */
-    private fun memberPointExchangeBenefit() {
-        if (hasFlagToday("memberBenefit::refresh")) {
-            return
-        }
-        try {
-            val userId = UserMap.currentUid
-            record(TAG, "会员积分商品加载..")
-            // 1. 分类配置直接放在函数内部
-            val categoryMap = mapOf(
-                "公益道具" to listOf("94000SR2025022012011004"),
-                "出行旅游" to listOf("94000SR2025010611441006", "94000SR2025010611458001"),
-                "餐饮" to listOf("94000SR2025110315351006"),
-                "皮肤藏品" to listOf("94000SR2025110315357001", "94000SR2025111015444005"),
-                "理财还款" to listOf("94000SR2025011411575008", "94000SR2025091814834002"),
-                "红包神券" to listOf("94000SR2025092414916001"),
-                "充值缴费" to listOf("94000SR2025011611640002", "94000SR2025091814821018")
-            )
-            // 3. 遍历分类
-            categoryMap.forEach { (catName, ids) ->
-                var currentPage = 1
-                var hasNextPage = true
-                while (hasNextPage) {//此处请求过载，容易风控，循环频繁请求会炸
-                    GlobalThreadPools.sleepCompat(1000L)
-                    val responseStr = AntMemberRpcCall.queryDeliveryZoneDetail(ids, currentPage, 48)
-                    if (responseStr.isNullOrEmpty()) {
-                        Log.error(TAG, "分类[$catName] 接口返回空字符串")
-                        break
-                    }
-                    val jo = JSONObject(responseStr)
-                    if (!ResChecker.checkRes(TAG, jo)) {
-                        Log.error(TAG, "分类[$catName] 校验失败: $responseStr")
-                        break
-                    }
-                    val benefits = jo.optJSONArray("briefConfigInfos")
-                    if (benefits == null || benefits.length() == 0) {
-                        Log.error(TAG, "分类[$catName] 第 $currentPage 页没有权益数据")
-                        break
-                    }
-                    for (i in 0 until benefits.length()) {
-                        val rawItem = benefits.getJSONObject(i)
-                        // 兼容 benefitInfo 嵌套结构
-                        val benefit = if (rawItem.has("benefitInfo")) rawItem.getJSONObject("benefitInfo") else rawItem
-                        val name = benefit.optString("name", "未知")
-                        val benefitId = benefit.optString("benefitId")
-                        val itemId = benefit.optString("itemId")
-                        val pointNeeded = benefit.optJSONObject("pricePresentation")?.optString("point") ?: "0"
-                        if (benefitId.isEmpty()) {
-                            record(TAG, "商品[$name] 没有 benefitId，跳过")
-                            continue
-                        }
-                        // 记录 benefitId 映射关系
-                        IdMapManager.getInstance(MemberBenefitsMap::class.java).add(benefitId, name)
-                        // 校验是否在白名单
-                        val inWhiteList = memberPointExchangeBenefitList?.value?.contains(benefitId) ?: false
-                        if (!inWhiteList) {
-                            // 如果不在白名单，保持安静，不刷 record 日志，或者你可以按需开启
-                            continue
-                        }
-                        // 校验频率限制
-                        if (!canMemberPointExchangeBenefitToday(benefitId)) {
-                            record(TAG, "跳过[$name]: 今日已兑换过")
-                            continue
-                        }
-                        // 5. 执行兑换
-                        record(TAG, "准备兑换[$name], ID: $benefitId, 需积分: $pointNeeded")
-                        if (exchangeBenefit(benefitId, itemId, userId)) {
-                            Log.other("会员积分🎐兑换[$name]#花费[$pointNeeded 积分]")
-                        } else {
-                            record(TAG, "兑换失败: $name (ItemId: $itemId)")
-                        }
-                    }
-                    val nextPageNum = jo.optInt("nextPageNum", 0)
-                    if (nextPageNum > 0 && nextPageNum > currentPage) {
-                        currentPage = nextPageNum
-                    } else {
-                        hasNextPage = false
-                    }
-                }
-                IdMapManager.getInstance(MemberBenefitsMap::class.java).save(userId)
-                record(TAG, "分类[$catName]处理完毕，已执行中间保存")
-            }
-            // 7. 保存映射表
-            IdMapManager.getInstance(MemberBenefitsMap::class.java).save(userId)
-            record(TAG, "会员积分🎐全部分类任务处理完毕")
-            setFlagToday("memberBenefit::refresh")
-
-        } catch (t: Throwable) {
-            record(TAG, "memberPointExchangeBenefit 运行异常: ${t.message}")
-            Log.printStackTrace(TAG, t)
-        }
-    }
-
-    private fun exchangeBenefit(benefitId: String, itemid: String, userid: String?): Boolean {
-        try {
-            val resString = AntMemberRpcCall.exchangeBenefit(benefitId, itemid, userid)
-            val jo = JSONObject(resString)
-            val resultCode = jo.optString("resultCode")
-
-            if (resultCode == "BEYOND_BUYING_TIMES") {
-                record(TAG, "会员权益兑换已达上限，标记任务今日完成")
-                memberPointExchangeBenefitToday(benefitId)
-                return true
-            }
-
-            if (ResChecker.checkRes(TAG + "会员权益兑换失败:", jo)) {
-                memberPointExchangeBenefitToday(benefitId)
-                return true
-            }
-
-        } catch (t: Throwable) {
-            Log.printStackTrace(TAG, "exchangeBenefit 错误:", t)
-        }
-        return false
-    }
-
-    /**
-     * 会员签到
-     */
-    /**
-     * 会员签到
-     */
-    private suspend fun doMemberSign(): Unit = CoroutineUtils.run {
-        try {
-            if (canMemberSignInToday(UserMap.currentUid)) {
-                val s = AntMemberRpcCall.queryMemberSigninCalendar()
-                delay(500)
-                val jo = JSONObject(s)
-                if (ResChecker.checkRes(TAG + "会员签到失败:", jo)) {
-                    Log.other(
-                        "会员签到📅[" + jo.getString("signinPoint") + "积分]#已签到" + jo.getString(
-                            "signinSumDay"
-                        ) + "天"
-                    )
-                    memberSignInToday(UserMap.currentUid)
-                } else {
-                    record(jo.getString("resultDesc"))
-                    record(s)
-                }
-            }
-            queryPointCert(1, 8)
-        } catch (t: Throwable) {
-            Log.printStackTrace(TAG, "doMemberSign err:", t)
-        }
-    }
-
-    /**
-     * 会员任务-逛一逛
-     * 单次执行 1
-     */
-    private suspend fun doAllMemberAvailableTask(): Unit = CoroutineUtils.run {
-        try {
-            val str = AntMemberRpcCall.queryAllStatusTaskList()
-            delay(500)
-            val jsonObject = JSONObject(str)
-            if (!ResChecker.checkRes(TAG, jsonObject)) {
-                Log.error(
-                    "$TAG.doAllMemberAvailableTask", "会员任务响应失败: " + jsonObject.getString("resultDesc")
-                )
-                return@run
-            }
-            if (!jsonObject.has("availableTaskList")) {
-                return@run
-            }
-            val taskList = jsonObject.getJSONArray("availableTaskList")
-            for (j in 0 until taskList.length()) {
-                val task = taskList.getJSONObject(j)
-                processTask(task)
-            }
-        } catch (t: Throwable) {
-            Log.printStackTrace(TAG, "doAllMemberAvailableTask err:", t)
-        }
-    }
-
-    /**
-     * 芝麻信用任务
+     * 芽麻信用任务
      */
     private suspend fun doAllAvailableSesameTask(): Unit = CoroutineUtils.run {
         try {
@@ -1307,68 +1130,6 @@ class AntMember : ModelTask() {
             }
         } catch (t: Throwable) {
             Log.printStackTrace("$TAG.collectInsuredGold", t)
-        }
-    }
-
-    /**
-     * 执行会员任务 类型1
-     * @param task 单个任务对象
-     */
-    @Throws(JSONException::class)
-    private suspend fun processTask(task: JSONObject): Unit = CoroutineUtils.run {
-        val taskConfigInfo = task.getJSONObject("taskConfigInfo")
-        val name = taskConfigInfo.getString("name")
-        val id = taskConfigInfo.getLong("id")
-        val awardParamPoint = taskConfigInfo.getJSONObject("awardParam").getString("awardParamPoint")
-        val targetBusiness = taskConfigInfo.getJSONArray("targetBusiness").getString(0)
-        val targetBusinessArray: Array<String?> = targetBusiness.split("#".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        if (targetBusinessArray.size < 3) {
-            Log.error(TAG, "processTask target param err:" + targetBusinessArray.contentToString())
-            return@run
-        }
-        val bizType = targetBusinessArray[0]
-        val bizSubType = targetBusinessArray[1]
-        val bizParam = targetBusinessArray[2]
-        delay(16000)
-        val str = AntMemberRpcCall.executeTask(bizParam, bizSubType, bizType, id)
-        val jo = JSONObject(str)
-        if (!ResChecker.checkRes(TAG + "执行会员任务失败:", jo)) {
-            Log.error(TAG, "执行任务失败:" + jo.optString("resultDesc"))
-            return@run
-        }
-        if (checkMemberTaskFinished(id)) {
-            Log.other("会员任务🎖️[$name]#获得积分$awardParamPoint")
-        }
-    }
-
-    /**
-     * 查询指定会员任务是否完成
-     * @param taskId 任务id
-     */
-    private suspend fun checkMemberTaskFinished(taskId: Long): Boolean {
-        return try {
-            val str = AntMemberRpcCall.queryAllStatusTaskList()
-            delay(500)
-            val jsonObject = JSONObject(str)
-            if (!ResChecker.checkRes(TAG + "查询会员任务状态失败:", jsonObject)) {
-                Log.error(
-                    "$TAG.checkMemberTaskFinished", "会员任务响应失败: " + jsonObject.getString("resultDesc")
-                )
-            }
-            if (!jsonObject.has("availableTaskList")) {
-                return true
-            }
-            val taskList = jsonObject.getJSONArray("availableTaskList")
-            for (i in 0..<taskList.length()) {
-                val taskConfigInfo = taskList.getJSONObject(i).getJSONObject("taskConfigInfo")
-                val id = taskConfigInfo.getLong("id")
-                if (taskId == id) {
-                    return false
-                }
-            }
-            true
-        } catch (_: JSONException) {
-            false
         }
     }
 
@@ -2543,7 +2304,7 @@ class AntMember : ModelTask() {
     }
 
     companion object {
-        private val TAG: String = AntMember::class.java.getSimpleName()
+        internal val TAG: String = AntMember::class.java.getSimpleName()
 
         /**
          * 查询 + 自动领取可领取球（精简一行输出领取信息）
@@ -2583,46 +2344,7 @@ class AntMember : ModelTask() {
         }
 
         /**
-         * 会员积分收取
-         * @param page 第几页
-         * @param pageSize 每页数据条数
-         */
-        private suspend fun queryPointCert(page: Int, pageSize: Int) {
-            try {
-                var s = AntMemberRpcCall.queryPointCert(page, pageSize)
-                delay(500)
-                var jo = JSONObject(s)
-                if (ResChecker.checkRes(TAG + "查询会员积分证书失败:", jo)) {
-                    val hasNextPage = jo.getBoolean("hasNextPage")
-                    val jaCertList = jo.getJSONArray("certList")
-                    for (i in 0..<jaCertList.length()) {
-                        jo = jaCertList.getJSONObject(i)
-                        val bizTitle = jo.getString("bizTitle")
-                        val id = jo.getString("id")
-                        val pointAmount = jo.getInt("pointAmount")
-                        s = AntMemberRpcCall.receivePointByUser(id)
-                        jo = JSONObject(s)
-                        if (ResChecker.checkRes(TAG + "会员积分领取失败:", jo)) {
-                            Log.other("会员积分🎖️[领取" + bizTitle + "]#" + pointAmount + "积分")
-                        } else {
-                            record(jo.getString("resultDesc"))
-                            record(s)
-                        }
-                    }
-                    if (hasNextPage) {
-                        queryPointCert(page + 1, pageSize)
-                    }
-                } else {
-                    record(jo.getString("resultDesc"))
-                    record(s)
-                }
-            } catch (t: Throwable) {
-                Log.printStackTrace(TAG, "queryPointCert err:", t)
-            }
-        }
-
-        /**
-         * 检查是否满足运行芝麻信用任务的条件
+         * 检查是否满足运行芽麻信用任务的条件
          * @return bool
          */
         private fun checkSesameCanRun(): Boolean {

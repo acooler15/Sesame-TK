@@ -218,7 +218,7 @@ fansirsqi.xposed.sesame
 | 8.1 | ApplicationHook 拆分 | 高 | 完成 | f24b7554 |
 | 8.2 | AntForest 拆分 | 高 | 完成 | a4f8b99b |
 | 8.3 | AntFarm 拆分 | 高 | 完成 | 07bc3ddc |
-| 8.4 | AntSports 拆分 | 中 | 待开始 | — |
+| 8.4 | AntSports 拆分 | 中 | 完成 | d6add1f3 |
 | 8.5 | AntMember 拆分 | 中 | 待开始 | — |
 | — | **Phase 8 完成** | — | — | — |
 | 9.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 待开始 | — |

@@ -15,7 +15,6 @@ hiddenapi = "4.4.0"
 slf4j = "2.1.0-alpha1"
 logback-android = "3.0.0"
 appcompat = "1.7.1"
-material = "1.13.0"
 okhttp = "5.3.2"
 jackson = "2.20.1"
 jackson-annotations = "2.20"
@@ -60,7 +59,6 @@ logback-android = { module = "com.github.tony19:logback-android", version.ref = 
 appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }

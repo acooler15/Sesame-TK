@@ -259,8 +259,8 @@ fansirsqi.xposed.sesame
 | 9.2 | UI 侧调用清理 | 中 | 完成 | 590df987 |
 | 9.3 | 删除 Detector.kt 与 AssetUtil checker 常量 | 低 | 完成 | 23d5fb72 |
 | 9.4 | 删除 so 二进制与 IDA 残留 | 中 | 完成 | 5e661065 |
-| 9.5 | 文档同步 | 低 | 待开始 | — |
-| — | **Phase 9 完成** | — | — | — |
+| 9.5 | 文档同步 | 低 | 完成 | 99c05f63 |
+| — | **Phase 9 完成** | — | — | tag: phase-9-done |
 | 10.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 待开始 | — |
 | 10.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 待开始 | — |
 | 10.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 待开始 | — |

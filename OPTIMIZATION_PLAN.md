@@ -303,7 +303,7 @@ fansirsqi.xposed.sesame
 | 12.5 | 评估并移除 ModelField.kt 的 3 处 @JvmField | 高 | 完成 | a719370a |
 | 12.6 | 移除 AntForest.kt 的 1 处 @JvmField | 低 | 完成 | e78a540d |
 | 12.7 | 删除 OptionsAdapter 死代码 | 低 | 完成 | 8bd2a447 |
-| 12.8 | 文档同步 | 低 | 进行中 | — |
+| 12.8 | 文档同步 | 低 | 完成 | 7e742acf |
 | — | **Phase 12 完成** | — | — | tag: phase-12-done |
 | 11.1 | 提取 ModelField 视图描述 | 高 | 待开始 | — |
 | 11.2 | Compose 配置页迁移 | 高 | 待开始 | — |

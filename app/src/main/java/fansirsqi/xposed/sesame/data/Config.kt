@@ -93,7 +93,6 @@ class Config private constructor() {
     companion object {
         private const val TAG = "Config"
 
-        @JvmField
         val INSTANCE: Config = Config()
 
         /**
@@ -102,7 +101,6 @@ class Config private constructor() {
          * @param userId 用户 ID
          * @return 是否已修改
          */
-        @JvmStatic
         fun isModify(userId: String?): Boolean {
             var json: String? = null
             val configV2File: File = if (StringUtil.isEmpty(userId)) {
@@ -127,7 +125,6 @@ class Config private constructor() {
          * @param force  是否强制保存
          * @return 保存是否成功
          */
-        @JvmStatic
         @Synchronized
         fun save(userId: String?, force: Boolean): Boolean {
             var userId = userId
@@ -171,7 +168,6 @@ class Config private constructor() {
             return true
         }
 
-        @JvmStatic
         fun isLoaded(): Boolean = INSTANCE.initialized
 
         /**
@@ -180,7 +176,6 @@ class Config private constructor() {
          * @param userId 用户 ID
          * @return 配置是否成功加载
          */
-        @JvmStatic
         @Synchronized
         fun load(userId: String?): Config {
             Log.record(TAG, "开始加载配置")
@@ -246,7 +241,6 @@ class Config private constructor() {
         /**
          * 卸载当前配置
          */
-        @JvmStatic
         @Synchronized
         fun unload() {
             for (modelFields in INSTANCE._modelFieldsMap.values) {
@@ -256,7 +250,6 @@ class Config private constructor() {
             }
         }
 
-        @JvmStatic
         fun toSaveStr(): String {
             // 防御：模型字段未填充时先以默认值重建，避免把空配置写回文件覆盖用户数据
             if (INSTANCE._modelFieldsMap.isEmpty() && Model.getModelConfigMap().isNotEmpty()) {

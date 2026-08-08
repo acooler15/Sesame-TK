@@ -1989,7 +1989,6 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     companion object {
         val TAG: String = AntForest::class.java.getSimpleName()
 
-        @JvmField
         var instance: AntForest? = null
 
 

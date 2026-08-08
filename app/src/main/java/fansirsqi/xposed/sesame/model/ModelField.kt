@@ -26,7 +26,6 @@ import java.util.Objects
 abstract class ModelField<T> : Serializable {
     // 存储字段值的类型
     @JsonIgnore
-    @JvmField
     val valueType: Type?
 
     // 字段代码
@@ -39,16 +38,14 @@ abstract class ModelField<T> : Serializable {
 
     // 默认值
     @JsonIgnore
-    @JvmField
     var defaultValue: T = castNull()
 
     @JsonIgnore
     open var desc: String? = null
 
-    // 当前值（公开字段，与旧 Java 版 public volatile T value 一致）
-    @JvmField
+    // 当前值（序列化经属性 getter 输出，与旧 Java 版 public volatile T value 行为一致）
     @Volatile
-    var value: T = defaultValue
+    open var value: T = defaultValue
 
     /**
      * 默认构造函数，初始化字段值类型
@@ -59,22 +56,6 @@ abstract class ModelField<T> : Serializable {
 
     @Suppress("UNCHECKED_CAST")
     private fun castNull(): T = null as T
-
-    /**
-     * 获取当前值（与旧版 Lombok @Getter 生成的 getter 等价，Jackson 序列化时经由该方法输出 value）
-     *
-     * @return 当前值
-     */
-    open fun getValue(): T = value
-
-    /**
-     * 设置当前值字段
-     *
-     * @param value 要设置的值
-     */
-    open fun setValue(value: T) {
-        this.value = value
-    }
 
     /**
      * 无参构造函数，仅初始化字段值类型

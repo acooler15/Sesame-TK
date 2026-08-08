@@ -69,9 +69,11 @@ open class TextModelField(code: String?, name: String?, value: String?) : ModelF
         override val type: String
             get() = "READ_TEXT"
 
-        override fun getValue(): String? {
-            return null
-        }
+        override var value: String?
+            get() = null
+            set(value) {
+                super.value = value
+            }
 
         override fun setConfigValue(configValue: String?) {
         }

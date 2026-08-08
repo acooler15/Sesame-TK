@@ -51,7 +51,7 @@ class SelectAndCountOneModelField : ModelField<KVMap<String?, Int?>>, SelectMode
     }
 
     override fun get(id: String?): Int? {
-        val kvMap: KVMap<String?, Int?>? = getValue()
+        val kvMap: KVMap<String?, Int?>? = value
         if (kvMap != null && kvMap.key == id) {
             return kvMap.value
         }
@@ -63,14 +63,14 @@ class SelectAndCountOneModelField : ModelField<KVMap<String?, Int?>>, SelectMode
     }
 
     override fun remove(id: String?) {
-        val kvMap: KVMap<String?, Int?>? = getValue()
+        val kvMap: KVMap<String?, Int?>? = value
         if (kvMap != null && kvMap.key == id) {
             value = defaultValue
         }
     }
 
     override fun contains(id: String?): Boolean {
-        val kvMap: KVMap<String?, Int?>? = getValue()
+        val kvMap: KVMap<String?, Int?>? = value
         return kvMap != null && kvMap.key == id
     }
 

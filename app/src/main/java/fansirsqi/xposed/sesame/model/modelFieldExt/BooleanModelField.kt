@@ -21,7 +21,7 @@ class BooleanModelField(code: String?, name: String?, value: Boolean) : ModelFie
         sw.minHeight = 150 // 设置最小高度
         sw.maxHeight = 180 // 设置最大高度
         sw.setPaddingRelative(40, 0, 40, 0) // 设置左右内边距
-        sw.isChecked = getValue() // 根据字段值设置 Switch 的选中状态
+        sw.isChecked = value // 根据字段值设置 Switch 的选中状态
         // 设置按钮和轨道样式
 //        sw.setThumbResource(R.drawable.switch_thumb)
         sw.setTrackResource(R.drawable.switch_track)

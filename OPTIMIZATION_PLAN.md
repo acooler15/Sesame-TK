@@ -98,7 +98,7 @@ util/
 - **不改变业务逻辑**：拆分和重组仅做代码移动/重组，不重写功能
 - **不改变序列化格式**：Jackson 注解和配置保持兼容
 - **不移动高危入口**：`hook.xp82.HookEntry`、`hook.lsp100.HookEntry` 全限定名不变
-- **不改动 JNI/AIDL**：`Detector` native 方法名、AIDL 包路径不变
+- **不改动 JNI/AIDL**：`Detector` native 方法名、AIDL 包路径不变（例外：Phase 9 为刻意移除 `Detector` JNI，移除后该约束自然失效）
 - **编译通过即提交**：每个 Task 完成后 `./gradlew :app:compileDebugKotlin` 通过即提交
 
 ---
@@ -140,8 +140,8 @@ fansirsqi.xposed.sesame
 │                      //   WakeLockManager, CommandUtil, FansirsqiUtil,
 │                      //   DirectoryWatcher, defaultBlacklist, TaskBlacklist
 ├── util/
-│   ├── Detector.kt   // 保留原位（libchecker.so JNI 静态符号绑定 util 包名）
 │   └── maps/         // 保持不动（ID 映射，引用方多）
+│                      // Detector.kt 原保留原位（JNI 绑定），已在 Phase 9 随 libchecker.so 一并移除
 └── ...（其余包不变）
 ```
 
@@ -171,28 +171,62 @@ fansirsqi.xposed.sesame
 | 8.4 | `AntSports` 拆分 | `AntSports.kt`（3007 行） | 按子功能拆分：走路兑换→`SportsExchangeManager`、运动任务→`SportsTaskManager` | 8.3 | 中 | 编译通过 |
 | 8.5 | `AntMember` 拆分 | `AntMember.kt`（3000 行） | 按子功能拆分：积分→`MemberPointsManager`、权益兑换→`MemberBenefitManager` | 8.4 | 中 | 编译通过 |
 
-### Phase 9：冗余注解清理与死依赖移除
+### Phase 9：移除 libchecker.so 与 Detector native 依赖
+
+> 目标：彻底移除 libchecker.so 二进制及其 JNI 封装 `Detector`，消除闭源 native 依赖，APK 体积减少约 20MB
+> 原则：随 so 移除的环境门禁、依赖检查、BaseUrl 生成等 native 功能一并废弃；dexkit / tflite 等其他 so 的加载流程不受影响
+
+#### 9.0 背景：libchecker.so 影响面
+
+| 类别 | 位置 | 说明 |
+|------|------|------|
+| 二进制文件 | `app/src/main/jniLibs/{arm64-v8a, armeabi-v7a, x86, x86_64}/libchecker.so` | 4 个 ABI，合计约 20MB，已被 git 跟踪 |
+| 误入库文件 | `arm64-v8a/libchecker.so.{id0,id1,id2,nam,til}` | IDA 分析数据库残留，未被 git 跟踪但存在于工作区，约 19.6MB |
+| JNI 封装 | `util/Detector.kt` | 7 个 `external` native 方法：`init`、`tips`、`isEmbeddedNative`、`dangerous`、`genWua`、`loadLibraryWithContextNative`、`getApiUrlWithKey` |
+| Hook 侧调用 | `hook/ApplicationHook.kt` | 环境门禁 `isLegitimateEnvironment()`→`dangerous()`；`loadNativeLibs(checkerDestFile)` |
+| UI 侧调用 | `ui/MainActivity.kt`、`ui/extension/UiExtensions.kt`、`ui/viewmodel/ExtendViewModel.kt` | `initNativeDetector()`；设置页跳转前置检查 `loadLibrary("checker")`；"获取BaseUrl" 调试菜单 |
+| so 分发链路 | `ui/viewmodel/MainViewModel.kt`、`core/app/AssetUtil.kt` | `copyAssets()` 复制 checker；`CHEKCE_SO`/`checkerDestFile` 常量 |
+
+#### 9.x 行为决策（已确认）
+
+| 决策点 | 结论 |
+|--------|------|
+| `ApplicationHook` 环境门禁 | 整段移除，放行所有环境（不再调用 `dangerous()`，不再提前 return） |
+| 设置页跳转前置检查 | 移除 `loadLibrary("checker")` 门禁，直接进入设置页 |
+| "获取BaseUrl" 调试菜单 | 连同 `handleGetBaseUrl()` 一并移除 |
+| `genWua()` | 确认无任何调用方，随 `Detector.kt` 删除 |
+| 编号策略 | 原 Phase 9/10 顺延为 Phase 10/11，任务号同步顺延 |
+
+| Task | 标题 | 涉及文件 | 操作 | 前置 | 风险 | 验证 |
+|------|------|---------|------|------|------|------|
+| 9.1 | Hook 侧调用清理 | `ApplicationHook.kt`、`MainViewModel.kt` | 移除 `Detector` import 与环境门禁（`isLegitimateEnvironment`/`dangerous`）；移除 `loadLibs()` 中 `loadNativeLibs(checkerDestFile)` 及 `checkerDestFile` import；移除 `copyAssets()` 中 checker 复制行 | Phase 8 | 中 | 编译通过 + 真机验证模块加载 |
+| 9.2 | UI 侧调用清理 | `MainActivity.kt`、`UiExtensions.kt`、`ExtendViewModel.kt` | 移除 `initNativeDetector()` 及其调用；`performNavigationToSettings` 去掉 `loadLibrary("checker")` 门禁与 `Detector.tips()` 分支，直接跳转；移除"获取BaseUrl"菜单项与 `handleGetBaseUrl()` | 9.1 | 中 | 编译通过 + 真机验证设置页跳转 |
+| 9.3 | 删除 Detector.kt 与 AssetUtil checker 常量 | `util/Detector.kt`、`core/app/AssetUtil.kt` | 删除 `Detector.kt` 整个文件；移除 `CHEKCE_SO`、`checkerDestFile`；修正 `copySoFileToStorage()` 日志中误用的 `checkerDestFile`（改为 `destFile`） | 9.2 | 低 | 编译通过 |
+| 9.4 | 删除 so 二进制与 IDA 残留 | `app/src/main/jniLibs/`、`.gitignore` | `git rm` 4 个 `libchecker.so`；删除 5 个 IDA 残留文件；`.gitignore` 追加 `*.id0`、`*.id1`、`*.id2`、`*.nam`、`*.til` | 9.3 | 中 | `:app:assembleDebug` 通过 + APK 体积下降约 20MB |
+| 9.5 | 文档同步 | `OPTIMIZATION_PLAN.md` | 核对 §7.1 包结构注释与进度表 7.10 备注和移除结果一致；同步 Phase 9 进度表状态、回填提交哈希、打标 `phase-9-done` | 9.4 | 低 | 文档与代码状态一致 |
+
+### Phase 10：冗余注解清理与死依赖移除
 
 > 目标：移除无意义的 `@JvmStatic`/`@JvmField` 注解和未使用的依赖条目
 
 | Task | 标题 | 涉及文件 | 操作 | 前置 | 风险 | 验证 |
 |------|------|---------|------|------|------|------|
-| 9.1 | 移除 `@JvmStatic`/`@JvmField`（第一批） | `BaseModel.kt`、`VitalityStore.kt`、`RpcEntity.kt`、`RpcVersion.kt` | 逐个移除注解，验证无 Kotlin 编译错误 | Phase 8 | 低 | 编译通过 |
-| 9.2 | 移除 `@JvmStatic`/`@JvmField`（第二批） | `ListDialog.kt`（8 处）、`OptionsAdapter.kt`（1 处）、`ListAdapter.kt`（4 处） | 移除注解 | 9.1 | 低 | 编译通过 |
-| 9.3 | 移除 `@JvmStatic`/`@JvmField`（第三批） | `AntFarm.kt`（4 处）、`ModelTask.kt`（3 处） | 移除注解 | 9.2 | 低 | 编译通过 |
-| 9.4 | 清理 `libs.versions.toml` 死条目 | `libs.versions.toml` | 移除 `android`、`desugar`、`junit`、`androidx-junit`、`espresso-core`、`ui-tooling-preview-android`、`rikka-hidden-stub` 条目 | — | 低 | 编译通过 |
-| 9.5 | 合并 `material3` 重复定义 | `libs.versions.toml`、`build.gradle.kts` | 移除 `libs.material3`（显式版本），统一使用 BOM 管理的 `libs.androidx.material3` | 9.4 | 低 | 编译通过 |
+| 10.1 | 移除 `@JvmStatic`/`@JvmField`（第一批） | `BaseModel.kt`、`VitalityStore.kt`、`RpcEntity.kt`、`RpcVersion.kt` | 逐个移除注解，验证无 Kotlin 编译错误 | Phase 9 | 低 | 编译通过 |
+| 10.2 | 移除 `@JvmStatic`/`@JvmField`（第二批） | `ListDialog.kt`（8 处）、`OptionsAdapter.kt`（1 处）、`ListAdapter.kt`（4 处） | 移除注解 | 10.1 | 低 | 编译通过 |
+| 10.3 | 移除 `@JvmStatic`/`@JvmField`（第三批） | `AntFarm.kt`（4 处）、`ModelTask.kt`（3 处） | 移除注解 | 10.2 | 低 | 编译通过 |
+| 10.4 | 清理 `libs.versions.toml` 死条目 | `libs.versions.toml` | 移除 `android`、`desugar`、`junit`、`androidx-junit`、`espresso-core`、`ui-tooling-preview-android`、`rikka-hidden-stub` 条目 | — | 低 | 编译通过 |
+| 10.5 | 合并 `material3` 重复定义 | `libs.versions.toml`、`build.gradle.kts` | 移除 `libs.material3`（显式版本），统一使用 BOM 管理的 `libs.androidx.material3` | 10.4 | 低 | 编译通过 |
 
-### Phase 10：Model-UI 解耦（可选）
+### Phase 11：Model-UI 解耦（可选）
 
 > 目标：将 `ModelField` 体系与 Android View 解耦，为 Compose 配置页迁移扫清障碍
-> 风险较高，依赖 Phase 8 拆分完成后再评估
+> 风险较高，依赖 Phase 9 拆分完成后再评估
 
 | Task | 标题 | 涉及文件 | 操作 | 前置 | 风险 | 验证 |
 |------|------|---------|------|------|------|------|
-| 10.1 | 提取 `ModelField` 视图描述 | `ModelField.kt`、`modelFieldExt/*.kt` | 将 `getView()` 返回的 View 创建逻辑提取为 `ModelFieldViewData` 数据类（描述字段类型+选项），不再直接创建 View | Phase 9 | 高 | 编译通过 + 真机验证配置页 |
-| 10.2 | Compose 配置页迁移 | `ui/legacy/SettingActivity.kt` | 用 Compose 替换传统 View 配置页，消费 `ModelFieldViewData` 渲染 | 10.1 | 高 | 编译通过 + 真机验证配置 UI |
-| 10.3 | 移除传统 View 依赖（评估） | `build.gradle.kts` | 评估移除 `recyclerview`、`viewpager2`、`material`（传统）的可行性，确认无残留引用后移除 | 10.2 | 中 | 编译通过 |
+| 11.1 | 提取 `ModelField` 视图描述 | `ModelField.kt`、`modelFieldExt/*.kt` | 将 `getView()` 返回的 View 创建逻辑提取为 `ModelFieldViewData` 数据类（描述字段类型+选项），不再直接创建 View | Phase 10 | 高 | 编译通过 + 真机验证配置页 |
+| 11.2 | Compose 配置页迁移 | `ui/legacy/SettingActivity.kt` | 用 Compose 替换传统 View 配置页，消费 `ModelFieldViewData` 渲染 | 11.1 | 高 | 编译通过 + 真机验证配置 UI |
+| 11.3 | 移除传统 View 依赖（评估） | `build.gradle.kts` | 评估移除 `recyclerview`、`viewpager2`、`material`（传统）的可行性，确认无残留引用后移除 | 11.2 | 中 | 编译通过 |
 
 ---
 
@@ -213,7 +247,7 @@ fansirsqi.xposed.sesame
 | 7.7 | core/notify/ 迁移 | 中 | 完成 | 00e73f5c |
 | 7.8 | core/permission/ 迁移 | 低 | 完成 | abc2728c |
 | 7.9 | core/store/ 迁移 | 低 | 完成 | 01f7e14d |
-| 7.10 | core/app/ 迁移 | 高 | 完成 | 53446a33（Detector.kt 因 JNI 静态符号绑定 util 包名保留原位） |
+| 7.10 | core/app/ 迁移 | 高 | 完成 | 53446a33（Detector.kt 当时因 JNI 绑定保留原位，已在 Phase 9 移除） |
 | — | **Phase 7 完成** | — | — | tag: phase-7-done |
 | 8.1 | ApplicationHook 拆分 | 高 | 完成 | f24b7554 |
 | 8.2 | AntForest 拆分 | 高 | 完成 | a4f8b99b |
@@ -221,16 +255,22 @@ fansirsqi.xposed.sesame
 | 8.4 | AntSports 拆分 | 中 | 完成 | d6add1f3 |
 | 8.5 | AntMember 拆分 | 中 | 完成 | 3b44de25 |
 | — | **Phase 8 完成** | — | — | tag: phase-8-done |
-| 9.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 待开始 | — |
-| 9.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 待开始 | — |
-| 9.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 待开始 | — |
-| 9.4 | 清理 libs.versions.toml 死条目 | 低 | 待开始 | — |
-| 9.5 | 合并 material3 重复定义 | 低 | 待开始 | — |
+| 9.1 | Hook 侧调用清理 | 中 | 完成 | e55b2e39 |
+| 9.2 | UI 侧调用清理 | 中 | 待开始 | — |
+| 9.3 | 删除 Detector.kt 与 AssetUtil checker 常量 | 低 | 待开始 | — |
+| 9.4 | 删除 so 二进制与 IDA 残留 | 中 | 待开始 | — |
+| 9.5 | 文档同步 | 低 | 待开始 | — |
 | — | **Phase 9 完成** | — | — | — |
-| 10.1 | 提取 ModelField 视图描述 | 高 | 待开始 | — |
-| 10.2 | Compose 配置页迁移 | 高 | 待开始 | — |
-| 10.3 | 移除传统 View 依赖（评估） | 中 | 待开始 | — |
+| 10.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 待开始 | — |
+| 10.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 待开始 | — |
+| 10.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 待开始 | — |
+| 10.4 | 清理 libs.versions.toml 死条目 | 低 | 待开始 | — |
+| 10.5 | 合并 material3 重复定义 | 低 | 待开始 | — |
 | — | **Phase 10 完成** | — | — | — |
+| 11.1 | 提取 ModelField 视图描述 | 高 | 待开始 | — |
+| 11.2 | Compose 配置页迁移 | 高 | 待开始 | — |
+| 11.3 | 移除传统 View 依赖（评估） | 中 | 待开始 | — |
+| — | **Phase 11 完成** | — | — | — |
 
 ---
 
@@ -238,15 +278,15 @@ fansirsqi.xposed.sesame
 
 | 文件 | 注解 | 数量 | 对应 Task |
 |------|------|------|-----------|
-| `model/BaseModel.kt` | `@JvmStatic` | 1 | 9.1 |
-| `entity/VitalityStore.kt` | `@JvmStatic` | 2 | 9.1 |
-| `entity/RpcEntity.kt` | `@JvmOverloads` | 1 | 9.1 |
-| `hook/rpc/bridge/RpcVersion.kt` | `@JvmStatic` | 1 | 9.1 |
-| `ui/widget/ListDialog.kt` | `@JvmField`×1, `@JvmStatic`×7 | 8 | 9.2 |
-| `ui/adapter/OptionsAdapter.kt` | `@JvmStatic` | 1 | 9.2 |
-| `ui/adapter/ListAdapter.kt` | `@JvmField`×2, `@JvmStatic`×2 | 4 | 9.2 |
-| `task/antFarm/AntFarm.kt` | `@JvmField`×3, `@JvmStatic`×1 | 4 | 9.3 |
-| `task/ModelTask.kt` | `@JvmStatic` | 3 | 9.3 |
+| `model/BaseModel.kt` | `@JvmStatic` | 1 | 10.1 |
+| `entity/VitalityStore.kt` | `@JvmStatic` | 2 | 10.1 |
+| `entity/RpcEntity.kt` | `@JvmOverloads` | 1 | 10.1 |
+| `hook/rpc/bridge/RpcVersion.kt` | `@JvmStatic` | 1 | 10.1 |
+| `ui/widget/ListDialog.kt` | `@JvmField`×1, `@JvmStatic`×7 | 8 | 10.2 |
+| `ui/adapter/OptionsAdapter.kt` | `@JvmStatic` | 1 | 10.2 |
+| `ui/adapter/ListAdapter.kt` | `@JvmField`×2, `@JvmStatic`×2 | 4 | 10.2 |
+| `task/antFarm/AntFarm.kt` | `@JvmField`×3, `@JvmStatic`×1 | 4 | 10.3 |
+| `task/ModelTask.kt` | `@JvmStatic` | 3 | 10.3 |
 | **合计** | | **25** | |
 
 > **注意**：移除前需确认无反射调用（Xposed 框架可能通过反射访问 companion object 成员）。若发现反射依赖则保留对应注解并标注原因。
@@ -257,14 +297,14 @@ fansirsqi.xposed.sesame
 
 | 条目 | 定义位置 | 引用情况 | 对应 Task |
 |------|---------|---------|-----------|
-| `android` (`com.google.android:android`) | `versions.toml:47` | `build.gradle.kts` 未引用 | 9.4 |
-| `desugar` (`com.android.tools:desugar_jdk_libs`) | `versions.toml:84` | `build.gradle.kts:204` 已注释 | 9.4 |
-| `junit` (`junit:junit`) | `versions.toml:86` | 测试已禁用，未引用 | 9.4 |
-| `androidx-junit` (`androidx.test.ext:junit`) | `versions.toml:87` | 测试已禁用，未引用 | 9.4 |
-| `espresso-core` (`androidx.test.espresso:espresso-core`) | `versions.toml:88` | 测试已禁用，未引用 | 9.4 |
-| `ui-tooling-preview-android` (`androidx.compose.ui:ui-tooling-preview-android`) | `versions.toml:85` | 未引用（已有 BOM 管理的 `androidx-ui-tooling-preview`） | 9.4 |
-| `rikka-hidden-stub` (`dev.rikka.hidden:stub`) | `versions.toml:67` | `build.gradle.kts:146` 已注释 | 9.4 |
-| `material3` (`androidx.compose.material3:material3` 显式版本) | `versions.toml:91` | 与 `androidx-material3`（BOM 管理）重复 | 9.5 |
+| `android` (`com.google.android:android`) | `versions.toml:47` | `build.gradle.kts` 未引用 | 10.4 |
+| `desugar` (`com.android.tools:desugar_jdk_libs`) | `versions.toml:84` | `build.gradle.kts:204` 已注释 | 10.4 |
+| `junit` (`junit:junit`) | `versions.toml:86` | 测试已禁用，未引用 | 10.4 |
+| `androidx-junit` (`androidx.test.ext:junit`) | `versions.toml:87` | 测试已禁用，未引用 | 10.4 |
+| `espresso-core` (`androidx.test.espresso:espresso-core`) | `versions.toml:88` | 测试已禁用，未引用 | 10.4 |
+| `ui-tooling-preview-android` (`androidx.compose.ui:ui-tooling-preview-android`) | `versions.toml:85` | 未引用（已有 BOM 管理的 `androidx-ui-tooling-preview`） | 10.4 |
+| `rikka-hidden-stub` (`dev.rikka.hidden:stub`) | `versions.toml:67` | `build.gradle.kts:146` 已注释 | 10.4 |
+| `material3` (`androidx.compose.material3:material3` 显式版本) | `versions.toml:91` | 与 `androidx-material3`（BOM 管理）重复 | 10.5 |
 
 ---
 

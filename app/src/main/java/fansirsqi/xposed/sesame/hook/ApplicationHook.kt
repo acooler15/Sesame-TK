@@ -46,14 +46,12 @@ import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.MainTask.Companion.newInstance
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
 import fansirsqi.xposed.sesame.core.app.AssetUtil
-import fansirsqi.xposed.sesame.core.app.AssetUtil.checkerDestFile
 import fansirsqi.xposed.sesame.core.app.AssetUtil.copyStorageSoFileToPrivateDir
 import fansirsqi.xposed.sesame.core.app.AssetUtil.dexkitDestFile
 import fansirsqi.xposed.sesame.core.app.AssetUtil.tfliteDestFile
 import fansirsqi.xposed.sesame.core.app.AssetUtil.tfliteGpuDestFile
 import fansirsqi.xposed.sesame.core.store.DataStore.init
-import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.Detector.loadLibrary
+
 import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools.shutdownAndRestart
 import fansirsqi.xposed.sesame.core.log.Log
@@ -283,11 +281,6 @@ class ApplicationHook {
                     appContext = appService.applicationContext
                     TaskScheduler.ensureScheduler()
 
-                    if (Detector.isLegitimateEnvironment(appContext!!)) {
-                        Detector.dangerous(appContext!!)
-                        return
-                    }
-
                     DexKitBridge.create(apkPath).use { _ ->
                         record(TAG, "Hook DexKit successfully")
                     }
@@ -329,7 +322,6 @@ class ApplicationHook {
     }
 
     private fun loadLibs() {
-        loadNativeLibs(appContext!!, checkerDestFile)
         loadNativeLibs(appContext!!, dexkitDestFile)
         loadNativeLibs(appContext!!, tfliteDestFile)
         loadNativeLibs(appContext!!, tfliteGpuDestFile)
@@ -369,7 +361,7 @@ class ApplicationHook {
             if (finalSoFile != null) {
                 System.load(finalSoFile.absolutePath)
             } else {
-                loadLibrary(soFile.getName().replace(".so", "").replace("lib", ""))
+                System.loadLibrary(soFile.getName().replace(".so", "").replace("lib", ""))
             }
         } catch (e: Exception) {
             Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), e)

@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.model
 
+import android.app.AlertDialog
 import android.content.Context
-import androidx.appcompat.app.AlertDialog
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.MapperEntity

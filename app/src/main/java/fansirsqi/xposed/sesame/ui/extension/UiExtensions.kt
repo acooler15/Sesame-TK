@@ -21,7 +21,6 @@ import fansirsqi.xposed.sesame.ui.legacy.SettingActivity
 import fansirsqi.xposed.sesame.ui.legacy.WebSettingsActivity
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
-import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
@@ -137,24 +136,18 @@ fun joinQQGroup(context: Context) {
 
 
 fun Context.performNavigationToSettings(user: UserEntity) {
-    if (Detector.loadLibrary("checker")) {
-        Log.record("载入用户配置 ${user.showName}")
-        try {
-            // 1. 【改动点】从仓库获取当前模式
-            val currentMode = ConfigRepository.uiMode.value
-            // 2. 【改动点】获取对应的 Activity 类 (使用上面定义的扩展属性)
-            val targetActivity = currentMode.targetActivity
+    Log.record("载入用户配置 ${user.showName}")
+    try {
+        val currentMode = ConfigRepository.uiMode.value
+        val targetActivity = currentMode.targetActivity
 
-            val intent = Intent(this, targetActivity).apply {
-                putExtra("userId", user.userId)
-                putExtra("userName", user.showName)
-            }
-            startActivity(intent)
-        } catch (e: Exception) {
-            ToastUtil.showToast(this, "无法启动设置页面: ${e.message}")
+        val intent = Intent(this, targetActivity).apply {
+            putExtra("userId", user.userId)
+            putExtra("userName", user.showName)
         }
-    } else {
-        Detector.tips(this, "缺少必要依赖！")
+        startActivity(intent)
+    } catch (e: Exception) {
+        ToastUtil.showToast(this, "无法启动设置页面: ${e.message}")
     }
 }
 

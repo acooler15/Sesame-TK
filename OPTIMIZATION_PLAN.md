@@ -256,7 +256,7 @@ fansirsqi.xposed.sesame
 | 8.5 | AntMember 拆分 | 中 | 完成 | 3b44de25 |
 | — | **Phase 8 完成** | — | — | tag: phase-8-done |
 | 9.1 | Hook 侧调用清理 | 中 | 完成 | e55b2e39 |
-| 9.2 | UI 侧调用清理 | 中 | 待开始 | — |
+| 9.2 | UI 侧调用清理 | 中 | 完成 | 590df987 |
 | 9.3 | 删除 Detector.kt 与 AssetUtil checker 常量 | 低 | 待开始 | — |
 | 9.4 | 删除 so 二进制与 IDA 残留 | 中 | 待开始 | — |
 | 9.5 | 文档同步 | 低 | 待开始 | — |

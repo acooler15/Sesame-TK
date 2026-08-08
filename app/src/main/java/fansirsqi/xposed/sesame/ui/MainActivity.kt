@@ -25,7 +25,6 @@ import fansirsqi.xposed.sesame.ui.theme.AppTheme
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
 import fansirsqi.xposed.sesame.core.app.CommandUtil
-import fansirsqi.xposed.sesame.util.Detector
 import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.app.IconManager
 import fansirsqi.xposed.sesame.core.log.Log
@@ -67,7 +66,6 @@ class MainActivity : ComponentActivity() {
         hasPermissions = PermissionUtil.checkOrRequestFilePermissions(this)
         if (hasPermissions) {
             viewModel.initAppLogic()
-            initNativeDetector()
         }
 
         // 3. 初始化 Shizuku
@@ -108,17 +106,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-        }
-    }
-
-    // 在 Activity 中执行 Native 检测
-    private fun initNativeDetector() {
-        try {
-            if (Detector.loadLibrary("checker")) {
-                Detector.initDetector(this)
-            }
-        } catch (e: Exception) {
-            Log.error("MainActivity", "Native detector init failed: ${e.message}")
         }
     }
 

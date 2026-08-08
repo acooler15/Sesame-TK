@@ -183,9 +183,7 @@ dependencies {
     implementation(libs.slf4j.api)                  // SLF4J 日志 API
     implementation(libs.logback.android)            // Logback Android 日志实现
     implementation(libs.appcompat)                  // AppCompat 兼容库
-    implementation(libs.recyclerview)               // RecyclerView 列表组件
-    implementation(libs.viewpager2)                 // ViewPager2 页面滑动
-    implementation(libs.material)                   // Material Design 组件
+    implementation(libs.material)                   // Material Design 组件（BaseActivity/Toolbar/对话框/主题仍在使用）
     implementation(libs.webkit)                     // WebView 组件
 
     // 仅编译时依赖 - Xposed 相关

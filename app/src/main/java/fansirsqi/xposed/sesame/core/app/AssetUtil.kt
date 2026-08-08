@@ -15,13 +15,11 @@ import java.security.MessageDigest
  */
 object AssetUtil {
     private val TAG: String = AssetUtil::class.java.simpleName
-    const val CHEKCE_SO = "libchecker.so"
     const val DEXKIT_OS = "libdexkit.so"
     const val TFLITE_JNI = "libtensorflowlite_jni.so"
     const val TFLITE_GPU_JNI = "libtensorflowlite_gpu_jni.so"
-    const val SLIDER_MODEL = "slider.tflite" // 模型文件名
+    const val SLIDER_MODEL = "slider.tflite"
     private var destDir: String = Files.MAIN_DIR.absolutePath + File.separator + "lib"
-    var checkerDestFile: File = File(destDir, CHEKCE_SO)
     var dexkitDestFile: File = File(destDir, DEXKIT_OS)
     var tfliteDestFile: File = File(destDir, TFLITE_JNI)
     var tfliteGpuDestFile: File = File(destDir, TFLITE_GPU_JNI)
@@ -92,7 +90,7 @@ object AssetUtil {
                     fos.flush()
                     Log.record(
                         TAG,
-                        "Copied ${destFile.name} from $sourceDir ${checkerDestFile.absolutePath}"
+                        "Copied ${destFile.name} from $sourceDir to ${destFile.absolutePath}"
                     )
                     setExecutablePermissions(destFile)
                     return true

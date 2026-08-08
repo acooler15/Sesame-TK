@@ -32,7 +32,6 @@ class ListDialog {
 
     companion object {
         @SuppressLint("StaticFieldLeak")
-        @JvmField
         var listDialog: AlertDialog? = null
 
         @SuppressLint("StaticFieldLeak")
@@ -60,44 +59,36 @@ class ListDialog {
         @SuppressLint("StaticFieldLeak")
         private var layout_batch_process: RelativeLayout? = null
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, selectModelField: SelectOneModelField, listType: ListType) {
             show(c, title, selectModelField.expandValue, selectModelField, false, listType)
         }
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, selectModelField: SelectAndCountOneModelField, listType: ListType) {
             show(c, title, selectModelField.expandValue, selectModelField, false, listType)
         }
 
-        @JvmStatic
         @Throws(JSONException::class)
         fun show(c: Context, title: CharSequence, selectModelField: SelectModelField) {
             show(c, title, selectModelField, ListType.CHECK)
         }
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, selectModelField: SelectAndCountModelField) {
             show(c, title, selectModelField, ListType.CHECK)
         }
 
-        @JvmStatic
         @Throws(JSONException::class)
         fun show(c: Context, title: CharSequence, selectModelField: SelectModelField, listType: ListType) {
             show(c, title, selectModelField.expandValue, selectModelField, false, listType)
         }
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, selectModelField: SelectAndCountModelField, listType: ListType) {
             show(c, title, selectModelField.expandValue, selectModelField, true, listType)
         }
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean) {
             show(c, title, bl, selectModelFieldFunc, hasCount, ListType.CHECK)
         }
 
-        @JvmStatic
         fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean, listType: ListType) {
             ListDialog.selectModelFieldFunc = selectModelFieldFunc
             ListDialog.hasCount = hasCount

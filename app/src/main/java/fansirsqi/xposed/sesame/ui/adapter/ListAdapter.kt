@@ -149,7 +149,6 @@ class ListAdapter private constructor(private val context: Context) : BaseAdapte
      */
     class ViewHolder {
         lateinit var tv: TextView
-        @JvmField
         var cb: CheckBox? = null
     }
 
@@ -160,10 +159,8 @@ class ListAdapter private constructor(private val context: Context) : BaseAdapte
         private var adapter: ListAdapter? = null
         private var listType: ListDialog.ListType? = null
 
-        @JvmField
         val viewHolderList: MutableList<ViewHolder> = ArrayList()
 
-        @JvmStatic
         fun get(c: Context): ListAdapter {
             if (adapter == null) {
                 adapter = ListAdapter(c.applicationContext)  // 使用 ApplicationContext
@@ -171,14 +168,12 @@ class ListAdapter private constructor(private val context: Context) : BaseAdapte
             return adapter!!
         }
 
-        @JvmStatic
         fun getClear(c: Context): ListAdapter {
             val adapter = get(c)
             adapter.resetFindState()
             return adapter
         }
 
-        @JvmStatic
         fun getClear(c: Context, listType: ListDialog.ListType?): ListAdapter {
             val adapter = get(c)
             this.listType = listType

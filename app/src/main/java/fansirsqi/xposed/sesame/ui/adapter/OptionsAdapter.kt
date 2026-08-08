@@ -66,7 +66,6 @@ class OptionsAdapter private constructor(private val context: Context) : BaseAda
          * @param c 上下文对象。
          * @return 适配器实例。
          */
-        @JvmStatic
         fun get(c: Context): OptionsAdapter {
             if (adapter == null) {
                 adapter = OptionsAdapter(c)

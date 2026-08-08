@@ -16,6 +16,13 @@ import java.io.Serializable
 import java.lang.reflect.Type
 import java.util.Objects
 
+/**
+ * 序列化说明：本类仅参与序列化（由 Config.toSaveStr 写出），不参与 Jackson 反序列化
+ * （抽象类无法构造，配置加载由 Config 解析 JSON 树完成）。
+ * 与旧 Java 版（Lombok @Getter/@Setter 生成 getValue()/setValue()）保持一致：
+ * Jackson 序列化 value 属性时优先走 getValue() getter，子类可通过覆写改变输出
+ * （如 ReadOnlyTextModelField 返回 null，配合 NON_NULL 序列化为 {}）。
+ */
 abstract class ModelField<T> : Serializable {
     // 存储字段值的类型
     @JsonIgnore
@@ -38,8 +45,7 @@ abstract class ModelField<T> : Serializable {
     @JsonIgnore
     open var desc: String? = null
 
-    // 当前值
-    @JsonIgnore
+    // 当前值（公开字段，与旧 Java 版 public volatile T value 一致）
     @JvmField
     @Volatile
     var value: T = defaultValue
@@ -55,7 +61,7 @@ abstract class ModelField<T> : Serializable {
     private fun castNull(): T = null as T
 
     /**
-     * 获取当前值
+     * 获取当前值（与旧版 Lombok @Getter 生成的 getter 等价，Jackson 序列化时经由该方法输出 value）
      *
      * @return 当前值
      */

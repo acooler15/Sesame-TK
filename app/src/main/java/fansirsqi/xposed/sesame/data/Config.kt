@@ -1,10 +1,6 @@
 package fansirsqi.xposed.sesame.data
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
-import com.fasterxml.jackson.databind.node.ObjectNode
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.task.TaskCommon
@@ -20,7 +16,6 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * 配置类，负责加载、保存、管理应用的配置数据。
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 class Config private constructor() {
 
     @Volatile
@@ -32,42 +27,44 @@ class Config private constructor() {
     fun getModelFieldsMap(): Map<String, ModelFields> = _modelFieldsMap
 
     /**
-     * 设置新的模型字段配置
+     * 将配置 JSON 中保存的值应用到模型字段，并重建 modelFieldsMap。
      *
-     * @param newModels 新的模型字段映射
+     * 注意：ModelField 是抽象类，Jackson 无法构造其实例，因此配置加载
+     * 不能依赖 Jackson 数据绑定，而是通过解析 JSON 树手动应用值。
+     *
+     * @param modelFieldsNode 配置 JSON 中的 "modelFieldsMap" 节点，为 null 时全部恢复默认值
      */
-    fun setModelFieldsMap(newModels: Map<String, ModelFields>?) {
+    fun applyModelFieldsJson(modelFieldsNode: JsonNode?) {
+        unload()
         _modelFieldsMap.clear()
         val modelConfigMap = Model.getModelConfigMap()
-        // 如果传入的 newModels 为 null，初始化为空
-        val models = newModels ?: emptyMap()
-        // 遍历所有模型配置，合并字段配置
+        // 遍历所有模型配置，应用已保存的字段值
         for (modelConfig in modelConfigMap.values) {
             val modelCode = modelConfig.code!!
             val newModelFields = ModelFields()
-            val configModelFields = modelConfig.fields
-            val modelFields = models[modelCode]
-            if (modelFields != null) {
-                // 如果已有模型字段，则按值覆盖配置
-                for (configModelField in configModelFields.values) {
-                    val modelField = modelFields[configModelField.code]
-                    try {
-                        if (modelField != null) {
-                            val value = modelField.value
-                            if (value != null) {
-                                configModelField.setObjectValue(value)
+            val savedModelFields = modelFieldsNode?.get(modelCode)
+            for (configModelField in modelConfig.fields.values) {
+                if (savedModelFields != null) {
+                    val savedField = savedModelFields.get(configModelField.code)
+                    if (savedField != null && !savedField.isNull) {
+                        // 标准格式为 {"value": ...}；对象节点无 value 键（如 "toastPerfix": {}）
+                        // 表示值为 null（序列化时被 NON_NULL 省略），跳过即可；
+                        // 非对象节点直接存值，作为兼容格式处理
+                        val valueNode = if (savedField.isObject) {
+                            savedField.get("value")
+                        } else {
+                            savedField
+                        }
+                        if (valueNode != null && !valueNode.isNull) {
+                            try {
+                                configModelField.setObjectValue(valueNode)
+                            } catch (e: Exception) {
+                                Log.printStackTrace(TAG, "应用配置值失败: $modelCode/${configModelField.code}", e)
                             }
                         }
-                    } catch (e: Exception) {
-                        Log.printStackTrace(e)
                     }
-                    newModelFields.addField(configModelField)
                 }
-            } else {
-                // 如果没有找到对应的模型字段，则直接添加配置字段
-                for (configModelField in configModelFields.values) {
-                    newModelFields.addField(configModelField)
-                }
+                newModelFields.addField(configModelField)
             }
             _modelFieldsMap[modelCode] = newModelFields
         }
@@ -187,71 +184,58 @@ class Config private constructor() {
         @Synchronized
         fun load(userId: String?): Config {
             Log.record(TAG, "开始加载配置")
-            var userName = ""
-            var configV2File: File? = null
+            var userName: String
+            val configV2File: File
+            if (StringUtil.isEmpty(userId)) {
+                configV2File = Files.getDefaultConfigV2File()
+                userName = "默认"
+            } else {
+                configV2File = Files.getConfigV2File(userId!!)
+                val userEntity = UserMap.get(userId)
+                userName = userEntity?.showName ?: userId!!
+            }
+            Log.record(TAG, "加载配置: $userName")
+
+            var loaded = false
             try {
-                if (StringUtil.isEmpty(userId)) {
-                    configV2File = Files.getDefaultConfigV2File()
-                    userName = "默认"
-                    if (!configV2File.exists()) {
-                        Log.record(TAG, "默认配置文件不存在，初始化新配置")
-                        unload()
-                        Files.write2File(toSaveStr(), configV2File)
-                    }
-                } else {
-                    configV2File = Files.getConfigV2File(userId!!)
-                    val userEntity = UserMap.get(userId)
-                    userName = userEntity?.showName ?: userId!!
+                val defaultFile = Files.getDefaultConfigV2File()
+                // 优先用户配置，其次默认配置
+                val sourceFile = when {
+                    configV2File.exists() -> configV2File
+                    defaultFile.exists() -> defaultFile
+                    else -> null
                 }
-
-                Log.record(TAG, "加载配置: $userName")
-                val configV2FileExists = configV2File.exists()
-                val defaultConfigV2FileExists = Files.getDefaultConfigV2File().exists()
-
-                if (configV2FileExists) {
-                    val json = Files.readFromFile(configV2File)
-                    try {
-                        JsonUtil.copyMapper().readerForUpdating(INSTANCE).readValue<Config>(json)
-                    } catch (e: UnrecognizedPropertyException) {
-                        Log.error(TAG, "配置文件中存在无法识别的字段: '${e.propertyName}'，将尝试移除并重新加载。")
-                        try {
-                            // 移除无法识别的字段并重新解析
-                            val mapper: ObjectMapper = JsonUtil.copyMapper()
-                            val rootNode: JsonNode = mapper.readTree(json)
-                            (rootNode as ObjectNode).remove(e.propertyName)
-                            val cleanedJson = mapper.writeValueAsString(rootNode)
-                            mapper.readerForUpdating(INSTANCE).readValue<Config>(cleanedJson)
-                            Log.error(TAG, "成功移除问题字段并加载配置。")
-                            // 保存修复后的配置
-                            Files.write2File(toSaveStr(), configV2File)
-                            Log.error(TAG, "已保存修复后的配置文件。")
-                        } catch (innerEx: Exception) {
-                            Log.printStackTrace(TAG, "移除问题字段后，加载配置仍然失败。", innerEx)
-                            throw innerEx // 抛出内部异常，触发重置逻辑
+                if (sourceFile != null) {
+                    val json = Files.readFromFile(sourceFile)
+                    if (json.isNotBlank()) {
+                        // ModelField 为抽象类，Jackson 无法构造，改为手动解析 JSON 树应用配置值
+                        val modelFieldsNode = JsonUtil.toNode(json)?.get("modelFieldsMap")
+                        INSTANCE.applyModelFieldsJson(modelFieldsNode)
+                        loaded = true
+                        if (sourceFile != configV2File) {
+                            Log.record(TAG, "复制新配置: $userName")
                         }
                     }
+                }
+                if (!loaded) {
+                    // 配置文件不存在或内容为空：以默认配置重建
+                    INSTANCE.applyModelFieldsJson(null)
+                }
+                // 仅在解析成功（或无源文件）时规范化回写，解析失败时保留原文件，避免破坏用户配置
+                if (loaded || sourceFile == null) {
                     val formatted = toSaveStr()
-                    if (formatted != null && formatted != json) {
+                    val oldJson = if (configV2File.exists()) Files.readFromFile(configV2File) else ""
+                    if (formatted != oldJson) {
                         Files.write2File(formatted, configV2File)
                     }
-                } else if (defaultConfigV2FileExists) {
-                    val json = Files.readFromFile(Files.getDefaultConfigV2File())
-                    JsonUtil.copyMapper().readerForUpdating(INSTANCE).readValue<Config>(json)
-                    Log.record(TAG, "复制新配置: $userName")
-                    Files.write2File(json, configV2File)
                 } else {
-                    unload()
-                    Files.write2File(toSaveStr(), configV2File)
+                    Log.error(TAG, "配置文件解析失败，本次使用默认配置，原文件保持不变: ${configV2File.absolutePath}")
                 }
             } catch (t: Throwable) {
-                Log.printStackTrace(TAG, "重置配置失败", t)
-                try {
-                    unload()
-                    if (configV2File != null) {
-                        Files.write2File(toSaveStr(), configV2File)
-                    }
-                } catch (e: Exception) {
-                    Log.printStackTrace(TAG, "重置配置失败", e)
+                // 任何异常都不覆盖现有配置文件，仅退回默认配置
+                Log.printStackTrace(TAG, "加载配置失败", t)
+                if (!loaded) {
+                    INSTANCE.applyModelFieldsJson(null)
                 }
             }
             INSTANCE.initialized = true
@@ -273,6 +257,12 @@ class Config private constructor() {
         }
 
         @JvmStatic
-        fun toSaveStr(): String = JsonUtil.formatJson(INSTANCE)
+        fun toSaveStr(): String {
+            // 防御：模型字段未填充时先以默认值重建，避免把空配置写回文件覆盖用户数据
+            if (INSTANCE._modelFieldsMap.isEmpty() && Model.getModelConfigMap().isNotEmpty()) {
+                INSTANCE.applyModelFieldsJson(null)
+            }
+            return JsonUtil.formatJson(INSTANCE)
+        }
     }
 }

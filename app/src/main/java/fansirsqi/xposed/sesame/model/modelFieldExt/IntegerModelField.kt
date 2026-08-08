@@ -137,8 +137,8 @@ open class IntegerModelField : ModelField<Int> {
         value: Int,
         minLimit: Int?,
         maxLimit: Int?,
-        /** 乘数，用于计算最终值 */
-        private val multiple: Int?
+        /** 乘数，用于计算最终值；公开以便序列化时写出 multiple 键（与旧版 Lombok @Getter 行为一致） */
+        val multiple: Int?
     ) : IntegerModelField(code, name, value * multiple!!, minLimit, maxLimit) {
 
         /**

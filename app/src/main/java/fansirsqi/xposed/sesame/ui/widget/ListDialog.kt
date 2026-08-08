@@ -1,19 +1,50 @@
 package fansirsqi.xposed.sesame.ui.widget
 
-import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
-import android.content.DialogInterface
-import android.view.LayoutInflater
-import android.view.View
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ListView
-import android.widget.RelativeLayout
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fansirsqi.xposed.sesame.R
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.entity.CooperateEntity
 import fansirsqi.xposed.sesame.entity.MapperEntity
 import fansirsqi.xposed.sesame.model.SelectModelFieldFunc
@@ -21,9 +52,17 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.SelectAndCountModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectAndCountOneModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectOneModelField
-import fansirsqi.xposed.sesame.ui.adapter.ListAdapter
+import fansirsqi.xposed.sesame.ui.theme.AppTheme
+import fansirsqi.xposed.sesame.ui.theme.ThemeManager
+import kotlinx.coroutines.launch
 import org.json.JSONException
+import kotlin.math.max
 
+/**
+ * 多选/单选/只读列表对话框（Compose 化）。
+ * 通过 ComposeView 桥接弹出，内部使用 Compose AlertDialog + LazyColumn 替代原
+ * Material 对话框 + 列表适配器 + 旧布局文件的实现。
+ */
 class ListDialog {
 
     enum class ListType {
@@ -31,33 +70,6 @@ class ListDialog {
     }
 
     companion object {
-        @SuppressLint("StaticFieldLeak")
-        var listDialog: AlertDialog? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var btn_find_last: Button? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var btn_find_next: Button? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var btn_select_all: Button? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var btn_select_invert: Button? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var searchText: EditText? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var lv_list: ListView? = null
-
-        private var selectModelFieldFunc: SelectModelFieldFunc? = null
-        private var hasCount: Boolean? = null
-        private var listType: ListType? = null
-
-        @SuppressLint("StaticFieldLeak")
-        private var layout_batch_process: RelativeLayout? = null
 
         fun show(c: Context, title: CharSequence, selectModelField: SelectOneModelField, listType: ListType) {
             show(c, title, selectModelField.expandValue, selectModelField, false, listType)
@@ -89,122 +101,318 @@ class ListDialog {
             show(c, title, bl, selectModelFieldFunc, hasCount, ListType.CHECK)
         }
 
-        fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean, listType: ListType) {
-            ListDialog.selectModelFieldFunc = selectModelFieldFunc
-            ListDialog.hasCount = hasCount
-            val la = ListAdapter.getClear(c, listType)
-            @Suppress("UNCHECKED_CAST")
-            la.setBaseList(bl as MutableList<out MapperEntity>?)
-            la.setSelectedList(selectModelFieldFunc)
-            showListDialog(c, title)
-            ListDialog.listType = listType
-        }
-
-        private fun showListDialog(c: Context, title: CharSequence) {
-            if (listDialog == null || listDialog!!.context !== c) {
-                listDialog = MaterialAlertDialogBuilder(c)
-                    .setTitle(title)
-                    .setView(getListView(c))
-                    .setPositiveButton(c.getString(R.string.close), null)
-                    .create()
-            }
-            listDialog!!.setOnShowListener { p1 ->
-                val d = p1 as AlertDialog
-                layout_batch_process = d.findViewById(R.id.layout_batch_process)
-                assert(layout_batch_process != null)
-                layout_batch_process!!.visibility = if (listType == ListType.CHECK && hasCount != true) View.VISIBLE else View.GONE
-                ListAdapter.get(c).notifyDataSetChanged()
-            }
-            listDialog!!.show()
-            val positiveButton = listDialog!!.getButton(DialogInterface.BUTTON_POSITIVE)
-            if (positiveButton != null) {
-                positiveButton.setTextColor(ContextCompat.getColor(c, R.color.selection_color))
-            }
-        }
-
-        private fun getListView(c: Context): View {
-            @SuppressLint("InflateParams") val v = LayoutInflater.from(c).inflate(R.layout.dialog_list, null)
-            btn_find_last = v.findViewById(R.id.btn_find_last)
-            btn_find_next = v.findViewById(R.id.btn_find_next)
-            btn_select_all = v.findViewById(R.id.btn_select_all)
-            btn_select_invert = v.findViewById(R.id.btn_select_invert)
-            val onBtnClickListener = View.OnClickListener { v1 ->
-                if (searchText!!.length() <= 0) return@OnClickListener
-                val la = ListAdapter.get(v1.context)
-                var index = -1
-                if (v1.id == R.id.btn_find_last) index = la.findLast(searchText!!.text.toString())
-                else if (v1.id == R.id.btn_find_next) index = la.findNext(searchText!!.text.toString())
-                if (index < 0) Toast.makeText(v1.context, "未搜到", Toast.LENGTH_SHORT).show()
-                else lv_list!!.setSelection(index)
-            }
-            btn_find_last!!.setOnClickListener(onBtnClickListener)
-            btn_find_next!!.setOnClickListener(onBtnClickListener)
-
-            val batchBtnOnClickListener = View.OnClickListener { v1 ->
-                val la = ListAdapter.get(v1.context)
-                if (v1.id == R.id.btn_select_all) la.selectAll()
-                else if (v1.id == R.id.btn_select_invert) la.SelectInvert()
-            }
-            btn_select_all!!.setOnClickListener(batchBtnOnClickListener)
-            btn_select_invert!!.setOnClickListener(batchBtnOnClickListener)
-
-            searchText = v.findViewById(R.id.edt_find)
-            lv_list = v.findViewById(R.id.lv_list)
-            lv_list!!.setAdapter(ListAdapter.getClear(c))
-
-            lv_list!!.setOnItemClickListener { p1, p2, p3, _ ->
-                if (listType == ListType.SHOW) return@setOnItemClickListener
-                val cur = p1.adapter.getItem(p3) as MapperEntity
-                val holder = p2.tag as ListAdapter.ViewHolder
-                if (hasCount != true) {
-                    if (listType == ListType.RADIO) {
-                        selectModelFieldFunc!!.clear()
-                        if (holder.cb!!.isChecked) holder.cb!!.isChecked = false
-                        else {
-                            for (vh in ListAdapter.viewHolderList) vh.cb!!.isChecked = false
-                            holder.cb!!.isChecked = true
-                            selectModelFieldFunc!!.add(cur.id, 0)
+        /**
+         * 核心实现：通过 ComposeView 桥接弹出 Compose 对话框。
+         *
+         * @param onDismiss 对话框关闭（任意方式）时回调
+         */
+        fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean, listType: ListType, onDismiss: (() -> Unit)? = null) {
+            // 通过 ComposeView 桥接：需要 Activity 获取根视图承载 Compose 内容
+            val activity = c as? Activity ?: return
+            val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+            val composeView = ComposeView(c)
+            composeView.setContent {
+                val isDynamicColor by ThemeManager.isDynamicColor.collectAsStateWithLifecycle()
+                AppTheme(dynamicColor = isDynamicColor) {
+                    ListDialogContent(
+                        title = title,
+                        bl = bl,
+                        selectModelFieldFunc = selectModelFieldFunc,
+                        hasCount = hasCount,
+                        listType = listType,
+                        onDismiss = {
+                            rootView.post { rootView.removeView(composeView) }
+                            onDismiss?.invoke()
                         }
-                    } else {
-                        if (holder.cb!!.isChecked) {
-                            selectModelFieldFunc!!.remove(cur.id)
-                            holder.cb!!.isChecked = false
-                        } else {
-                            if (java.lang.Boolean.FALSE == selectModelFieldFunc!!.contains(cur.id)) selectModelFieldFunc!!.add(cur.id, 0)
-                            holder.cb!!.isChecked = true
+                    )
+                }
+            }
+            rootView.addView(composeView)
+        }
+
+        @Composable
+        private fun ListDialogContent(
+            title: CharSequence,
+            bl: List<out MapperEntity>?,
+            selectModelFieldFunc: SelectModelFieldFunc,
+            hasCount: Boolean,
+            listType: ListType,
+            onDismiss: () -> Unit
+        ) {
+            // 等价原列表适配器 setSelectedList：选中的排前，其余按拼音排序（稳定排序）
+            val sortedList = remember(bl, selectModelFieldFunc) {
+                val base = bl ?: emptyList()
+                try {
+                    base.sortedWith { o1, o2 ->
+                        val contains1 = selectModelFieldFunc.contains(o1.id) == true
+                        val contains2 = selectModelFieldFunc.contains(o2.id) == true
+                        when {
+                            contains1 == contains2 -> o1.compareTo(o2)
+                            contains1 -> -1
+                            else -> 1
                         }
                     }
-                } else {
-                    val edt = EditText(c)
-                    val edtDialog = MaterialAlertDialogBuilder(c)
-                        .setTitle(cur.name)
-                        .setView(edt)
-                        .setPositiveButton(c.getString(R.string.ok)) { _, _ ->
-                            if (edt.length() > 0) {
-                                try {
-                                    val count = edt.text.toString().toInt()
-                                    if (count > 0) {
-                                        selectModelFieldFunc!!.add(cur.id, count)
-                                        holder.cb!!.isChecked = true
-                                    } else {
-                                        selectModelFieldFunc!!.remove(cur.id)
-                                        holder.cb!!.isChecked = false
-                                    }
-                                } catch (ignored: Exception) {
-                                }
-                            }
-                            ListAdapter.get(c).notifyDataSetChanged()
-                        }
-                        .setNegativeButton(c.getString(R.string.cancel), null)
-                        .create()
-                    edt.setHint(if (cur is CooperateEntity) "浇水克数" else "次数")
-                    val value = selectModelFieldFunc!!.get(cur.id)
-                    if (value != null && value >= 0) edt.setText(value.toString())
-                    edtDialog.show()
+                } catch (e: Exception) {
+                    Log.record(TAG, "列表排序错误")
+                    Log.printStackTrace(e)
+                    base
                 }
             }
 
-            return v
+            // 选中状态映射：从 selectModelFieldFunc 初始化，变更时同步写回（等价 CheckBox 状态 + notifyDataSetChanged）
+            val selectedMap = remember {
+                mutableStateMapOf<String, Int>().apply {
+                    sortedList.forEach { item ->
+                        if (selectModelFieldFunc.contains(item.id) == true) {
+                            put(item.id, selectModelFieldFunc.get(item.id) ?: 0)
+                        }
+                    }
+                }
+            }
+
+            // RADIO 模式当前选中项 id
+            val radioSelectedId = remember {
+                mutableStateOf(sortedList.firstOrNull { selectModelFieldFunc.contains(it.id) == true }?.id)
+            }
+
+            val listState: LazyListState = rememberLazyListState()
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+
+            var searchText by remember { mutableStateOf("") }
+            // 搜索定位状态，等价原适配器的 findIndex/findWord
+            var findIndex by remember { mutableStateOf(-1) }
+            var findWord by remember { mutableStateOf<String?>(null) }
+
+            // 计数模式嵌套对话框状态
+            var countDialogItem by remember { mutableStateOf<MapperEntity?>(null) }
+            var countText by remember { mutableStateOf("") }
+
+            // 等价原适配器 findItem：从上次位置起循环查找下一个/上一个匹配项
+            fun findItem(findThis: String, forward: Boolean): Int {
+                if (sortedList.isEmpty()) return -1
+                val word = findThis.lowercase()
+                if (word != findWord) {
+                    findIndex = -1
+                    findWord = word
+                }
+                var current = max(findIndex, 0)
+                val size = sortedList.size
+                val start = current
+                do {
+                    current = if (forward) (current + 1) % size else (current - 1 + size) % size
+                    if (sortedList[current].name.lowercase().contains(word)) {
+                        findIndex = current
+                        return findIndex
+                    }
+                } while (current != start)
+                return -1
+            }
+
+            // 上一个/下一个：未搜到 Toast「未搜到」，搜到滚动定位（等价 lv_list.setSelection）
+            fun search(forward: Boolean) {
+                if (searchText.isEmpty()) return
+                val index = findItem(searchText, forward)
+                if (index < 0) {
+                    Toast.makeText(context, "未搜到", Toast.LENGTH_SHORT).show()
+                } else {
+                    scope.launch { listState.scrollToItem(index) }
+                }
+            }
+
+            // 列表项点击逻辑（等价原 setOnItemClickListener，hasCount == true 时弹出计数对话框）
+            fun onItemClick(item: MapperEntity) {
+                if (hasCount != true) {
+                    if (listType == ListType.RADIO) {
+                        selectModelFieldFunc.clear()
+                        val wasSelected = selectedMap.containsKey(item.id)
+                        selectedMap.clear()
+                        if (wasSelected) {
+                            radioSelectedId.value = null
+                        } else {
+                            selectModelFieldFunc.add(item.id, 0)
+                            selectedMap[item.id] = 0
+                            radioSelectedId.value = item.id
+                        }
+                    } else {
+                        if (selectedMap.containsKey(item.id)) {
+                            selectModelFieldFunc.remove(item.id)
+                            selectedMap.remove(item.id)
+                        } else {
+                            if (selectModelFieldFunc.contains(item.id) != true) selectModelFieldFunc.add(item.id, 0)
+                            selectedMap[item.id] = 0
+                        }
+                    }
+                } else {
+                    countDialogItem = item
+                    val value = selectModelFieldFunc.get(item.id)
+                    countText = if (value != null && value >= 0) value.toString() else ""
+                }
+            }
+
+            AlertDialog(
+                onDismissRequest = onDismiss,
+                title = {
+                    Text(text = title.toString(), style = MaterialTheme.typography.titleLarge)
+                },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        // 批量操作按钮：仅 CHECK 且非计数模式显示（等价 layout_batch_process 可见性）
+                        if (listType == ListType.CHECK && hasCount != true) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                TextButton(onClick = {
+                                    // 等价原适配器 selectAll()
+                                    selectModelFieldFunc.clear()
+                                    selectedMap.clear()
+                                    sortedList.forEach { item ->
+                                        selectModelFieldFunc.add(item.id, 0)
+                                        selectedMap[item.id] = 0
+                                    }
+                                }) {
+                                    Text(text = stringResource(R.string.select_all))
+                                }
+                                TextButton(onClick = {
+                                    // 等价原适配器 SelectInvert()
+                                    sortedList.forEach { item ->
+                                        if (selectedMap.containsKey(item.id)) {
+                                            selectModelFieldFunc.remove(item.id)
+                                            selectedMap.remove(item.id)
+                                        } else {
+                                            selectModelFieldFunc.add(item.id, 0)
+                                            selectedMap[item.id] = 0
+                                        }
+                                    }
+                                }) {
+                                    Text(text = stringResource(R.string.select_invert))
+                                }
+                            }
+                        }
+
+                        // 列表：RADIO → RadioButton；CHECK → Checkbox；SHOW → 无选择控件且点击不响应
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 360.dp)) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                itemsIndexed(sortedList) { index, item ->
+                                    val isClickable = listType != ListType.SHOW
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .then(if (isClickable) Modifier.clickable { onItemClick(item) } else Modifier)
+                                            .padding(vertical = 8.dp, horizontal = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        when (listType) {
+                                            ListType.RADIO -> RadioButton(
+                                                selected = radioSelectedId.value == item.id,
+                                                onClick = null
+                                            )
+                                            ListType.CHECK -> Checkbox(
+                                                checked = selectedMap.containsKey(item.id),
+                                                onCheckedChange = null
+                                            )
+                                            ListType.SHOW -> Unit
+                                        }
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            // 搜索命中的项高亮（等价原适配器中 findIndex == position 显示红色）
+                                            color = if (findIndex == index) Color.Red else MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.padding(start = 12.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // 搜索行：输入框 + 上一个/下一个
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = searchText,
+                                onValueChange = { searchText = it },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true,
+                                placeholder = { Text(text = stringResource(R.string.search)) }
+                            )
+                            IconButton(onClick = { search(false) }) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowUp,
+                                    contentDescription = stringResource(R.string.last)
+                                )
+                            }
+                            IconButton(onClick = { search(true) }) {
+                                Icon(
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = stringResource(R.string.next)
+                                )
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = onDismiss) {
+                        Text(text = stringResource(R.string.close))
+                    }
+                }
+            )
+
+            // 计数模式嵌套对话框（等价原 EditText + Material 对话框）
+            countDialogItem?.let { item ->
+                AlertDialog(
+                    onDismissRequest = { countDialogItem = null },
+                    title = {
+                        Text(text = item.name, style = MaterialTheme.typography.titleLarge)
+                    },
+                    text = {
+                        OutlinedTextField(
+                            value = countText,
+                            onValueChange = { countText = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            placeholder = {
+                                Text(text = if (item is CooperateEntity) "浇水克数" else "次数")
+                            }
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            if (countText.isNotEmpty()) {
+                                try {
+                                    val count = countText.toInt()
+                                    if (count > 0) {
+                                        selectModelFieldFunc.add(item.id, count)
+                                        selectedMap[item.id] = count
+                                    } else {
+                                        selectModelFieldFunc.remove(item.id)
+                                        selectedMap.remove(item.id)
+                                    }
+                                } catch (ignored: Exception) {
+                                    // 非数字输入忽略
+                                }
+                            }
+                            countDialogItem = null
+                        }) {
+                            Text(text = stringResource(R.string.ok))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { countDialogItem = null }) {
+                            Text(text = stringResource(R.string.cancel))
+                        }
+                    }
+                )
+            }
         }
+
+        private const val TAG = "ListDialog"
     }
 }

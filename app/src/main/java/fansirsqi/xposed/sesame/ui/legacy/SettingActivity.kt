@@ -1,30 +1,27 @@
 package fansirsqi.xposed.sesame.ui.legacy
 
-import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.data.Config
 import fansirsqi.xposed.sesame.entity.AlipayUser
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.SelectModelFieldFunc
-import fansirsqi.xposed.sesame.ui.BaseActivity
-import fansirsqi.xposed.sesame.ui.adapter.ContentPagerAdapter
-import fansirsqi.xposed.sesame.ui.adapter.TabAdapter
-import fansirsqi.xposed.sesame.ui.extension.WatermarkInjector
+import fansirsqi.xposed.sesame.ui.extension.WatermarkLayer
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
+import fansirsqi.xposed.sesame.ui.theme.AppTheme
+import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
 import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.util.LanguageUtil
@@ -42,7 +39,7 @@ import fansirsqi.xposed.sesame.util.maps.SesameGiftMap
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap
 
-class SettingActivity : BaseActivity() {
+class SettingActivity : ComponentActivity() {
     private lateinit var exportLauncher: ActivityResultLauncher<Intent>
     private lateinit var importLauncher: ActivityResultLauncher<Intent>
     private var userId: String? = null
@@ -69,9 +66,8 @@ class SettingActivity : BaseActivity() {
         IdMapManager.getInstance(ReserveMap::class.java).load()
         IdMapManager.getInstance(BeachMap::class.java).load()
         Config.load(this.userId)
-        // 设置语言和布局
+        // 设置语言
         LanguageUtil.setLocale(this)
-        setContentView(R.layout.activity_settings)
         // 处理返回键
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -95,60 +91,29 @@ class SettingActivity : BaseActivity() {
                 PortUtil.handleImport(this, result.data!!.data, userId)
             }
         }
-        // 设置副标题
-        if (this.userName != null) {
-            baseSubtitle = getString(R.string.settings) + ": " + this.userName
-        }
-        initializeTabs()
-        WatermarkInjector.inject(this)
-    }
-
-    private fun initializeTabs() {
-        try {
-            val recyclerTabList = findViewById<RecyclerView>(R.id.recycler_tab_list)
-            recyclerTabList.layoutManager = LinearLayoutManager(this)
-            val modelConfigMap = Model.getModelConfigMap()
-            val tabTitles = ArrayList<String>()
-            for (config in modelConfigMap.values) {
-                tabTitles.add(config.name!!)
+        // 渲染 Compose 配置页
+        setContent {
+            val isDynamicColor by ThemeManager.isDynamicColor.collectAsStateWithLifecycle()
+            AppTheme(dynamicColor = isDynamicColor) {
+                WatermarkLayer(uidList = listOfNotNull(userId)) {
+                    SettingScreen(
+                        title = if (this.userName != null) {
+                            getString(R.string.settings) + ": " + this.userName
+                        } else {
+                            getString(R.string.settings)
+                        },
+                        onMenuAction = { itemId -> handleMenuAction(itemId) }
+                    )
+                }
             }
-            val viewPager = findViewById<ViewPager2>(R.id.view_pager_content)
-            val tabAdapter = TabAdapter(this, tabTitles, object : TabAdapter.OnTabClickListener {
-                override fun onTabClick(position: Int) {
-                    viewPager.setCurrentItem(position, true)
-                }
-            })
-            recyclerTabList.adapter = tabAdapter
-            val contentAdapter = ContentPagerAdapter(supportFragmentManager, lifecycle, modelConfigMap)
-            viewPager.adapter = contentAdapter
-            viewPager.isUserInputEnabled = false // 禁止用户手动滑动
-            viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-                override fun onPageSelected(position: Int) {
-                    recyclerTabList.smoothScrollToPosition(position)
-                    tabAdapter.setSelectedPosition(position)
-                }
-            })
-        } catch (t: Throwable) {
-            Log.error(TAG, "初始化Tabs失败: " + t.message)
-            Log.printStackTrace(TAG, t)
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // 创建菜单选项
-        menu.add(0, 1, 1, "导出配置")
-        menu.add(0, 2, 2, "导入配置")
-        menu.add(0, 3, 3, "删除配置")
-        menu.add(0, 4, 4, "单向好友")
-        menu.add(0, 5, 5, "切换WEBUI")
-        menu.add(0, 6, 6, "保存")
-        menu.add(0, 7, 7, "复制ID")
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // 处理菜单项点击事件
-        when (item.itemId) {
+    /**
+     * 处理菜单项点击，逻辑与原 onOptionsItemSelected 保持一致
+     */
+    private fun handleMenuAction(itemId: Int) {
+        when (itemId) {
             1 -> { // 导出配置
                 val exportIntent = Intent(Intent.ACTION_CREATE_DOCUMENT)
                 exportIntent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -163,30 +128,12 @@ class SettingActivity : BaseActivity() {
                 importIntent.putExtra(Intent.EXTRA_TITLE, "config_v2.json")
                 importLauncher.launch(importIntent)
             }
-            3 -> AlertDialog.Builder(this) // 删除配置
-                .setTitle("警告")
-                .setMessage("确认删除该配置？")
-                .setPositiveButton(R.string.ok) { _, _ ->
-                    val userConfigDirectoryFile = if (StringUtil.isEmpty(this.userId)) {
-                        Files.getDefaultConfigV2File()
-                    } else {
-                        Files.getUserConfigDir(this.userId!!)
-                    }
-                    if (Files.delFile(userConfigDirectoryFile)) {
-                        ToastUtil.makeText(this, "配置删除成功", Toast.LENGTH_SHORT).show()
-                    } else {
-                        ToastUtil.makeText(this, "配置删除失败", Toast.LENGTH_SHORT).show()
-                    }
-                    finish()
-                }
-                .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-                .create()
-                .show()
+            3 -> deleteConfig() // 删除配置
             4 -> ListDialog.show( // 查看单向好友列表
                 this, "单向好友列表", AlipayUser.getList { user -> user.friendStatus != 1 },
                 SelectModelFieldFunc.newMapInstance(), false, ListDialog.ListType.SHOW
             )
-            5 -> { // 切换到新 UI
+            5 -> { // 切换到 WEBUI
                 ConfigRepository.setUiMode(UiMode.Web)
                 val intent = Intent(this, WebSettingsActivity::class.java)
                 intent.putExtra("userId", userId)
@@ -203,7 +150,23 @@ class SettingActivity : BaseActivity() {
                 ToastUtil.showToastWithDelay(this, "复制成功！", 100)
             }
         }
-        return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * 删除当前用户配置，逻辑与原菜单项 3 确认后一致
+     */
+    private fun deleteConfig() {
+        val userConfigDirectoryFile = if (StringUtil.isEmpty(this.userId)) {
+            Files.getDefaultConfigV2File()
+        } else {
+            Files.getUserConfigDir(this.userId!!)
+        }
+        if (Files.delFile(userConfigDirectoryFile)) {
+            ToastUtil.makeText(this, "配置删除成功", Toast.LENGTH_SHORT).show()
+        } else {
+            ToastUtil.makeText(this, "配置删除失败", Toast.LENGTH_SHORT).show()
+        }
+        finish()
     }
 
     private fun save() {
@@ -219,9 +182,5 @@ class SettingActivity : BaseActivity() {
         } catch (th: Throwable) {
             Log.printStackTrace(th)
         }
-    }
-
-    companion object {
-        private val TAG: String = SettingActivity::class.java.simpleName
     }
 }

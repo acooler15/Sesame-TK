@@ -1,7 +1,6 @@
 package fansirsqi.xposed.sesame.ui.legacy
 
 import android.annotation.SuppressLint
-import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -11,41 +10,69 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.Menu
-import android.view.MenuItem
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fasterxml.jackson.core.type.TypeReference
 import fansirsqi.xposed.sesame.BuildConfig
 import fansirsqi.xposed.sesame.R
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.json.JsonUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
+import fansirsqi.xposed.sesame.core.util.LanguageUtil
+import fansirsqi.xposed.sesame.core.util.PortUtil
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import fansirsqi.xposed.sesame.data.Config
 import fansirsqi.xposed.sesame.entity.AlipayUser
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.SelectModelFieldFunc
-import fansirsqi.xposed.sesame.ui.BaseActivity
+import fansirsqi.xposed.sesame.ui.compose.CommonAlertDialog
 import fansirsqi.xposed.sesame.ui.dto.ModelDto
 import fansirsqi.xposed.sesame.ui.dto.ModelFieldInfoDto
 import fansirsqi.xposed.sesame.ui.dto.ModelFieldShowDto
 import fansirsqi.xposed.sesame.ui.dto.ModelGroupDto
-import fansirsqi.xposed.sesame.ui.extension.WatermarkInjector
+import fansirsqi.xposed.sesame.ui.extension.WatermarkLayer
 import fansirsqi.xposed.sesame.ui.model.UiMode
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
+import fansirsqi.xposed.sesame.ui.theme.AppTheme
+import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
-import fansirsqi.xposed.sesame.core.app.Files
-import fansirsqi.xposed.sesame.core.json.JsonUtil
-import fansirsqi.xposed.sesame.core.util.LanguageUtil
-import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.core.util.PortUtil
-import fansirsqi.xposed.sesame.core.util.StringUtil
-import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.BeachMap
 import fansirsqi.xposed.sesame.util.maps.CooperateMap
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
@@ -58,7 +85,11 @@ import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap
 import org.json.JSONException
 import java.nio.charset.StandardCharsets
 
-class WebSettingsActivity : BaseActivity() {
+/**
+ * Web 配置页（Compose 外壳 + AndroidView WebView）
+ * 由 BaseActivity + activity_web_settings 布局迁移而来：Activity 类型、布局、菜单已 Compose 化，业务逻辑全部保留
+ */
+class WebSettingsActivity : ComponentActivity() {
     private lateinit var exportLauncher: ActivityResultLauncher<Intent>
     private lateinit var importLauncher: ActivityResultLauncher<Intent>
     private lateinit var webView: WebView
@@ -68,13 +99,6 @@ class WebSettingsActivity : BaseActivity() {
     private val tabList = ArrayList<ModelDto>()
     private val groupList = ArrayList<ModelGroupDto>()
 
-    override var baseSubtitle: String?
-        get() = getString(R.string.settings)
-        set(value) {
-            super.baseSubtitle = value
-        }
-
-    @SuppressLint("MissingInflatedId", "SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         context = this
@@ -98,7 +122,6 @@ class WebSettingsActivity : BaseActivity() {
         IdMapManager.getInstance(BeachMap::class.java).load()
         Config.load(userId)
         LanguageUtil.setLocale(this)
-        setContentView(R.layout.activity_web_settings)
         // 处理返回键
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -129,12 +152,40 @@ class WebSettingsActivity : BaseActivity() {
                 PortUtil.handleImport(this, result.data!!.data, userId)
             }
         }
-        if (userName != null) {
-            baseSubtitle = getString(R.string.settings) + ": " + userName
+        // tabList/groupList 构建
+        val modelConfigMap = Model.getModelConfigMap()
+        for ((key, modelConfig) in modelConfigMap) {
+            tabList.add(ModelDto(key, modelConfig.name, modelConfig.icon, modelConfig.group?.code, null))
         }
-        context = this
-        webView = findViewById(R.id.webView)
-        val settings = webView.settings
+        for (modelGroup in ModelGroup.entries) {
+            groupList.add(ModelGroupDto(modelGroup.code, modelGroup.displayName, modelGroup.icon))
+        }
+        // 渲染 Compose 配置页（原 setContentView(R.layout.activity_web_settings)）
+        setContent {
+            val isDynamicColor by ThemeManager.isDynamicColor.collectAsStateWithLifecycle()
+            AppTheme(dynamicColor = isDynamicColor) {
+                WatermarkLayer(uidList = listOfNotNull(userId)) {
+                    WebSettingsScreen(
+                        title = if (userName != null) {
+                            getString(R.string.settings) + ": " + userName
+                        } else {
+                            getString(R.string.settings)
+                        },
+                        webViewFactory = ::createWebView,
+                        onWebViewCreated = { webView = it },
+                        onMenuAction = { itemId -> handleMenuAction(itemId) }
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * 创建并配置 WebView（原 onCreate 中 findViewById 后的全部配置逻辑）
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun createWebView(ctx: Context): WebView = WebView(ctx).apply {
+        val settings = this.settings
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
@@ -148,7 +199,7 @@ class WebSettingsActivity : BaseActivity() {
         settings.javaScriptCanOpenWindowsAutomatically = true
         settings.loadsImagesAutomatically = true
         settings.defaultTextEncodingName = StandardCharsets.UTF_8.name()
-        webView.webViewClient = object : WebViewClient() {
+        webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 // 强制在当前 WebView 中加载 url
                 val requestUrl: Uri = request.url
@@ -171,42 +222,14 @@ class WebSettingsActivity : BaseActivity() {
         }
         if (BuildConfig.DEBUG) {
             WebView.setWebContentsDebuggingEnabled(true)
-//            webView.loadUrl("http://192.168.31.69:5500/app/src/main/assets/web/index.html")
-            webView.loadUrl("file:///android_asset/web/semi_index.html")
+//            loadUrl("http://192.168.31.69:5500/app/src/main/assets/web/index.html")
+            loadUrl("file:///android_asset/web/semi_index.html")
         } else {
-            webView.loadUrl("file:///android_asset/web/semi_index.html")
+            loadUrl("file:///android_asset/web/semi_index.html")
         }
-        webView.addJavascriptInterface(WebViewCallback(), "HOOK")
+        addJavascriptInterface(WebViewCallback(), "HOOK")
 
-        webView.requestFocus()
-        val modelConfigMap = Model.getModelConfigMap()
-        for ((key, modelConfig) in modelConfigMap) {
-            tabList.add(ModelDto(key, modelConfig.name, modelConfig.icon, modelConfig.group?.code, null))
-        }
-        for (modelGroup in ModelGroup.entries) {
-            groupList.add(ModelGroupDto(modelGroup.code, modelGroup.displayName, modelGroup.icon))
-        }
-        WatermarkInjector.inject(this)
-    }
-
-    inner class WebAppInterface {
-        @JavascriptInterface
-        fun onBackPressed() {
-            runOnUiThread {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    Log.record(TAG, "WebAppInterface onBackPressed: save")
-                    save()
-                    this@WebSettingsActivity.finish()
-                }
-            }
-        }
-
-        @JavascriptInterface
-        fun onExit() {
-            runOnUiThread { this@WebSettingsActivity.finish() }
-        }
+        requestFocus()
     }
 
     private inner class WebViewCallback {
@@ -388,57 +411,43 @@ class WebSettingsActivity : BaseActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(0, 1, 1, "导出配置")
-        menu.add(0, 2, 2, "导入配置")
-        menu.add(0, 3, 3, "删除配置")
-        menu.add(0, 4, 4, "单向好友")
-        menu.add(0, 5, 5, "切换UI")
-        menu.add(0, 6, 6, "保存")
-        menu.add(0, 7, 7, "复制ID")
-        return super.onCreateOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            1 -> {
+    /**
+     * 处理菜单项点击，逻辑与原 onOptionsItemSelected 保持一致
+     */
+    private fun handleMenuAction(itemId: Int) {
+        when (itemId) {
+            1 -> { // 导出配置
                 val exportIntent = Intent(Intent.ACTION_CREATE_DOCUMENT)
                 exportIntent.addCategory(Intent.CATEGORY_OPENABLE)
                 exportIntent.type = "*/*"
                 exportIntent.putExtra(Intent.EXTRA_TITLE, "[" + userName + "]-config_v2.json")
                 exportLauncher.launch(exportIntent)
             }
-            2 -> {
+            2 -> { // 导入配置
                 val importIntent = Intent(Intent.ACTION_GET_CONTENT)
                 importIntent.addCategory(Intent.CATEGORY_OPENABLE)
                 importIntent.type = "*/*"
                 importIntent.putExtra(Intent.EXTRA_TITLE, "config_v2.json")
                 importLauncher.launch(importIntent)
             }
-            3 -> AlertDialog.Builder(context)
-                .setTitle("警告")
-                .setMessage("确认删除该配置？")
-                .setPositiveButton(R.string.ok) { _, _ ->
-                    val userConfigDirectoryFile = if (StringUtil.isEmpty(userId)) {
-                        Files.getDefaultConfigV2File()
-                    } else {
-                        Files.getUserConfigDir(userId!!)
-                    }
-                    if (Files.delFile(userConfigDirectoryFile)) {
-                        Toast.makeText(this, "配置删除成功", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "配置删除失败", Toast.LENGTH_SHORT).show()
-                    }
-                    finish()
+            3 -> { // 删除配置（经确认对话框后执行）
+                val userConfigDirectoryFile = if (StringUtil.isEmpty(userId)) {
+                    Files.getDefaultConfigV2File()
+                } else {
+                    Files.getUserConfigDir(userId!!)
                 }
-                .setNegativeButton(R.string.cancel) { dialog, _ -> dialog.dismiss() }
-                .create()
-                .show()
-            4 -> ListDialog.show(
+                if (Files.delFile(userConfigDirectoryFile)) {
+                    Toast.makeText(this, "配置删除成功", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "配置删除失败", Toast.LENGTH_SHORT).show()
+                }
+                finish()
+            }
+            4 -> ListDialog.show( // 查看单向好友列表
                 this, "单向好友列表", AlipayUser.getList { user -> user.friendStatus != 1 },
                 SelectModelFieldFunc.newMapInstance(), false, ListDialog.ListType.SHOW
             )
-            5 -> {
+            5 -> { // 切换 UI 到新配置页
                 ConfigRepository.setUiMode(UiMode.New)
                 val intent = Intent(this, SettingActivity::class.java)
                 intent.putExtra("userId", userId)
@@ -446,7 +455,7 @@ class WebSettingsActivity : BaseActivity() {
                 finish()
                 startActivity(intent)
             }
-            6 -> {
+            6 -> { // 保存
                 // 在调用 save() 之前，先调用 JS 函数同步 WebView 中的数据到 Java 端
                 Log.record(TAG, "WebSettingsActivity.onOptionsItemSelected: Calling handleData() in WebView")
                 webView.evaluateJavascript("if(typeof handleData === 'function'){ handleData(); } else { console.error('handleData function not found'); }", null)
@@ -454,15 +463,13 @@ class WebSettingsActivity : BaseActivity() {
                 // 200 毫秒是一个经验值，如果仍然有问题可以适当增加
                 Handler(Looper.getMainLooper()).postDelayed({ save() }, 200) // 延迟 200 毫秒
             }
-            7 -> {
-                // 复制userId到剪切板
+            7 -> { // 复制 userId 到剪切板
                 val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
                 val clipData = ClipData.newPlainText("userId", this.userId)
                 cm.setPrimaryClip(clipData)
                 ToastUtil.showToastWithDelay(this, "复制成功！", 100)
             }
         }
-        return super.onOptionsItemSelected(item)
     }
 
     private fun save() {
@@ -488,5 +495,93 @@ class WebSettingsActivity : BaseActivity() {
 
     companion object {
         private const val TAG = "WebSettingsActivity"
+    }
+}
+
+/**
+ * Web 配置页 Compose 外壳：Scaffold + TopAppBar + DropdownMenu 菜单 + AndroidView WebView
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WebSettingsScreen(
+    title: String,
+    webViewFactory: (Context) -> WebView,
+    onWebViewCreated: (WebView) -> Unit,
+    onMenuAction: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontSize = 24.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                actions = {
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "菜单")
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            // 菜单项顺序与原 onCreateOptionsMenu 一致
+                            val menuItems = listOf(
+                                "导出配置", "导入配置", "删除配置", "单向好友", "切换UI", "保存", "复制ID"
+                            )
+                            menuItems.forEachIndexed { index, menuText ->
+                                DropdownMenuItem(
+                                    text = { Text(menuText) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        if (index + 1 == 3) {
+                                            // 删除配置需先确认
+                                            showDeleteDialog = true
+                                        } else {
+                                            onMenuAction(index + 1)
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        AndroidView(
+            factory = { ctx ->
+                webViewFactory(ctx).also { createdWebView -> onWebViewCreated(createdWebView) }
+            },
+            // 保留原布局 activity_web_settings 中 WebView 的 48dp 底部留白
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(bottom = 48.dp)
+                .fillMaxSize()
+        )
+    }
+
+    // 删除配置确认对话框，行为与原菜单项 3 的 AlertDialog.Builder 一致
+    if (showDeleteDialog) {
+        CommonAlertDialog(
+            showDialog = true,
+            onDismissRequest = { showDeleteDialog = false },
+            onConfirm = { onMenuAction(3) },
+            title = "警告",
+            text = "确认删除该配置？",
+            confirmText = context.getString(R.string.ok),
+            dismissText = context.getString(R.string.cancel)
+        )
     }
 }

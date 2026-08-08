@@ -83,6 +83,8 @@ util/
 
 `ModelField` 及其子类仍直接创建 Android View（`Button`、`LinearLayout`、`MaterialButton`），数据模型与传统 UI 强耦合。`modelFieldExt/` 下 4 个子类（`SelectOneModelField`、`SelectAndCountModelField`、`SelectAndCountOneModelField`、`SelectModelField`）的 `getView(context: Context): View` 方法直接实例化传统 View 组件。
 
+> ✅ material 传统依赖已于 Phase 13 移除（见 [MATERIAL_REMOVAL_PLAN.md](MATERIAL_REMOVAL_PLAN.md)，tag: phase-13-done），项目 UI 栈为 Compose-only（Compose Material3 保留）；P4 剩余项仅为 `getView()` 传统 View 创建路径本身。
+
 ---
 
 ## 2. 优化目标
@@ -309,6 +311,24 @@ fansirsqi.xposed.sesame
 | 11.2 | Compose 配置页迁移 | 高 | 完成 | d3d73bb8 |
 | 11.3 | 移除传统 View 依赖（评估） | 中 | 完成 | b7418baf |
 | — | **Phase 11 完成** | — | — | tag: phase-11-done |
+| 13.1 | 删除无引用布局 | 低 | 完成 | f0e50863 |
+| 13.2 | Compose 化 ChoiceDialog | 低 | 完成 | dcf229a5 |
+| 13.3 | Compose 化 StringDialog | 中 | 完成 | bfcfdc06 |
+| 13.4a | Compose 化 ListDialog 主体 | 高 | 完成 | 17546d81 |
+| 13.4b | 处理 CustomSettings 反射耦合 | 中 | 完成 | 16c14a25 |
+| 13.4c | 删除旧 ListAdapter 和布局 | 低 | 完成 | 67c9b4ba |
+| 13.5a | WebSettingsActivity 迁移 Compose | 高 | 完成 | d1e50579 |
+| 13.5b | 删除 BaseActivity 和旧布局 | 低 | 完成 | 907d14bb |
+| 13.6 | ExtendActivity 继承迁移 | 低 | 完成 | 8d9d8156 |
+| 13.7a | 更换 AppTheme parent | 中 | 完成 | c6f1f849 |
+| 13.7b | 删除死样式 Widget.App.Button.Main | 低 | 完成 | c6f1f849 |
+| 13.7c | 清理 MenuTheme | 低 | 完成 | c6f1f849 |
+| 13.8a | 全项目 Material 引用清零验证 | 低 | 完成 | 6ad58e4a |
+| 13.8b | 移除 build.gradle.kts 依赖 | 低 | 完成 | 6ad58e4a |
+| 13.8c | 移除 libs.versions.toml 条目 | 低 | 完成 | 6ad58e4a |
+| 13.8d | 完整构建验证 | 中 | 完成 | 6ad58e4a |
+| 13.9 | 文档同步 | 低 | 完成 | 8b4ed336 |
+| — | **Phase 13 完成** | — | — | tag: phase-13-done |
 
 ---
 

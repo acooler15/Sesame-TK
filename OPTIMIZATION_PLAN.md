@@ -306,7 +306,7 @@ fansirsqi.xposed.sesame
 | 12.8 | 文档同步 | 低 | 完成 | 7e742acf |
 | — | **Phase 12 完成** | — | — | tag: phase-12-done |
 | 11.1 | 提取 ModelField 视图描述 | 高 | 完成 | 836f6d66 |
-| 11.2 | Compose 配置页迁移 | 高 | 待开始 | — |
+| 11.2 | Compose 配置页迁移 | 高 | 完成 | d3d73bb8 |
 | 11.3 | 移除传统 View 依赖（评估） | 中 | 待开始 | — |
 | — | **Phase 11 完成** | — | — | — |
 

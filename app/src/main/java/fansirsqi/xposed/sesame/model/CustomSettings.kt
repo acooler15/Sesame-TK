@@ -17,7 +17,6 @@ import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
-import java.lang.reflect.Field
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -294,14 +293,7 @@ object CustomSettings {
                     onRefresh()
                     showAccountOps(context, uid, showName, onRefresh)
                 } else if (which == 1) {
-                    ListDialog.show(context, "黑名单 | $showName", onlyOnceDailyList)
-                    try {
-                        val dialogField: Field = ListDialog::class.java.getDeclaredField("listDialog")
-                        dialogField.isAccessible = true
-                        val dialog = dialogField.get(null) as? androidx.appcompat.app.AlertDialog
-                        dialog?.setOnDismissListener { save(uid) }
-                    } catch (e: Exception) {
-                    }
+                    ListDialog.show(context, "黑名单 | $showName", onlyOnceDailyList, onDismiss = { save(uid) })
                 } else if (which == 2) {
                     val edt = android.widget.EditText(context)
                     edt.setText(autoHandleOnceDailyTimes.configValue)

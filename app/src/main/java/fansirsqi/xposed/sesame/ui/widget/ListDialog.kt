@@ -80,8 +80,8 @@ class ListDialog {
         }
 
         @Throws(JSONException::class)
-        fun show(c: Context, title: CharSequence, selectModelField: SelectModelField) {
-            show(c, title, selectModelField, ListType.CHECK)
+        fun show(c: Context, title: CharSequence, selectModelField: SelectModelField, onDismiss: (() -> Unit)? = null) {
+            show(c, title, selectModelField, ListType.CHECK, onDismiss)
         }
 
         fun show(c: Context, title: CharSequence, selectModelField: SelectAndCountModelField) {
@@ -89,8 +89,8 @@ class ListDialog {
         }
 
         @Throws(JSONException::class)
-        fun show(c: Context, title: CharSequence, selectModelField: SelectModelField, listType: ListType) {
-            show(c, title, selectModelField.expandValue, selectModelField, false, listType)
+        fun show(c: Context, title: CharSequence, selectModelField: SelectModelField, listType: ListType, onDismiss: (() -> Unit)? = null) {
+            show(c, title, selectModelField.expandValue, selectModelField, false, listType, onDismiss)
         }
 
         fun show(c: Context, title: CharSequence, selectModelField: SelectAndCountModelField, listType: ListType) {

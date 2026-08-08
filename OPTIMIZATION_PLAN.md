@@ -76,6 +76,8 @@ util/
 | A1 | `@JvmStatic`/`@JvmField`/`@JvmOverloads` 注解残留 | 25 处，分布在 8 个文件中；所有 Java 调用方已迁移，注解失去意义 |
 | A2 | `libs.versions.toml` 死条目 | `android`、`desugar`、`junit`/`androidx-junit`/`espresso-core`、`ui-tooling-preview-android`、`rikka-hidden-stub` |
 | A3 | `material3` 重复定义 | `libs.material3`（显式版本）与 `libs.androidx-material3`（BOM 管理）同时引用 |
+| A4 | 附录清单外的 `@JvmStatic`/`@JvmField` 残留 | 97 处，分布在 6 个文件中（Status.kt 66、UserMap.kt 13、Config.kt 7、ApplicationHook.kt 7、ModelField.kt 3、AntForest.kt 1）；涉及 Jackson 序列化与 Xposed 加载链路，需专项评估后移除 |
+| A5 | `OptionsAdapter` 死代码 | `ui/adapter/OptionsAdapter.kt` 全文件无外部调用方，可整体删除 |
 
 #### 🟢 P4：Model-UI 耦合
 
@@ -217,6 +219,33 @@ fansirsqi.xposed.sesame
 | 10.4 | 清理 `libs.versions.toml` 死条目 | `libs.versions.toml` | 移除 `android`、`desugar`、`junit`、`androidx-junit`、`espresso-core`、`ui-tooling-preview-android`、`rikka-hidden-stub` 条目 | — | 低 | 编译通过 |
 | 10.5 | 合并 `material3` 重复定义 | `libs.versions.toml`、`build.gradle.kts` | 移除 `libs.material3`（显式版本），统一使用 BOM 管理的 `libs.androidx.material3` | 10.4 | 低 | 编译通过 |
 
+### Phase 12：附录清单外注解清理与死代码删除
+
+> 目标：评估并移除 Phase 10 附录清单外的 `@JvmStatic`/`@JvmField` 注解（97 处），删除 `OptionsAdapter` 死代码
+> 前置条件：Phase 10 完成（已完成）
+> 核心约束：不改变 Jackson 序列化行为；移除前逐项验证反射/序列化依赖
+
+#### 12.0 核查结论
+
+经核查（2026-08-08）：
+- 项目中无 Java 源文件调用 Status/Config/UserMap/ApplicationHook 的 companion object 成员
+- 无 `field.get(Config)` 式的直接反射访问存在于代码中
+- Jackson 通过内部反射序列化/反序列化实例，`@JvmStatic` 在 companion object 成员上不影响实例序列化
+- `@JvmField` 在 ModelField 实例字段（`value`/`defaultValue`/`valueType`）上风险最高，Jackson 可能用字段访问而非 getter
+- 历史上曾有「ModelField 抽象化导致 Jackson 反序列化失败并清空 config_v2.json」事故，需重点验证
+- ApplicationHook 的 `@JvmField`（`classLoader`/`appContext`/`offline`）被 22 处 Kotlin 代码引用，移除后 Kotlin 层仍可访问，但需验证 Xposed 加载链路
+
+| Task | 标题 | 涉及文件 | 操作 | 前置 | 风险 | 验证 |
+|------|------|---------|------|------|------|------|
+| 12.1 | 移除 Status.kt 的 66 处 `@JvmStatic` | `data/Status.kt` | 逐个移除 companion object 上的 `@JvmStatic`；验证 Jackson 序列化 `Status.INSTANCE` 正常（`load`/`save`/`unload` 路径）；确认 `Status.INSTANCE.useAccelerateToolCount` 等 Kotlin 调用不受影响 | Phase 10 | 中 | 编译通过 + 真机验证 status.json 读写 |
+| 12.2 | 移除 UserMap.kt 的 13 处 `@JvmStatic` | `util/maps/UserMap.kt` | 逐个移除 `@JvmStatic`；验证 `UserMap.currentUid`/`UserMap.get()` 等 Kotlin 调用正常；删除注释中过时的 `@JvmStatic 和 @JvmField` 说明 | 12.1 | 低 | 编译通过 |
+| 12.3 | 移除 Config.kt 的 7 处 `@JvmStatic`/`@JvmField` | `data/Config.kt` | 移除 `INSTANCE` 上的 `@JvmField`，移除 5 个方法上的 `@JvmStatic`；验证 `Config.INSTANCE` 序列化（`toSaveStr`/`load`/`save` 路径）正常 | 12.1 | 中 | 编译通过 + 真机验证 config_v2.json 读写 |
+| 12.4 | 移除 ApplicationHook.kt 的 7 处 `@JvmStatic`/`@JvmField` | `hook/ApplicationHook.kt` | 移除 `classLoader`/`appContext`/`offline` 上的 `@JvmField`，移除 `alipayVersion`/`shouldEnableSimplePageManager`/`setOffline`/`reLoginByBroadcast` 上的 `@JvmStatic`；验证 22 处 Kotlin 调用方正常；真机验证 Xposed 模块加载 | 12.2 | 高 | 编译通过 + 真机验证模块加载 |
+| 12.5 | 评估并移除 ModelField.kt 的 3 处 `@JvmField` | `model/ModelField.kt` | 移除 `valueType`/`defaultValue`/`value` 上的 `@JvmField`；重点验证 Jackson 序列化仍走 `getValue()` getter（而非直接字段访问）；编写序列化测试用例验证 config_v2.json 格式不变 | 12.3 | 高 | 编译通过 + 序列化测试 + 真机验证配置页读写 |
+| 12.6 | 移除 AntForest.kt 的 1 处 `@JvmField` | `task/antForest/AntForest.kt` | 移除 `instance` 上的 `@JvmField`；验证 Kotlin 调用方正常 | 12.4 | 低 | 编译通过 |
+| 12.7 | 删除 OptionsAdapter 死代码 | `ui/adapter/OptionsAdapter.kt` | 整文件删除；确认无引用后移除 | 12.1 | 低 | 编译通过 |
+| 12.8 | 文档同步 | `OPTIMIZATION_PLAN.md` | 更新进度表状态、回填提交哈希、打标 `phase-12-done` | 12.7 | 低 | 文档与代码状态一致 |
+
 ### Phase 11：Model-UI 解耦（可选）
 
 > 目标：将 `ModelField` 体系与 Android View 解耦，为 Compose 配置页迁移扫清障碍
@@ -267,6 +296,15 @@ fansirsqi.xposed.sesame
 | 10.4 | 清理 libs.versions.toml 死条目 | 低 | 完成 | 7fbb927d |
 | 10.5 | 合并 material3 重复定义 | 低 | 完成 | ed163b3d |
 | — | **Phase 10 完成** | — | — | tag: phase-10-done |
+| 12.1 | 移除 Status.kt 的 66 处 @JvmStatic | 中 | 完成 | 88b4e639 |
+| 12.2 | 移除 UserMap.kt 的 13 处 @JvmStatic | 低 | 完成 | 807258fa |
+| 12.3 | 移除 Config.kt 的 7 处 @JvmStatic/@JvmField | 中 | 完成 | e152af83 |
+| 12.4 | 移除 ApplicationHook.kt 的 7 处 @JvmStatic/@JvmField | 高 | 完成 | 62d046a2 |
+| 12.5 | 评估并移除 ModelField.kt 的 3 处 @JvmField | 高 | 完成 | a719370a |
+| 12.6 | 移除 AntForest.kt 的 1 处 @JvmField | 低 | 完成 | e78a540d |
+| 12.7 | 删除 OptionsAdapter 死代码 | 低 | 完成 | 8bd2a447 |
+| 12.8 | 文档同步 | 低 | 进行中 | — |
+| — | **Phase 12 完成** | — | — | tag: phase-12-done |
 | 11.1 | 提取 ModelField 视图描述 | 高 | 待开始 | — |
 | 11.2 | Compose 配置页迁移 | 高 | 待开始 | — |
 | 11.3 | 移除传统 View 依赖（评估） | 中 | 待开始 | — |
@@ -276,20 +314,42 @@ fansirsqi.xposed.sesame
 
 ## 附录：@JvmStatic/@JvmField 分布清单
 
+#### Phase 10 已处理（25 处，已完成）
+
 | 文件 | 注解 | 数量 | 对应 Task |
 |------|------|------|-----------|
 | `model/BaseModel.kt` | `@JvmStatic` | 1 | 10.1 |
 | `entity/VitalityStore.kt` | `@JvmStatic` | 2 | 10.1 |
 | `entity/RpcEntity.kt` | `@JvmOverloads` | 1 | 10.1 |
 | `hook/rpc/bridge/RpcVersion.kt` | `@JvmStatic` | 1 | 10.1 |
-| `ui/widget/ListDialog.kt` | `@JvmField`×1, `@JvmStatic`×7 | 8 | 10.2 |
+| `ui/widget/ListDialog.kt` | `@JvmField`×1, `@JvmStatic`×8 | 9 | 10.2 |
 | `ui/adapter/OptionsAdapter.kt` | `@JvmStatic` | 1 | 10.2 |
-| `ui/adapter/ListAdapter.kt` | `@JvmField`×2, `@JvmStatic`×2 | 4 | 10.2 |
+| `ui/adapter/ListAdapter.kt` | `@JvmField`×2, `@JvmStatic`×3 | 5 | 10.2 |
 | `task/antFarm/AntFarm.kt` | `@JvmField`×3, `@JvmStatic`×1 | 4 | 10.3 |
 | `task/ModelTask.kt` | `@JvmStatic` | 3 | 10.3 |
-| **合计** | | **25** | |
+| **合计** | | **27** | |
 
-> **注意**：移除前需确认无反射调用（Xposed 框架可能通过反射访问 companion object 成员）。若发现反射依赖则保留对应注解并标注原因。
+> **注意**：实际移除时发现 ListDialog.kt 9 处（附录 8 处）、ListAdapter.kt 5 处（附录 4 处），均一并移除。
+
+#### Phase 10 附录清单外（97 处，Phase 12 处理）
+
+| 文件 | 注解 | 数量 | 对应 Task |
+|------|------|------|-----------|
+| `data/Status.kt` | `@JvmStatic`×66 | 66 | 12.1 |
+| `util/maps/UserMap.kt` | `@JvmStatic`×13 | 13 | 12.2 |
+| `data/Config.kt` | `@JvmField`×2, `@JvmStatic`×5 | 7 | 12.3 |
+| `hook/ApplicationHook.kt` | `@JvmField`×3, `@JvmStatic`×4 | 7 | 12.4 |
+| `model/ModelField.kt` | `@JvmField`×3 | 3 | 12.5 |
+| `task/antForest/AntForest.kt` | `@JvmField`×1 | 1 | 12.6 |
+| **合计** | | **97** | |
+
+> **注意**：附录清单外的注解涉及 Jackson 序列化链路（ModelField.value/Config.INSTANCE/Status.INSTANCE）和 Xposed 模块加载（ApplicationHook.classLoader/appContext），移除前需逐项验证反射依赖。详见 Phase 12.0 核查结论。
+>
+> **实际执行偏差记录（2026-08-08，Phase 12）**：
+> - Config.kt 实际为 `@JvmField`×1（INSTANCE）+ `@JvmStatic`×6（isModify/save/isLoaded/load/unload/toSaveStr），数量 7 处与附录一致，构成与附录（×2/×5）略有偏差，全部移除
+> - ApplicationHook.kt 另有 2 处 `@get:JvmStatic`（appContext/isHooked 的 getter）未计入附录，同类冗余一并移除（共 9 处）
+> - 移除 `offline` 的 `@JvmField` 后属性 setter 与同名函数 `setOffline` 产生 JVM 签名冲突，删除该冗余函数，4 处调用改为属性赋值（语义等价）
+> - 移除 ModelField.kt `value` 的 `@JvmField` 后手动 `getValue()`/`setValue()` 与属性访问器冲突，删除函数改由属性承担（JVM 签名不变，Jackson 反射调用不受影响）；14 处内部裸 `getValue()` 调用改为属性访问，ReadOnlyTextModelField 由 `override fun getValue()` 改为覆写属性 getter；`valueType`/`defaultValue` 的 `@JsonIgnore` 保留，序列化行为不变
 
 ---
 

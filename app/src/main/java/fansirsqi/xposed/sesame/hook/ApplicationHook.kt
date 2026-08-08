@@ -372,18 +372,13 @@ class ApplicationHook {
         const val TAG: String = "ApplicationHook" // 简化TAG
         var finalProcessName: String? = ""
 
-        @JvmField
         var classLoader: ClassLoader? = null
 
-        @JvmField
-        @get:JvmStatic
         @Volatile
         var appContext: Context? = null
 
-        @JvmStatic
         var alipayVersion: AlipayVersion = AlipayVersion("")
 
-        @get:JvmStatic
         @Volatile
         var isHooked: Boolean = false
             private set
@@ -392,7 +387,6 @@ class ApplicationHook {
          * 检查目标应用版本是否需要启用SimplePageManager功能
          * @return true表示版本低于等于10.6.58.99999，需要启用；false表示不需要
          */
-        @JvmStatic
         fun shouldEnableSimplePageManager(): Boolean {
             if (!VersionHook.hasVersion() || alipayVersion.toString().isEmpty()) {
                 record(TAG, "SimplePageManager 版本判断失败：未捕获到目标应用版本")
@@ -413,14 +407,8 @@ class ApplicationHook {
         @Volatile
         internal var init = false
 
-        @JvmField
         @Volatile
         var offline: Boolean = false
-
-        @JvmStatic
-        fun setOffline(value: Boolean) {
-            offline = value
-        }
 
         @Volatile
         private var batteryPermissionChecked = false
@@ -471,7 +459,6 @@ class ApplicationHook {
 
         fun sendBroadcastShell(api: String?, message: String?) = BroadcastReceiverManager.sendBroadcastShell(api, message)
 
-        @JvmStatic
         fun reLoginByBroadcast() = BroadcastReceiverManager.reLoginByBroadcast()
 
         fun restartByBroadcast() = BroadcastReceiverManager.restartByBroadcast()

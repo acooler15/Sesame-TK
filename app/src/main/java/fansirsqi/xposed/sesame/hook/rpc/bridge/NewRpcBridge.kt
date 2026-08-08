@@ -319,7 +319,7 @@ class NewRpcBridge : RpcBridge {
                             val currentErrorCount = maxErrorCount.incrementAndGet()
                             if (!ApplicationHook.offline) {
                                 if (currentErrorCount > setMaxErrorCount) {
-                                    ApplicationHook.setOffline(true)
+                                    ApplicationHook.offline = true
                                     Notify.updateStatusText("网络连接异常，已进入离线模式")
                                     if (BaseModel.errNotify.value) {
                                         Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常次数超过阈值[" + setMaxErrorCount + "]", response)

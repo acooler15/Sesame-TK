@@ -79,7 +79,7 @@ object RequestManager {
         if (currentCount >= maxCount) {
             Log.record(TAG, "🔴 连续失败次数达到阈值，触发熔断兜底机制！")
             // 1. 设置离线状态，停止后续任务
-            ApplicationHook.setOffline(true)
+            ApplicationHook.offline = true
             // 2. 发送通知 (根据用户配置)
             if (BaseModel.errNotify.value) {
                 val msg = "${TimeUtil.getTimeStr()} | 网络异常次数超过阈值[$maxCount]"

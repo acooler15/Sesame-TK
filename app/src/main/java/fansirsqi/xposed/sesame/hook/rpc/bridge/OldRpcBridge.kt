@@ -146,7 +146,7 @@ class OldRpcBridge : RpcBridge {
         rpcEntity.setResponseObject(resultObject, resultStr) // 设置响应对象
         // 检查响应中的 "memo" 字段是否包含 "系统繁忙"
         if (resultObject.optString("memo", "").contains("系统繁忙")) {
-            ApplicationHook.setOffline(true) // 设置为离线状态
+            ApplicationHook.offline = true // 设置为离线状态
             Notify.updateStatusText("系统繁忙，可能需要滑动验证")
             Log.record(TAG, "系统繁忙，可能需要滑动验证")
             return null // 返回 null
@@ -215,7 +215,7 @@ class OldRpcBridge : RpcBridge {
      */
     private fun handleLoginTimeout() {
         if (!ApplicationHook.offline) {
-            ApplicationHook.setOffline(true)
+            ApplicationHook.offline = true
             Notify.updateStatusText("登录超时")
             if (BaseModel.timeoutRestart.value) {
                 Log.record(TAG, "尝试重新登录")

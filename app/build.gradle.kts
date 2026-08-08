@@ -70,7 +70,7 @@ android {
 
 
     buildFeatures {
-        viewBinding = true
+        viewBinding = false
         buildConfig = true
         compose = true
         aidl = true
@@ -173,8 +173,6 @@ dependencies {
     implementation(libs.nanohttpd)                   // 轻量级 HTTP 服务器
 
     // UI 布局和组件
-    implementation(libs.androidx.constraintlayout)  // 约束布局
-
     implementation(libs.activity.compose)           // Compose Activity 支持
 
     // Android 核心库

@@ -84,6 +84,8 @@ util/
 `ModelField` 及其子类仍直接创建 Android View（`Button`、`LinearLayout`、`MaterialButton`），数据模型与传统 UI 强耦合。`modelFieldExt/` 下 4 个子类（`SelectOneModelField`、`SelectAndCountModelField`、`SelectAndCountOneModelField`、`SelectModelField`）的 `getView(context: Context): View` 方法直接实例化传统 View 组件。
 
 > ✅ material 传统依赖已于 Phase 13 移除（见 [MATERIAL_REMOVAL_PLAN.md](MATERIAL_REMOVAL_PLAN.md)，tag: phase-13-done），项目 UI 栈为 Compose-only（Compose Material3 保留）；P4 剩余项仅为 `getView()` 传统 View 创建路径本身。
+>
+> ✅ appcompat 依赖已于 Phase 14 移除（见 [APPCOMPAT_REMOVAL_PLAN.md](APPCOMPAT_REMOVAL_PLAN.md)，tag: phase-14-done），viewBinding 已关闭，constraintlayout 已移除（其传递引入的 appcompat 随之消失）；项目第三方 UI 依赖仅剩 Compose 技术栈（material3/icons-extended 经 BOM）+ activity-compose + core-ktx。
 
 ---
 

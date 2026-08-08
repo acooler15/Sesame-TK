@@ -333,8 +333,10 @@ Activity → findViewById<ViewGroup>(android.R.id.content)
 
 三个对话框的 Compose 化均复用此模式，确保从任何 `Context`（含非 Compose Activity）都能弹出 Compose 对话框。
 
-### 4.4 后续展望（不在本计划范围）
+### 4.4 后续展望（已完成）
 
-- **appcompat 依赖移除**：13.5b 删除 BaseActivity 后，appcompat 仅被 ExtendActivity（13.6 已改 ComponentActivity）和 AppTheme parent（13.7a 改为 AppCompat 主题）引用；将 AppTheme parent 改为框架主题后可移除 appcompat
-- **viewBinding 移除**：build.gradle.kts:73 `viewBinding = true` 在全部布局删除后可关闭
-- **constraintlayout 移除**：若剩余布局不再使用 ConstraintLayout
+> ✅ 以下三项已于 2026-08-08 由 `APPCOMPAT_REMOVAL_PLAN.md`（Phase 14，tag: phase-14-done）全部完成：
+
+- **appcompat 依赖移除**：AlertDialog 三处调用点（CustomSettings/UiExtensions）改为 `android.app.AlertDialog`，PermissionUtil 参数类型收窄为 `Activity`，AppTheme parent 改框架 `android:Theme.Material.Light.NoActionBar`（含新增 values-night 变体），依赖条目已从 build.gradle.kts 与 libs.versions.toml 移除
+- **viewBinding 移除**：buildFeatures 中 `viewBinding = false`（代码 0 使用，已关闭）
+- **constraintlayout 移除**：依赖条目已删除；14.5d 依赖树核查发现 constraintlayout 曾传递引入 appcompat:1.2.0，移除后传递链一并消失

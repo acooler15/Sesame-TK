@@ -26,7 +26,6 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
     companion object {
         private var idNameMap: MutableMap<String?, String?>? = null
 
-        @JvmStatic
         val list: MutableList<VitalityStore>
             get() {
                 val list: MutableList<VitalityStore> = ArrayList()
@@ -39,7 +38,6 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
                 return list
             }
 
-        @JvmStatic
         fun getNameById(id: String?): String? {
             if (idNameMap == null) {
                 idNameMap = HashMap()

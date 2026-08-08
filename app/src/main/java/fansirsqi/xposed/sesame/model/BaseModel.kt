@@ -229,7 +229,6 @@ class BaseModel : Model() {
         /**
          * 清理数据，在模块销毁时调用，清空 Reserve 和 Beach 数据。
          */
-        @JvmStatic
         fun destroyData() {
             try {
                 Log.record(TAG, "🧹清理所有数据")

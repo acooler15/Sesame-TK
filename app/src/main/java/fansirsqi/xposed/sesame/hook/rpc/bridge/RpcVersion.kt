@@ -9,7 +9,6 @@ enum class RpcVersion(
     companion object {
         private val MAP: Map<String, RpcVersion> = entries.associateBy { it.code }
 
-        @JvmStatic
         fun getByCode(code: String?): RpcVersion? = MAP[code]
     }
 }

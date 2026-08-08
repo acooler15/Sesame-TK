@@ -2,6 +2,7 @@ package fansirsqi.xposed.sesame.core.permission
 import fansirsqi.xposed.sesame.core.log.Log
 
 import android.Manifest
+import android.app.Activity
 import android.app.AlarmManager
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -12,7 +13,6 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import fansirsqi.xposed.sesame.hook.ApplicationHook
@@ -158,7 +158,7 @@ object PermissionUtil {
     /**
      * 请求通知权限
      */
-    fun checkOrRequestNotificationPermission(activity: AppCompatActivity): Boolean {
+    fun checkOrRequestNotificationPermission(activity: Activity): Boolean {
         if (checkNotificationPermission(activity)) return true
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -179,7 +179,7 @@ object PermissionUtil {
      */
     private fun startActivitySafely(context: Context, intent: Intent, fallbackAction: String? = null) {
         try {
-            if (context !is androidx.appcompat.app.AppCompatActivity && context !is android.app.Activity) {
+            if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)

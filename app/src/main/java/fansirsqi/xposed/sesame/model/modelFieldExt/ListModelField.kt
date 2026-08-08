@@ -1,18 +1,9 @@
 package fansirsqi.xposed.sesame.model.modelFieldExt
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.drawable.Drawable
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
-import androidx.core.content.ContextCompat
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.core.type.TypeReference
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.ModelField
-import fansirsqi.xposed.sesame.ui.widget.StringDialog
+import fansirsqi.xposed.sesame.model.ModelFieldViewData
 
 /**
  * 表示一个存储字符串列表的字段模型，用于管理和展示列表数据。
@@ -33,31 +24,9 @@ open class ListModelField(code: String?, name: String?, value: List<String>) : M
     override val type: String
         get() = "LIST"
 
-    /**
-     * 获取用于展示该字段的视图组件。
-     *
-     * @param context 上下文环境
-     * @return 返回一个按钮视图，用于触发编辑功能
-     */
-    @SuppressLint("UseCompatLoadingForDrawables")
-    override fun getView(context: Context): View {
-        val btn = Button(context)
-        btn.text = name
-        btn.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        btn.setTextColor(ContextCompat.getColor(context, R.color.selection_color))
-        // 根据API版本选择合适的方法获取Drawable资源
-        val drawable: Drawable
-        drawable = context.resources.getDrawable(R.drawable.dialog_list_button, context.theme)
-        btn.background = drawable
-        btn.gravity = Gravity.START or Gravity.CENTER_VERTICAL
-        btn.minHeight = 150
-        btn.maxHeight = 180
-        btn.setPaddingRelative(40, 0, 40, 0)
-        btn.isAllCaps = false
-        // 设置按钮点击事件，打开编辑对话框
-        btn.setOnClickListener { v -> StringDialog.showEditDialog(v.context, (v as Button).text, this) }
-        return btn
-    }
+    @get:JsonIgnore
+    override val viewData: ModelFieldViewData
+        get() = super.viewData.copy(clickAction = ModelFieldViewData.ClickAction.EDIT)
 
     /**
      * 一个子类，用于将字符串列表转换为逗号分隔的字符串，并实现相应的设置和获取功能。

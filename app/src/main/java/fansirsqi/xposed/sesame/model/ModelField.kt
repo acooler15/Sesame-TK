@@ -1,14 +1,6 @@
 package fansirsqi.xposed.sesame.model
 
-import android.content.Context
-import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.Toast
-import androidx.core.content.ContextCompat
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.google.android.material.button.MaterialButton
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.reflect.TypeUtil
 import org.json.JSONException
@@ -218,30 +210,16 @@ abstract class ModelField<T> : Serializable {
     }
 
     /**
-     * 获取字段的视图
-     *
-     * @param context 上下文对象
-     * @return 生成的视图
+     * 获取字段的视图数据描述
      */
-    @JsonIgnore
-    open fun getView(context: Context): View {
-        val button = MaterialButton(context, null, com.google.android.material.R.attr.materialButtonOutlinedStyle)
-        button.text = name
-        button.layoutParams = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+    @get:JsonIgnore
+    open val viewData: ModelFieldViewData
+        get() = ModelFieldViewData(
+            type = type,
+            name = name,
+            desc = desc,
+            configValue = configValue,
+            expandKey = expandKey,
+            expandValue = expandValue,
         )
-        button.cornerRadius = 28 // M3 推荐圆角
-        button.insetTop = 24 // 上下 padding
-        button.insetBottom = 24
-        button.setPaddingRelative(40, 0, 40, 0) // 左右 padding
-        button.iconPadding = 16
-        button.setIconGravity(MaterialButton.ICON_GRAVITY_TEXT_START)
-        button.setRippleColorResource(R.color.selection_color) // 可自定义 ripple
-        button.setTextColor(ContextCompat.getColor(context, R.color.selection_color)) // 使用 M3 色彩
-        button.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
-        // 点击提示
-        button.setOnClickListener { Toast.makeText(context, "无配置项", Toast.LENGTH_SHORT).show() }
-        return button
-    }
 }

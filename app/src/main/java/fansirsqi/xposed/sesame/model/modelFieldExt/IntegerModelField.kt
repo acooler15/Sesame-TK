@@ -1,15 +1,8 @@
 package fansirsqi.xposed.sesame.model.modelFieldExt
 
-import android.content.Context
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.LinearLayout
-import androidx.core.content.ContextCompat
-import fansirsqi.xposed.sesame.R
+import com.fasterxml.jackson.annotation.JsonIgnore
 import fansirsqi.xposed.sesame.model.ModelField
-import fansirsqi.xposed.sesame.ui.widget.StringDialog
+import fansirsqi.xposed.sesame.model.ModelFieldViewData
 import fansirsqi.xposed.sesame.core.log.Log
 
 /**
@@ -97,35 +90,15 @@ open class IntegerModelField : ModelField<Int> {
     }
 
     /**
-     * 获取视图（返回一个 Button，点击后弹出编辑框）
-     *
-     * @param context 上下文
-     * @return 按钮视图
+     * 获取字段的视图数据描述
      */
-    override fun getView(context: Context): View {
-        val btn = Button(context)
-        // 设置按钮的文本为字段名称
-        btn.text = name
-        // 设置按钮的布局参数
-        btn.layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        // 设置按钮的文本颜色
-        btn.setTextColor(ContextCompat.getColor(context, R.color.selection_color))
-        // 设置按钮的背景
-        btn.background = ContextCompat.getDrawable(context, R.drawable.dialog_list_button)
-        // 设置按钮的文本对齐方式
-        btn.gravity = Gravity.START or Gravity.CENTER_VERTICAL
-        // 设置按钮的最小高度
-        btn.minHeight = 150
-        // 设置按钮的最大高度
-        btn.maxHeight = 180
-        // 设置按钮的左右内边距
-        btn.setPaddingRelative(40, 0, 40, 0)
-        // 设置按钮的文本不全大写
-        btn.isAllCaps = false
-        // 设置点击事件，弹出编辑对话框
-        btn.setOnClickListener { v -> StringDialog.showEditDialog(v.context, (v as Button).text, this) }
-        return btn
-    }
+    @get:JsonIgnore
+    override val viewData: ModelFieldViewData
+        get() = super.viewData.copy(
+            clickAction = ModelFieldViewData.ClickAction.EDIT,
+            minLimit = minLimit,
+            maxLimit = maxLimit,
+        )
 
     /**
      * MultiplyIntegerModelField 类，继承自 IntegerModelField，处理带乘数的整数类型字段

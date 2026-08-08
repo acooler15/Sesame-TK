@@ -1,6 +1,7 @@
 package fansirsqi.xposed.sesame.ui.extension
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -12,7 +13,6 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.core.graphics.toColorInt
 import androidx.core.net.toUri
 import fansirsqi.xposed.sesame.BuildConfig

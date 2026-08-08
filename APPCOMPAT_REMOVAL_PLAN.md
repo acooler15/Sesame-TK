@@ -142,7 +142,7 @@
 | 14.6b | 移除 constraintlayout | 低 | 完成 | 408b2728 |
 | 14.6c | useSupportLibrary 评估 | 低 | 完成（决策：保留） | 408b2728 |
 | 14.7 | 完整构建验证 | 中 | 完成（BUILD SUCCESSFUL） | — |
-| 14.8 | 文档同步 | 低 | 完成 | c94ef207 |
+| 14.8 | 文档同步 | 低 | 完成 | 44967580 |
 | — | **Phase 14 完成** | — | — | tag: phase-14-done |
 
 ---

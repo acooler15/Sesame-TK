@@ -22,7 +22,6 @@ object UserMap {
 
     /**
      * 当前用户ID
-     * 使用 @JvmStatic 和 @JvmField 保持 Java 互操作性
      */
     var currentUid: String? = null
         private set // 外部只能通过 setCurrentUserId 修改
@@ -30,7 +29,6 @@ object UserMap {
     /**
      * 获取只读的用户信息映射
      */
-    @JvmStatic
     fun getUserMap(): Map<String, UserEntity> {
         return Collections.unmodifiableMap(userMap)
     }
@@ -38,7 +36,6 @@ object UserMap {
     /**
      * 获取所有用户ID的集合
      */
-    @JvmStatic
     fun getUserIdSet(): Set<String> {
         return userMap.keys
     }
@@ -46,7 +43,6 @@ object UserMap {
     /**
      * 设置当前用户ID
      */
-    @JvmStatic
     @Synchronized
     fun setCurrentUserId(userId: String?) {
         currentUid = if (userId.isNullOrEmpty()) null else userId
@@ -56,7 +52,6 @@ object UserMap {
      * 获取当前用户的掩码名称
      * 修复：如果 currentUid 为 null，直接返回 null，避免 ConcurrentHashMap 崩溃
      */
-    @JvmStatic
     fun getCurrentMaskName(): String? {
         return getMaskName(currentUid)
     }
@@ -65,7 +60,6 @@ object UserMap {
      * 获取指定用户的掩码名称
      * 修复：增加了 userId 判空检查
      */
-    @JvmStatic
     fun getMaskName(userId: String?): String? {
         if (userId == null) {
             Log.record(TAG, "getMaskName: userId is null")
@@ -77,7 +71,6 @@ object UserMap {
     /**
      * 获取指定用户实体
      */
-    @JvmStatic
     fun get(userId: String?): UserEntity? {
         if (userId == null) return null // 关键修复
         return userMap[userId]
@@ -86,7 +79,6 @@ object UserMap {
     /**
      * 添加用户到映射
      */
-    @JvmStatic
     @Synchronized
     fun add(userEntity: UserEntity?) {
         if (userEntity == null) return
@@ -99,7 +91,6 @@ object UserMap {
     /**
      * 从映射中移除指定用户
      */
-    @JvmStatic
     @Synchronized
     fun remove(userId: String?) {
         if (userId != null) {
@@ -110,7 +101,6 @@ object UserMap {
     /**
      * 加载用户数据
      */
-    @JvmStatic
     @Synchronized
     fun load(userId: String?) {
         userMap.clear()
@@ -149,7 +139,6 @@ object UserMap {
     /**
      * 卸载用户数据
      */
-    @JvmStatic
     @Synchronized
     fun unload() {
         userMap.clear()
@@ -158,7 +147,6 @@ object UserMap {
     /**
      * 保存用户数据到文件
      */
-    @JvmStatic
     @Synchronized
     fun save(userId: String?): Boolean {
         if (userId.isNullOrEmpty()) return false
@@ -168,7 +156,6 @@ object UserMap {
     /**
      * 加载当前用户的数据
      */
-    @JvmStatic
     @Synchronized
     fun loadSelf(userId: String?) {
 //        userMap.clear()
@@ -198,7 +185,6 @@ object UserMap {
     /**
      * 保存当前用户数据到文件
      */
-    @JvmStatic
     @Synchronized
     fun saveSelf(userEntity: UserEntity?) {
         if (userEntity != null) {

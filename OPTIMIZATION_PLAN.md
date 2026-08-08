@@ -263,7 +263,7 @@ fansirsqi.xposed.sesame
 | — | **Phase 9 完成** | — | — | tag: phase-9-done |
 | 10.1 | 移除 @JvmStatic/@JvmField（第一批） | 低 | 完成 | 19395890 |
 | 10.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 完成 | a075105f |
-| 10.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 完成 | __HASH__ |
+| 10.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 完成 | 3be6779c |
 | 10.4 | 清理 libs.versions.toml 死条目 | 低 | 待开始 | — |
 | 10.5 | 合并 material3 重复定义 | 低 | 待开始 | — |
 | — | **Phase 10 完成** | — | — | — |

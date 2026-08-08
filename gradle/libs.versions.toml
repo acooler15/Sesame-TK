@@ -31,7 +31,6 @@ core-ktx = "1.17.0"
 dexkit = "2.0.7"
 fragment = "1.8.9"
 uiTextGoogleFonts = "1.10.0"
-material3 = "1.4.0"
 
 tensorflowLite = "2.17.0"
 tensorflowLiteSupport = "0.5.0"
@@ -75,7 +74,6 @@ jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
 androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
 # 支持库

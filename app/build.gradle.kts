@@ -147,7 +147,6 @@ dependencies {
     // implementation(libs.ui.tooling.preview.android)
     implementation(libs.cmd.android)
     implementation(libs.androidx.ui.text.google.fonts)
-    implementation(libs.material3) // 用于通过 Shizuku 执行命令
     implementation(libs.bundles.tensorflow)
 
     // Compose 相关依赖 - 现代化 UI 框架

@@ -265,8 +265,8 @@ fansirsqi.xposed.sesame
 | 10.2 | 移除 @JvmStatic/@JvmField（第二批） | 低 | 完成 | a075105f |
 | 10.3 | 移除 @JvmStatic/@JvmField（第三批） | 低 | 完成 | 3be6779c |
 | 10.4 | 清理 libs.versions.toml 死条目 | 低 | 完成 | 7fbb927d |
-| 10.5 | 合并 material3 重复定义 | 低 | 待开始 | — |
-| — | **Phase 10 完成** | — | — | — |
+| 10.5 | 合并 material3 重复定义 | 低 | 完成 | __HASH__ |
+| — | **Phase 10 完成** | — | — | tag: phase-10-done |
 | 11.1 | 提取 ModelField 视图描述 | 高 | 待开始 | — |
 | 11.2 | Compose 配置页迁移 | 高 | 待开始 | — |
 | 11.3 | 移除传统 View 依赖（评估） | 中 | 待开始 | — |

@@ -437,10 +437,8 @@ abstract class ModelTask : Model() {
 
 
             /** 获取当前等待中的任务总数 */
-            @JvmStatic
             fun getWaitingCount(): Int = waitingTasks.size
             /** 获取当前所有正在等待的任务列表 */
-            @JvmStatic
             fun getWaitingTasks(): List<ChildModelTask> = waitingTasks.values.toList()
 
         }
@@ -592,7 +590,6 @@ abstract class ModelTask : Model() {
         /**
          * 停止所有任务（协程版本）
          */
-        @JvmStatic
         fun stopAllTask() {
             globalTaskScope.launch {
                 for (model in Model.modelArray) {

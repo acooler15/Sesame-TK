@@ -4000,16 +4000,13 @@ class AntFarm : ModelTask() {
         internal val TAG: String = AntFarm::class.java.getSimpleName()
         private val objectMapper = ObjectMapper()
 
-        @JvmField
         var instance: AntFarm? = null
 
         /**
          * 小鸡饲料g
          */
-        @JvmField
         var foodStock: Int = 0
 
-        @JvmField
         var foodStockLimit: Int = 0
 
         // 抽抽乐 / 广告任务使用的 referToken（从 VipDataIdMap 读取并缓存）
@@ -4022,7 +4019,6 @@ class AntFarm : ModelTask() {
          *  - 如果本地已有缓存，直接返回
          *  - 否则从 VipDataIdMap 加载当前账号下保存的 AntFarmReferToken
          */
-        @JvmStatic
         fun loadAntFarmReferToken(): String? {
             if (!antFarmReferToken.isNullOrEmpty()) return antFarmReferToken
             val uid = UserMap.currentUid

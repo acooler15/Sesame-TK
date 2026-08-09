@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.view.ViewGroup
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -71,29 +72,32 @@ object ChoiceDialog {
             },
             text = {
                 // 单选列表：点击选项即设置值（与原 setSingleChoiceItems 逻辑一致）
-                choiceModelField.expandKey?.forEachIndexed { index, option ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                selectedIndex = index
-                                choiceModelField.setObjectValue(index)
-                            }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedIndex == index,
-                            onClick = {
-                                selectedIndex = index
-                                choiceModelField.setObjectValue(index)
-                            }
-                        )
-                        Text(
-                            text = option ?: "",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(start = 12.dp)
-                        )
+                // 显式 Column 包裹：确保选项垂直排列，避免依赖 AlertDialog text 容器的默认方向
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    choiceModelField.expandKey?.forEachIndexed { index, option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedIndex = index
+                                    choiceModelField.setObjectValue(index)
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedIndex == index,
+                                onClick = {
+                                    selectedIndex = index
+                                    choiceModelField.setObjectValue(index)
+                                }
+                            )
+                            Text(
+                                text = option ?: "",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(start = 12.dp)
+                            )
+                        }
                     }
                 }
             },

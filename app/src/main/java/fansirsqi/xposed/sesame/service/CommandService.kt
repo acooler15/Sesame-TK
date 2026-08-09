@@ -14,7 +14,6 @@ import androidx.core.app.NotificationCompat
 import fansirsqi.xposed.sesame.ICallback
 import fansirsqi.xposed.sesame.ICommandService
 import fansirsqi.xposed.sesame.IStatusListener
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.ui.MainActivity
 import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.CoroutineScope
@@ -237,7 +236,7 @@ class CommandService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(NOTIFICATION_TITLE)
             .setContentText(NOTIFICATION_CONTENT)
-            .setSmallIcon(R.drawable.title_logo)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true) // 禁止用户侧滑删除

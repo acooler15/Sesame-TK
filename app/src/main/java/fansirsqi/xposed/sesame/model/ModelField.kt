@@ -214,12 +214,16 @@ abstract class ModelField<T> : Serializable {
      */
     @get:JsonIgnore
     open val viewData: ModelFieldViewData
-        get() = ModelFieldViewData(
-            type = type,
-            name = name,
-            desc = desc,
-            configValue = configValue,
-            expandKey = expandKey,
-            expandValue = expandValue,
-        )
+        get() {
+            // configValue 声明为非空 String，但子类实现（如 StringModelField）可能返回 null，统一兜底为空串
+            val rawConfigValue: String? = configValue
+            return ModelFieldViewData(
+                type = type,
+                name = name,
+                desc = desc,
+                configValue = rawConfigValue ?: "",
+                expandKey = expandKey,
+                expandValue = expandValue,
+            )
+        }
 }

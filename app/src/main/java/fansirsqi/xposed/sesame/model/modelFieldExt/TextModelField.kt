@@ -10,7 +10,8 @@ open class TextModelField(code: String?, name: String?, value: String?) : ModelF
         get() = "TEXT"
 
     override val configValue: String
-        get() = castValue(value)
+        // value 类型为 String?，且 ReadOnlyTextModelField 恒返回 null，统一兜底为空串
+        get() = value ?: ""
 
     override fun setConfigValue(configValue: String?) {
         value = configValue
@@ -45,7 +46,3 @@ open class TextModelField(code: String?, name: String?, value: String?) : ModelF
         }
     }
 }
-
-// 保持与 Java 版本一致：允许 null 以非空声明类型返回（泛型擦除转换，无运行时检查）
-@Suppress("UNCHECKED_CAST")
-private fun <V> castValue(value: Any?): V = value as V

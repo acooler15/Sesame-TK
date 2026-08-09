@@ -10,7 +10,8 @@ class StringModelField(code: String?, name: String?, value: String?) : ModelFiel
         get() = "STRING"
 
     override val configValue: String
-        get() = castValue(value)
+        // value 允许为 null（如用户清空字段），展示层需非空字符串，统一兜底为空串
+        get() = castValue<String?>(value) ?: ""
 
     override fun setConfigValue(configValue: String?) {
         value = castValue(configValue)

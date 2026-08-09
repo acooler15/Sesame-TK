@@ -29,7 +29,7 @@
         android:name=".SesameApplication"
         android:description="@string/xposed_description"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="芝麻粒-TK"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
@@ -39,7 +39,7 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="@string/xposed_description" />
+            android:value="大鹏一日同风起，扶摇直上九万里。" />
         <meta-data
             android:name="xposedminversion"
             android:value="54" />
@@ -88,20 +88,6 @@
             android:name=".ui.MainActivityAlias"
             android:enabled="true"
             android:exported="true"
-            android:targetActivity="fansirsqi.xposed.sesame.ui.MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- 圣诞图标 -->
-        <activity-alias
-            android:name=".ui.MainActivityAliasChristmas"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_christmas"
-            android:label="@string/app_name"
             android:targetActivity="fansirsqi.xposed.sesame.ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

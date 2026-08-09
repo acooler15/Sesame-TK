@@ -2,7 +2,6 @@ package fansirsqi.xposed.sesame.model
 
 import android.app.AlertDialog
 import android.content.Context
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.MapperEntity
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
@@ -257,7 +256,7 @@ object CustomSettings {
                 load(selectedUid)
                 showAccountOps(context, selectedUid, selectedShowName, onRefresh)
             }
-            .setNegativeButton(R.string.cancel, null)
+            .setNegativeButton("取消", null)
             .show()
     }
 
@@ -301,12 +300,12 @@ object CustomSettings {
                         .setTitle("设置 ${showName} 非单次运行时段")
                         .setMessage("输入开始时间点(如0600)，多个用逗号隔开。时段为该时间点加\"设置\"中的执行间隔时间")
                         .setView(edt)
-                        .setPositiveButton(R.string.ok) { _, _ ->
+                        .setPositiveButton("确认") { _, _ ->
                             autoHandleOnceDailyTimes.setConfigValue(edt.text.toString())
                             save(uid)
                             showAccountOps(context, uid, showName, onRefresh)
                         }
-                        .setNegativeButton(R.string.cancel, null)
+                        .setNegativeButton("取消", null)
                         .show()
                 }
             }

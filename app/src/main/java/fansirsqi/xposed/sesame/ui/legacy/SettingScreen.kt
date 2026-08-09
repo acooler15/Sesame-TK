@@ -44,7 +44,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelConfig
 import fansirsqi.xposed.sesame.model.ModelField
@@ -176,8 +175,8 @@ fun SettingScreen(
             onConfirm = { onMenuAction(3) },
             title = "警告",
             text = "确认删除该配置？",
-            confirmText = context.getString(R.string.ok),
-            dismissText = context.getString(R.string.cancel)
+            confirmText = "确认",
+            dismissText = "取消"
         )
     }
     // 字段确认执行对话框，行为与原 EMPTY 字段 clickRunner 确认一致
@@ -188,8 +187,8 @@ fun SettingScreen(
             onConfirm = { field.clickRunner?.run() },
             title = "警告",
             text = "确认执行该操作？",
-            confirmText = context.getString(R.string.ok),
-            dismissText = context.getString(R.string.cancel)
+            confirmText = "确认",
+            dismissText = "取消"
         )
     }
 }

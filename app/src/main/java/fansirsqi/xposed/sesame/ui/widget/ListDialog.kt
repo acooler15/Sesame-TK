@@ -40,10 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.entity.CooperateEntity
 import fansirsqi.xposed.sesame.entity.MapperEntity
@@ -272,7 +270,7 @@ class ListDialog {
                                         selectedMap[item.id] = 0
                                     }
                                 }) {
-                                    Text(text = stringResource(R.string.select_all))
+                                    Text(text = "全选")
                                 }
                                 TextButton(onClick = {
                                     // 等价原适配器 SelectInvert()
@@ -286,7 +284,7 @@ class ListDialog {
                                         }
                                     }
                                 }) {
-                                    Text(text = stringResource(R.string.select_invert))
+                                    Text(text = "反选")
                                 }
                             }
                         }
@@ -341,18 +339,18 @@ class ListDialog {
                                 onValueChange = { searchText = it },
                                 modifier = Modifier.weight(1f),
                                 singleLine = true,
-                                placeholder = { Text(text = stringResource(R.string.search)) }
+                                placeholder = { Text(text = "搜索") }
                             )
                             IconButton(onClick = { search(false) }) {
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowUp,
-                                    contentDescription = stringResource(R.string.last)
+                                    contentDescription = "上一个"
                                 )
                             }
                             IconButton(onClick = { search(true) }) {
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowDown,
-                                    contentDescription = stringResource(R.string.next)
+                                    contentDescription = "下一个"
                                 )
                             }
                         }
@@ -360,7 +358,7 @@ class ListDialog {
                 },
                 confirmButton = {
                     TextButton(onClick = onDismiss) {
-                        Text(text = stringResource(R.string.close))
+                        Text(text = "关闭")
                     }
                 }
             )
@@ -401,12 +399,12 @@ class ListDialog {
                             }
                             countDialogItem = null
                         }) {
-                            Text(text = stringResource(R.string.ok))
+                            Text(text = "确认")
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { countDialogItem = null }) {
-                            Text(text = stringResource(R.string.cancel))
+                            Text(text = "取消")
                         }
                     }
                 )

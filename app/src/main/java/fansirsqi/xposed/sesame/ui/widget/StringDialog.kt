@@ -24,10 +24,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.model.ModelField
 import fansirsqi.xposed.sesame.ui.extension.parseHtml
@@ -99,12 +97,12 @@ object StringDialog {
                     }
                     onDismiss()
                 }) {
-                    Text(text = stringResource(R.string.ok))
+                    Text(text = "确认")
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(R.string.cancel))
+                    Text(text = "取消")
                 }
             }
         )
@@ -166,7 +164,7 @@ object StringDialog {
             },
             confirmButton = {
                 TextButton(onClick = onDismiss) {
-                    Text(text = stringResource(R.string.ok))
+                    Text(text = "确认")
                 }
             }
         )

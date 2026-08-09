@@ -12,7 +12,6 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.data.Config
 import fansirsqi.xposed.sesame.entity.AlipayUser
 import fansirsqi.xposed.sesame.model.Model
@@ -98,9 +97,9 @@ class SettingActivity : ComponentActivity() {
                 WatermarkLayer(uidList = listOfNotNull(userId)) {
                     SettingScreen(
                         title = if (this.userName != null) {
-                            getString(R.string.settings) + ": " + this.userName
+                            "设置: " + this.userName
                         } else {
-                            getString(R.string.settings)
+                            "设置"
                         },
                         onMenuAction = { itemId -> handleMenuAction(itemId) }
                     )

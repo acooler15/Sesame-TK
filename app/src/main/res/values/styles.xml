@@ -3,11 +3,11 @@
 
     <style name="AppTheme" parent="android:Theme.Material.Light.NoActionBar">
         <!--framework 无 colorPrimary，用 colorAccent 承载原值（对话框等 accent 色）-->
-        <item name="android:colorAccent">@color/colorPrimary</item>
+        <item name="android:colorAccent">#2489FD</item>
         <!--ToolBar上的Title颜色-->
-        <item name="android:titleTextColor">@color/active_text</item>
-        <item name="android:subtitleTextColor">@color/active_text</item>
-        <item name="android:navigationBarColor">@color/colorPrimary</item>
+        <item name="android:titleTextColor">#DCDCDC</item>
+        <item name="android:subtitleTextColor">#DCDCDC</item>
+        <item name="android:navigationBarColor">#2489FD</item>
         <!-- 核心修改 1: 设置状态栏颜色为透明 -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <!-- <item name="android:windowTranslucentStatus">true</item>-->

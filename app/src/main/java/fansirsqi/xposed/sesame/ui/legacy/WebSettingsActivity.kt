@@ -49,7 +49,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fasterxml.jackson.core.type.TypeReference
 import fansirsqi.xposed.sesame.BuildConfig
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
@@ -167,9 +166,9 @@ class WebSettingsActivity : ComponentActivity() {
                 WatermarkLayer(uidList = listOfNotNull(userId)) {
                     WebSettingsScreen(
                         title = if (userName != null) {
-                            getString(R.string.settings) + ": " + userName
+                            "设置: " + userName
                         } else {
-                            getString(R.string.settings)
+                            "设置"
                         },
                         webViewFactory = ::createWebView,
                         onWebViewCreated = { webView = it },
@@ -580,8 +579,8 @@ private fun WebSettingsScreen(
             onConfirm = { onMenuAction(3) },
             title = "警告",
             text = "确认删除该配置？",
-            confirmText = context.getString(R.string.ok),
-            dismissText = context.getString(R.string.cancel)
+            confirmText = "确认",
+            dismissText = "取消"
         )
     }
 }

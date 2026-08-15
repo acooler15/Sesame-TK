@@ -1,6 +1,7 @@
 package fansirsqi.xposed.sesame.task
 
 import android.annotation.SuppressLint
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.Model
@@ -67,13 +68,7 @@ abstract class ModelTask : Model() {
      * 准备任务执行环境
      */
     override fun prepare() {
-        if (taskScope == null) {
-            taskScope = CoroutineScope(
-                Dispatchers.Default + 
-                SupervisorJob() + 
-                CoroutineName("ModelTask-${getName()}")
-            )
-        }
+        ensureTaskScope()
     }
 
     /**
@@ -81,8 +76,11 @@ abstract class ModelTask : Model() {
      */
     private fun ensureTaskScope() {
         if (taskScope == null || !taskScope!!.isActive) {
-            taskScope =
-                CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineName("Task-$id"))
+            taskScope = CoroutineScope(
+                Dispatchers.Default +
+                SupervisorJob() +
+                CoroutineName("ModelTask-${getName()}")  // 统一命名
+            )
         }
     }
 
@@ -174,17 +172,14 @@ abstract class ModelTask : Model() {
         val job = CoroutineScope(currentCoroutineContext()).launch {
             try {
                 childTask.run()
+            } catch (e: CancellationException) {
+                val taskName = getName() ?: "未知任务"
+                Log.record("子任务协程被取消: $taskName-$childId - ${e.message}")
+                // 协程取消是正常控制流程，必须重新抛出
+                throw e
             } catch (e: Exception) {
                 val taskName = getName() ?: "未知任务"
-                // 检查是否是协程取消相关的异常
-                if (e.javaClass.name.contains("CancellationException") || 
-                    e.message?.contains("cancelled") == true ||
-                    e.message?.contains("StandaloneCoroutine") == true) {
-                    Log.record("子任务协程被取消: $taskName-$childId - ${e.message}")
-                    // 协程取消是正常现象，不需要打印堆栈
-                } else {
-                    Log.printStackTrace("addChildTaskSuspend 子任务执行异常1: $taskName-$childId", e)
-                }
+                Log.printStackTrace("addChildTaskSuspend 子任务执行异常1: $taskName-$childId", e)
             } finally {
 //                childTaskMap.remove(childId)
                 childTaskMap.remove(childTask.id, childTask)
@@ -218,7 +213,8 @@ abstract class ModelTask : Model() {
      */
     fun addChildTask(childTask: ChildModelTask): Boolean {
         ensureTaskScope()
-        taskScope!!.launch(start = CoroutineStart.UNDISPATCHED) {
+        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             addChildTaskSuspend(childTask)
         }
         return true
@@ -234,8 +230,8 @@ abstract class ModelTask : Model() {
         rounds: Int = 2
     ): Job {
         ensureTaskScope()
-        
-        return taskScope!!.launch {
+        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
+        return scope.launch {
             executionMutex.withLock {
                 if (isRunning && !force) {
                     Log.record(TAG, "任务 ${getName()} 正在运行，跳过启动")
@@ -328,8 +324,8 @@ abstract class ModelTask : Model() {
         taskScope = null
         
         // 异步清理子任务映射
-        // 使用 GlobalScope 确保清理逻辑能够完成，即使父作用域已被取消
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.Default) {
+        // 使用 applicationScope 确保清理逻辑能够完成，即使父作用域已被取消
+        ApplicationHook.applicationScope.launch(Dispatchers.Default) {
             try {
                 childTaskMap.values.forEach { childTask ->
                     try {
@@ -508,18 +504,8 @@ abstract class ModelTask : Model() {
                 return
             } catch (e: Exception) {
                 val parentTaskName = modelTask?.getName() ?: "未知任务"
-                // 检查是否是协程取消相关的异常
-                if (e.javaClass.name.contains("CancellationException") ||
-                    e.message?.contains("cancelled") == true ||
-                    e.message?.contains("StandaloneCoroutine") == true) {
-                    isCancelled = true
-                    Log.record("子任务协程被取消: $parentTaskName-$id - ${e.message}")
-                    // 协程取消是正常现象，不需要打印堆栈
-                    return
-                } else {
-                    Log.printStackTrace("run err: $parentTaskName-$id", e)
-                    throw e
-                }
+                Log.printStackTrace("run err: $parentTaskName-$id", e)
+                throw e
             } finally {
                 // 【关键】确保无论发生什么情况，只要加了计数就必须减掉
                 if (isCounted) {
@@ -581,24 +567,18 @@ abstract class ModelTask : Model() {
     companion object {
         /** 日志标签 */
         private const val TAG = "ModelTask"
-        
-        /** 全局任务管理器协程作用域 */
-        private val globalTaskScope = CoroutineScope(
-            Dispatchers.Default + SupervisorJob() + CoroutineName("GlobalTaskManager")
-        )
 
         /**
-         * 停止所有任务（协程版本）
+         * 停止所有任务（同步版本）
+         * 同步取消，确保 destroyHandler 返回时所有 taskScope 已取消
          */
         fun stopAllTask() {
-            globalTaskScope.launch {
-                for (model in Model.modelArray) {
-                    if (model is ModelTask) {
-                        try {
-                            model.stopTask()
-                        } catch (e: Exception) {
-                            Log.printStackTrace("停止任务异常", e)
-                        }
+            for (model in Model.modelArray) {
+                if (model is ModelTask) {
+                    try {
+                        model.stopTask()
+                    } catch (e: Exception) {
+                        Log.printStackTrace("停止任务异常", e)
                     }
                 }
             }

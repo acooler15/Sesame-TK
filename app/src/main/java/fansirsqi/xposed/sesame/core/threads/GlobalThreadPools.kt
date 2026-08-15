@@ -1,5 +1,6 @@
 package fansirsqi.xposed.sesame.core.threads
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineName
@@ -149,6 +150,13 @@ object GlobalThreadPools {
             globalScope.cancel("User session changed. Resetting coroutine scope.")
         }
         globalScope = createScope()
+        // 一并取消并重建 ApplicationHook.applicationScope，统一会话级生命周期管理
+        if (ApplicationHook.applicationScope.isActive) {
+            ApplicationHook.applicationScope.cancel("User session changed. Resetting coroutine scope.")
+        }
+        ApplicationHook.applicationScope = CoroutineScope(
+            SupervisorJob() + Dispatchers.Default + CoroutineName("Application")
+        )
         Log.record(TAG, "全局协程池已重置。")
     }
 

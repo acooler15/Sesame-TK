@@ -75,6 +75,12 @@ import java.lang.reflect.Member
 import java.lang.reflect.Method
 import java.util.Calendar
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 
 class ApplicationHook {
     var xposedInterface: XposedInterface? = null
@@ -372,6 +378,16 @@ class ApplicationHook {
         const val TAG: String = "ApplicationHook" // 简化TAG
         var finalProcessName: String? = ""
 
+        /**
+         * 全局应用协程作用域
+         * 替代 GlobalScope，统一管理应用内长生命周期协程的生命周期。
+         * 在 destroyHandler 中统一取消，切换账号时由 shutdownAndRestart 取消并重建。
+         */
+        @Volatile
+        var applicationScope: CoroutineScope = CoroutineScope(
+            SupervisorJob() + Dispatchers.Default + CoroutineName("Application")
+        )
+
         var classLoader: ClassLoader? = null
 
         @Volatile
@@ -483,6 +499,13 @@ class ApplicationHook {
             try {
                 if (init) destroyHandler()
 
+                // 账号切换/服务重建后 applicationScope 已被取消，重新初始化前需要重建为活跃作用域
+                if (!applicationScope.isActive) {
+                    applicationScope = CoroutineScope(
+                        SupervisorJob() + Dispatchers.Default + CoroutineName("Application")
+                    )
+                }
+
                 // 调试模式初始化
                 if (BuildConfig.DEBUG) {
                     try {
@@ -560,6 +583,8 @@ class ApplicationHook {
         @Synchronized
         fun destroyHandler() {
             try {
+                // 先同步停止所有任务，确保在资源卸载前所有 taskScope 已取消，避免竞态
+                stopAllTask()
                 shutdownAndRestart()
 
                 if (service != null) {
@@ -582,8 +607,10 @@ class ApplicationHook {
                         rpcBridge!!.unload()
                         rpcBridge = null
                     }
-                    stopAllTask()
                 }
+
+                // 最后统一取消 applicationScope
+                applicationScope.cancel("Application destroyed")
             } catch (th: Throwable) {
                 printStackTrace(TAG, "stopHandler err:", th)
             }

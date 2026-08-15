@@ -1,10 +1,9 @@
 package fansirsqi.xposed.sesame.task
 
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.Model
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -54,12 +53,11 @@ class TaskRunnerAdapter {
     /**
      * 执行任务 - 包含轮数参数（主方法）
      */
-    @OptIn(DelicateCoroutinesApi::class)
     fun run(isFirst: Boolean, mode: ModelTask.TaskExecutionMode?, rounds: Int) {
         // 如果有旧任务在运行，先取消
         stop()
 
-        currentJob = GlobalScope.launch(Dispatchers.Default) {
+        currentJob = ApplicationHook.applicationScope.launch(Dispatchers.Default) {
             coroutineTaskRunner.run(isFirst, rounds)
         }
     }

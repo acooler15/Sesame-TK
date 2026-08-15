@@ -4,6 +4,8 @@ import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
 import fansirsqi.xposed.sesame.core.log.Log
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
@@ -25,6 +27,7 @@ enum class GameTask(
     Forest_sljyd("森林救援队(能量雨)", "2021005113684028", "zfb_sljydx", "sljyd_game_xiaochu_every_10", "lianyun_senlin_leyuan", "1.0.1", 3),
     Forest_sgbhsd("三国冰河时代", "2021004173661702", "zfb_sgbhsd", "mysl_mc_wkmryi05", "lianyun_senlin_leyuan", "1.0.1", 1);
 
+    @Volatile
     private var cachedToken: String? = null
 
     /**
@@ -49,21 +52,25 @@ enum class GameTask(
                 setRequestProperty("x-release-type", "ONLINE")
             }
 
-            OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { it.write(body) }
+            try {
+                OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { it.write(body) }
 
-            // 💡 改进：登录失败也要读错误流
-            val respCode = conn.responseCode
-            val stream = if (respCode in 200..299) conn.inputStream else conn.errorStream
-            val responseText = stream?.bufferedReader()?.use { it.readText() } ?: "EMPTY"
+                // 💡 改进：登录失败也要读错误流
+                val respCode = conn.responseCode
+                val stream = if (respCode in 200..299) conn.inputStream else conn.errorStream
+                val responseText = stream?.bufferedReader()?.use { it.readText() } ?: "EMPTY"
 
-            val resJson = JSONObject(responseText)
-            if (resJson.optInt("code") == 1) {
-                val token = resJson.optJSONObject("data")?.optString("token")
-                //Log.record(title, "✅ 登录成功，Token 已获取")
-                token
-            } else {
-               // Log.record(title, "❌ 登录接口报错 (Code $respCode): $responseText")
-                null
+                val resJson = JSONObject(responseText)
+                if (resJson.optInt("code") == 1) {
+                    val token = resJson.optJSONObject("data")?.optString("token")
+                    //Log.record(title, "✅ 登录成功，Token 已获取")
+                    token
+                } else {
+                   // Log.record(title, "❌ 登录接口报错 (Code $respCode): $responseText")
+                    null
+                }
+            } finally {
+                conn.disconnect()  // 释放连接资源
             }
         } catch (e: Exception) {
             //Log.record(title, "🚨 登录过程抛出异常: ${e.message}")
@@ -76,11 +83,12 @@ enum class GameTask(
      */
     fun report(eggCount: Int) {
         val totalNeeded = eggCount * (requestsPerEgg+1)//正常不需要加1，多1次确保网络请求不会错误
-        Thread {
+        // 使用 applicationScope 协程化，生命周期受 ApplicationHook 统一管理
+        ApplicationHook.applicationScope.launch {
             cachedToken = login()
             if (cachedToken.isNullOrEmpty()) {
                 Log.record(title, "⚠️ 无法获取有效的 Token，放弃上报任务")
-                return@Thread
+                return@launch
             }
 
             //Log.record(title, "🚀 开始执行任务：目标 $eggCount 个蛋，需请求 $totalNeeded 次")
@@ -90,10 +98,10 @@ enum class GameTask(
                     // 具体的错误原因已在 executeSingleReport 中详细输出
                     break
                 }
-                if (i < totalNeeded) Thread.sleep((1000..3000).random().toLong())
+                if (i < totalNeeded) delay((1000..3000).random().toLong())
             }
             //Log.record(title, "🏁 任务流程运行结束")
-        }.start()
+        }
     }
 
     private fun executeSingleReport(current: Int, total: Int): Boolean {
@@ -115,21 +123,25 @@ enum class GameTask(
                 setRequestProperty("referer", "https://$appId.hybrid.alipay-eco.com/$appId/$version/index.html")
             }
 
-            OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { it.write(body) }
+            try {
+                OutputStreamWriter(conn.outputStream, StandardCharsets.UTF_8).use { it.write(body) }
 
-            // 💡 重点改进：读取响应码并捕获错误流
-            val respCode = conn.responseCode
-            val stream = if (respCode in 200..299) conn.inputStream else conn.errorStream
-            val responseText = stream?.bufferedReader()?.use { it.readText() } ?: "NULL_RESPONSE"
+                // 💡 重点改进：读取响应码并捕获错误流
+                val respCode = conn.responseCode
+                val stream = if (respCode in 200..299) conn.inputStream else conn.errorStream
+                val responseText = stream?.bufferedReader()?.use { it.readText() } ?: "NULL_RESPONSE"
 
-            val resJson = JSONObject(responseText)
-            if (resJson.optInt("code") == 1) {
-                if (current % requestsPerEgg == 0) Log.other(title, "📈 进度: $current/$total (已达成 ${current/requestsPerEgg} 个蛋)")
-                true
-            } else {
-                // 💡 修正：这里会直接打印出服务器返回的完整错误 JSON，比如 {"code":0,"msg":"token invalid"...}
-                //Log.error(title, "⚠️ 第 $current 次上报业务失败 (HTTP $respCode): $responseText")
-                false
+                val resJson = JSONObject(responseText)
+                if (resJson.optInt("code") == 1) {
+                    if (current % requestsPerEgg == 0) Log.other(title, "📈 进度: $current/$total (已达成 ${current/requestsPerEgg} 个蛋)")
+                    true
+                } else {
+                    // 💡 修正：这里会直接打印出服务器返回的完整错误 JSON，比如 {"code":0,"msg":"token invalid"...}
+                    //Log.error(title, "⚠️ 第 $current 次上报业务失败 (HTTP $respCode): $responseText")
+                    false
+                }
+            } finally {
+                conn.disconnect()  // 释放连接资源
             }
         } catch (e: Exception) {
            // Log.e(title, "🚨 第 $current 次请求发生网络崩溃:",e)

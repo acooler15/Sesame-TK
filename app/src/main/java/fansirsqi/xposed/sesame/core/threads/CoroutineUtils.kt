@@ -44,6 +44,7 @@ object CoroutineUtils {
      *
      * @param millis 延迟毫秒数
      */
+    @Deprecated("协程上下文中请改用 delay()，同步上下文请使用 Thread.sleep()；本方法内部 runBlocking 会阻塞调度线程")
     @JvmStatic
     fun sleepCompat(millis: Long) {
         try {

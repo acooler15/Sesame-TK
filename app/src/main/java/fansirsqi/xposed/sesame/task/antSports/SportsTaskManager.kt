@@ -32,7 +32,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 处理运动任务面板中的任务（含签到、完成、领奖）
      */
-    internal fun sportsTasks() {
+    internal suspend fun sportsTasks() {
         try {
             sportsCheckIn()
             val jo = JSONObject(AntSportsRpcCall.queryCoinTaskPanel())
@@ -105,7 +105,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
      * @param taskName   任务名称
      * @return 是否视为成功
      */
-    private fun receiveTaskReward(taskDetail: JSONObject, taskName: String): Boolean {
+    private suspend fun receiveTaskReward(taskDetail: JSONObject, taskName: String): Boolean {
         return try {
             val assetId = taskDetail.getString("assetId")
             val prizeAmount = taskDetail.getInt("prizeAmount").toString()
@@ -135,7 +135,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 执行任务（可能包含多次完成）
      */
-    private fun completeTask(taskDetail: JSONObject, taskName: String): Boolean {
+    private suspend fun completeTask(taskDetail: JSONObject, taskName: String): Boolean {
         return try {
             val taskId = taskDetail.getString("taskId")
             val prizeAmount = taskDetail.getString("prizeAmount")
@@ -195,7 +195,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 为任务执行报名
      */
-    private fun signUpForTask(taskId: String, taskName: String): Boolean {
+    private suspend fun signUpForTask(taskId: String, taskName: String): Boolean {
         return try {
             val result = AntSportsRpcCall.signUpTask(taskId)
             val resultData = JSONObject(result)
@@ -224,7 +224,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
      * - 对有 channel 的记录执行任务
      * - 成功后统一调用 pickBubbleTaskEnergy 领取奖励
      */
-    internal fun sportsEnergyBubbleTask() {
+    internal suspend fun sportsEnergyBubbleTask() {
         try {
             val jo = JSONObject(AntSportsRpcCall.queryEnergyBubbleModule())
             if (!ResChecker.checkRes(AntSports.TAG, jo)) {
@@ -293,7 +293,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 运动签到：先 query 再 signIn
      */
-    private fun sportsCheckIn() {
+    private suspend fun sportsCheckIn() {
         try {
             val queryJo = JSONObject(AntSportsRpcCall.signInCoinTask("query"))
             if (ResChecker.checkRes(AntSports.TAG, queryJo)) {
@@ -349,7 +349,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心任务组查询并自动完成 TODO 状态任务
      */
-    internal fun userTaskGroupQuery(groupId: String) {
+    internal suspend fun userTaskGroupQuery(groupId: String) {
         try {
             val s = AntSportsRpcCall.userTaskGroupQuery(groupId)
             var jo = JSONObject(s)
@@ -381,7 +381,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心走路挑战报名
      */
-    internal fun participate() {
+    internal suspend fun participate() {
         try {
             val s = AntSportsRpcCall.queryAccount()
             var jo = JSONObject(s)
@@ -438,7 +438,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心奖励领取
      */
-    internal fun userTaskRightsReceive() {
+    internal suspend fun userTaskRightsReceive() {
         try {
             val s = AntSportsRpcCall.userTaskGroupQuery("SPORTS_DAILY_GROUP")
             var jo = JSONObject(s)
@@ -480,7 +480,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心路径特性查询 + 行走任务/加入路径
      */
-    internal fun pathFeatureQuery() {
+    internal suspend fun pathFeatureQuery() {
         try {
             val s = AntSportsRpcCall.pathFeatureQuery()
             var jo = JSONObject(s)
@@ -521,7 +521,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心地图首页 & 奖励领取
      */
-    private fun pathMapHomepage(pathId: String) {
+    private suspend fun pathMapHomepage(pathId: String) {
         try {
             val s = AntSportsRpcCall.pathMapHomepage(pathId)
             var jo = JSONObject(s)
@@ -561,7 +561,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心加入路线
      */
-    private fun pathMapJoin(title: String, pathId: String) {
+    private suspend fun pathMapJoin(title: String, pathId: String) {
         try {
             val jo = JSONObject(AntSportsRpcCall.pathMapJoin(pathId))
             if (ResChecker.checkRes(AntSports.TAG, jo)) {
@@ -578,7 +578,7 @@ internal class SportsTaskManager(private val sports: AntSports) {
     /**
      * @brief 文体中心行走逻辑
      */
-    private fun tiyubizGo(
+    private suspend fun tiyubizGo(
         countDate: String,
         title: String,
         goStepCount: Int,

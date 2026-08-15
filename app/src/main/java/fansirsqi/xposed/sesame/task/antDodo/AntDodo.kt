@@ -104,7 +104,7 @@ class AntDodo : ModelTask() {
         return modelFields
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         try {
             Log.record(TAG, "执行开始-" + getName())
             receiveTaskAward()
@@ -138,7 +138,7 @@ class AntDodo : ModelTask() {
         return timeStep < endTimeStep && (endTimeStep - timeStep) < 691200000L
     }
 
-    private fun collect() {
+    private suspend fun collect() {
         try {
             val jo = JSONObject(AntDodoRpcCall.queryAnimalStatus())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -156,7 +156,7 @@ class AntDodo : ModelTask() {
         }
     }
 
-    private fun collectAnimalCard() {
+    private suspend fun collectAnimalCard() {
         try {
             var jo = JSONObject(AntDodoRpcCall.homePage())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -221,7 +221,7 @@ class AntDodo : ModelTask() {
     /**
      * 神奇物种任务
      */
-    private fun receiveTaskAward() {
+    private suspend fun receiveTaskAward() {
         try {
             // 获取不能完成的任务列表
             val presetBad: MutableSet<String> = LinkedHashSet(listOf("HELP_FRIEND_COLLECT"))
@@ -298,7 +298,7 @@ class AntDodo : ModelTask() {
         }
     }
 
-    fun propList() {
+    suspend fun propList() {
         try {
             // 获取道具列表
             val s = AntDodoRpcCall.propList()
@@ -440,7 +440,7 @@ class AntDodo : ModelTask() {
      * @param bookId 卡片图鉴ID
      * @param targetUser 目标用户ID
      */
-    private fun sendAntDodoCard(bookId: String?, targetUser: String?) {
+    private suspend fun sendAntDodoCard(bookId: String?, targetUser: String?) {
         try {
             val jo = JSONObject(AntDodoRpcCall.queryBookInfo(bookId))
             if (ResChecker.checkRes(TAG, jo)) {
@@ -461,7 +461,7 @@ class AntDodo : ModelTask() {
         }
     }
 
-    private fun sendCard(animal: JSONObject, targetUser: String?) {
+    private suspend fun sendCard(animal: JSONObject, targetUser: String?) {
         try {
             val animalId = animal.getString("animalId")
             val ecosystem = animal.getString("ecosystem")
@@ -477,7 +477,7 @@ class AntDodo : ModelTask() {
         }
     }
 
-    private fun collectToFriend() {
+    private suspend fun collectToFriend() {
         try {
             val jo = JSONObject(AntDodoRpcCall.queryFriend())
             if (!ResChecker.checkRes(TAG, jo)) {
@@ -550,7 +550,7 @@ class AntDodo : ModelTask() {
     /**
      * 辅助逻辑：获取万能卡要兑换的精准动物ID
      */
-    private fun getTargetAnimalIdForUniversalCard(): String {
+    private suspend fun getTargetAnimalIdForUniversalCard(): String {
         try {
             val allBooks = getAllBookList()
             if (allBooks.length() == 0) {
@@ -758,7 +758,7 @@ class AntDodo : ModelTask() {
          * ]
          */
         @JvmStatic
-        fun getAllBookList(): JSONArray {
+        suspend fun getAllBookList(): JSONArray {
             val allBooks = JSONArray()
             var pageStart: String? = null // 首页传 null
             var hasMore = true
@@ -806,7 +806,7 @@ class AntDodo : ModelTask() {
     /**
      * 自动合成图鉴
      */
-    private fun autoGenerateBook() {
+    private suspend fun autoGenerateBook() {
         try {
             // 1. 直接获取所有页合并后的完整图鉴数组
             val allBooks = getAllBookList()

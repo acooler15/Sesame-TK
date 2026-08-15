@@ -201,7 +201,7 @@ class AntCooperate : ModelTask() {
     }
 
     // 真爱合种逻辑
-    private fun loveCooperateWater() {
+    private suspend fun loveCooperateWater() {
         try {
             // 1. 本地状态检查 (快速失败)
             if (Status.hasFlagToday("love::teamWater")) {
@@ -277,7 +277,7 @@ class AntCooperate : ModelTask() {
     }
 
     // 组队合种浇水逻辑
-    private fun teamCooperateWater() {
+    private suspend fun teamCooperateWater() {
         try {
             // --- 1. 基础配置与本地校验 ---
             // 用户设置的“每日目标浇水量”
@@ -424,7 +424,7 @@ class AntCooperate : ModelTask() {
         /**
          * 合种浇水
          */
-        private fun cooperateWater(coopId: String, count: Int, name: String) {
+        private suspend fun cooperateWater(coopId: String, count: Int, name: String) {
             try {
                 val jo = JSONObject(AntCooperateRpcCall.cooperateWater(UserMap.currentUid, coopId, count))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -441,7 +441,7 @@ class AntCooperate : ModelTask() {
         /**
          * 计算合种需要浇水的克数
          */
-        private fun getTotalWatering(coopId: String?): Int {
+        private suspend fun getTotalWatering(coopId: String?): Int {
             try {
                 val jo = JSONObject(AntCooperateRpcCall.queryCooperateRank("A", coopId))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -469,7 +469,7 @@ class AntCooperate : ModelTask() {
         /**
          * 召唤队友浇水（仅队长）
          */
-        private fun cooperateSendCooperateBeckon(cooperationId: String, name: String) {
+        private suspend fun cooperateSendCooperateBeckon(cooperationId: String, name: String) {
             try {
                 if (TimeUtil.isNowBeforeTimeStr("1800")) {
                     return

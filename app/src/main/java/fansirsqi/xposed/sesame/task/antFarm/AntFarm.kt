@@ -12,7 +12,7 @@ import fansirsqi.xposed.sesame.entity.MapperEntity
 import fansirsqi.xposed.sesame.entity.OtherEntityProvider.farmFamilyOption
 import fansirsqi.xposed.sesame.entity.ParadiseCoinBenefit
 import fansirsqi.xposed.sesame.hook.Toast
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.addIntervalLimit
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.addIntervalLimit
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
@@ -828,7 +828,7 @@ class AntFarm : ModelTask() {
     /**
      * 召回小鸡
      */
-    private fun recallAnimal() {
+    private suspend fun recallAnimal() {
         try {
             //召回小鸡相关操作
             if (AnimalInteractStatus.HOME.name != ownerAnimal.animalInteractStatus) { //如果小鸡不在家
@@ -895,7 +895,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun animalSleepAndWake() {
+    private suspend fun animalSleepAndWake() {
         try {
             val sleepTimeStr = sleepTime!!.value
             if ("-1" == sleepTimeStr) {
@@ -995,7 +995,7 @@ class AntFarm : ModelTask() {
      *
      * @return 庄园信息
      */
-    internal fun enterFarm(): JSONObject? {
+    internal suspend fun enterFarm(): JSONObject? {
         try {
             val userId = UserMap.currentUid
             val jo = JSONObject(AntFarmRpcCall.enterFarm(userId, userId))
@@ -1054,7 +1054,7 @@ class AntFarm : ModelTask() {
     /**
      * 自动喂鸡
      */
-    private fun animalSleepNow() {
+    private suspend fun animalSleepNow() {
         try {
             var s = AntFarmRpcCall.queryLoveCabin(UserMap.currentUid)
             var jo = JSONObject(s)
@@ -1085,7 +1085,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun animalWakeUpNow() {
+    private suspend fun animalWakeUpNow() {
         try {
             var s = AntFarmRpcCall.queryLoveCabin(UserMap.currentUid)
             var jo = JSONObject(s)
@@ -1111,7 +1111,7 @@ class AntFarm : ModelTask() {
      *
      * @param farmId 庄园id
      */
-    private fun syncAnimalStatus(
+    private suspend fun syncAnimalStatus(
         farmId: String?,
         operTag: String?,
         operateType: String?
@@ -1124,7 +1124,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    internal fun syncAnimalStatus(farmId: String?) {
+    internal suspend fun syncAnimalStatus(farmId: String?) {
         try {
             val jo = syncAnimalStatus(farmId, "SYNC_RESUME", "QUERY_ALL")
             parseSyncAnimalStatusResponse(jo!!)
@@ -1133,7 +1133,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun syncAnimalStatusAfterFeedAnimal(farmId: String?): JSONObject? {
+    private suspend fun syncAnimalStatusAfterFeedAnimal(farmId: String?): JSONObject? {
         try {
             return syncAnimalStatus(
                 farmId,
@@ -1146,7 +1146,7 @@ class AntFarm : ModelTask() {
         return null
     }
 
-    private fun syncAnimalStatusQueryFamilyAnimals(farmId: String?): JSONObject? {
+    private suspend fun syncAnimalStatusQueryFamilyAnimals(farmId: String?): JSONObject? {
         try {
             return syncAnimalStatus(farmId, "SYNC_RESUME_FAMILY", "QUERY_ALL|QUERY_FAMILY_ANIMAL")
         } catch (e: Exception) {
@@ -1156,7 +1156,7 @@ class AntFarm : ModelTask() {
     }
 
 
-    private fun syncAnimalStatusAtOtherFarm(userId: String?, friendUserId: String?) {
+    private suspend fun syncAnimalStatusAtOtherFarm(userId: String?, friendUserId: String?) {
         try {
             val s = AntFarmRpcCall.enterFarm(userId, friendUserId)
             var jo = JSONObject(s)
@@ -1179,7 +1179,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun rewardFriend() {
+    private suspend fun rewardFriend() {
         try {
             if (rewardList != null) {
                 for (rewardFriend in rewardList) {
@@ -1212,7 +1212,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun recallAnimal(
+    private suspend fun recallAnimal(
         animalId: String?,
         currentFarmId: String?,
         masterFarmId: String?,
@@ -1236,7 +1236,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    internal fun sendBackAnimal() {
+    internal suspend fun sendBackAnimal() {
         if (animals == null) {
             return
         }
@@ -1277,7 +1277,7 @@ class AntFarm : ModelTask() {
 
 
     @Suppress("SameParameterValue")
-    private fun answerQuestion(activityId: String?) {
+    private suspend fun answerQuestion(activityId: String?) {
         try {
             val today = TimeUtil.getDateStr2()
             val tomorrow = TimeUtil.getDateStr2(1)
@@ -1535,7 +1535,7 @@ class AntFarm : ModelTask() {
     /**
      * 处理飞行赛和揍小鸡的额外次数任务
      */
-    private fun handleGameTasks(gameType: GameType): Boolean {
+    private suspend fun handleGameTasks(gameType: GameType): Boolean {
         // 仅飞行赛和揍小鸡有独立任务列表
         val listResponse = when (gameType) {
             GameType.flyGame -> AntFarmRpcCall.FlyGameListFarmTask()
@@ -1642,7 +1642,7 @@ class AntFarm : ModelTask() {
     }
 
     // 抽抽乐执行
-    private fun playChouChouLe() {
+    private suspend fun playChouChouLe() {
         val ccl = ChouChouLe()
         if (ccl.chouchoule()) {
             Status.setFlagToday("farm::chouChouLeFinished")
@@ -1651,7 +1651,7 @@ class AntFarm : ModelTask() {
             Log.record(TAG, "抽抽乐尚有未完成项（请检查是否需要验证）")
         }
     }
-    internal fun handleChouChouLeLogic() {
+    internal suspend fun handleChouChouLeLogic() {
         // 1. 检查抽抽乐是否已完成
         if (Status.hasFlagToday("farm::chouChouLeFinished")) {
             Log.record("今日抽抽乐已完成")
@@ -1784,7 +1784,7 @@ class AntFarm : ModelTask() {
     }
 
     // 抽取通用任务处理逻辑
-    private fun handleGeneralTask(bizKey: String, title: String) {
+    private suspend fun handleGeneralTask(bizKey: String, title: String) {
         val result = AntFarmRpcCall.doFarmTask(bizKey)
         if (result.isNullOrEmpty()) return
 
@@ -1941,7 +1941,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun farmSign(signList: JSONObject): Boolean {
+    private suspend fun farmSign(signList: JSONObject): Boolean {
         try {
             val flag = "farm::signed"
             if (Status.hasFlagToday(flag)) return false
@@ -1989,7 +1989,7 @@ class AntFarm : ModelTask() {
      *
      * @param jo 同步响应状态
      */
-    private fun parseSyncAnimalStatusResponse(jo: JSONObject) {
+    private suspend fun parseSyncAnimalStatusResponse(jo: JSONObject) {
         try {
             if (!jo.has("subFarmVO")) {
                 return
@@ -2107,7 +2107,7 @@ class AntFarm : ModelTask() {
     /**
      * 收集每日食材
      */
-    private fun collectDailyFoodMaterial() {
+    private suspend fun collectDailyFoodMaterial() {
         try {
             val userId = UserMap.currentUid
             var jo = JSONObject(AntFarmRpcCall.enterKitchen(userId))
@@ -2146,7 +2146,7 @@ class AntFarm : ModelTask() {
     /**
      * 领取爱心食材店食材
      */
-    private fun collectDailyLimitedFoodMaterial() {
+    private suspend fun collectDailyLimitedFoodMaterial() {
         try {
             var jo = JSONObject(AntFarmRpcCall.queryFoodMaterialPack())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -2201,7 +2201,7 @@ class AntFarm : ModelTask() {
     /**
      maxUsage 本次运行总计使用的美食数量。默认为美食种类数量，即每种尝试使用一个。
      */
-    private fun useSpecialFood(cuisineList: JSONArray, maxUsage: Int = cuisineList.length()) {
+    private suspend fun useSpecialFood(cuisineList: JSONArray, maxUsage: Int = cuisineList.length()) {
         try {
             var totalUsed = 0
             val counts = IntArray(cuisineList.length()) { i ->
@@ -2242,7 +2242,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun drawLotteryPlus(lotteryPlusInfo: JSONObject) {
+    private suspend fun drawLotteryPlus(lotteryPlusInfo: JSONObject) {
         try {
             if (!lotteryPlusInfo.has("userSevenDaysGiftsItem")) return
             val itemId = lotteryPlusInfo.getString("itemId")
@@ -2346,7 +2346,7 @@ class AntFarm : ModelTask() {
         return visitedTimes
     }
 
-    private fun acceptGift() {
+    private suspend fun acceptGift() {
         try {
             val jo = JSONObject(AntFarmRpcCall.acceptGift())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -2363,7 +2363,7 @@ class AntFarm : ModelTask() {
      *
      * @param queryDayStr 日期，格式：yyyy-MM-dd
      */
-    private fun diaryTietze(@Suppress("SameParameterValue") queryDayStr: String?) {
+    private suspend fun diaryTietze(@Suppress("SameParameterValue") queryDayStr: String?) {
         val diaryDateStr: String?
         try {
             var jo = JSONObject(AntFarmRpcCall.queryChickenDiary(queryDayStr))
@@ -2419,7 +2419,7 @@ class AntFarm : ModelTask() {
      * 点赞小鸡日记
      *
      */
-    private fun collectChickenDiary(queryDayStr: String?): String? {
+    private suspend fun collectChickenDiary(queryDayStr: String?): String? {
         var diaryDateStr: String? = null
         try {
             var jo = JSONObject(AntFarmRpcCall.queryChickenDiary(queryDayStr))
@@ -2447,7 +2447,7 @@ class AntFarm : ModelTask() {
 
     private suspend fun queryChickenDiaryList(
         queryMonthStr: String?,
-        `fun`: (String?) -> String?
+        `fun`: suspend (String?) -> String?
     ): Boolean {
         var hasPreviousMore = false
         try {
@@ -2534,7 +2534,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun visitAnimal() {
+    private suspend fun visitAnimal() {
         try {
             val response = AntFarmRpcCall.visitAnimal()
             if (response.isNullOrEmpty()) {
@@ -2583,7 +2583,7 @@ class AntFarm : ModelTask() {
     }
 
     /* 雇佣好友小鸡 */
-    internal  fun hireAnimal() {
+    internal suspend fun hireAnimal() {
         // 重置农场已满标志
         isFarmFull = false
         var animals: JSONArray? = null
@@ -2737,7 +2737,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun hireAnimalAction(userId: String?): Boolean {
+    private suspend fun hireAnimalAction(userId: String?): Boolean {
         try {
             val s = AntFarmRpcCall.enterFarm(userId, userId)
             var jo = JSONObject(s)
@@ -2887,7 +2887,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun hireNpc(config: NpcConfig): Boolean {
+    private suspend fun hireNpc(config: NpcConfig): Boolean {
         try {
             val s = AntFarmRpcCall.hireNpcAnimal(config.animalId, config.source)
             val jo = JSONObject(s)
@@ -2946,7 +2946,7 @@ class AntFarm : ModelTask() {
     /**
      * 处理芝麻大表鸽的加速任务
      */
-    private fun handleZhimaPigeonTasks() {
+    private suspend fun handleZhimaPigeonTasks() {
         try {
             val s = AntFarmRpcCall.listZhimaNpcFarmTask()
             val jo = JSONObject(s)
@@ -3039,7 +3039,7 @@ class AntFarm : ModelTask() {
      * 处理农场小鸡(肥料鸡)的加速任务
      * 任务：做美食(ORCHARD_NPC_COOK_TASK)、开宝箱(ORCHARD_NPC_GAME_TASK)
      */
-    private fun handleFarmChickenTasks() {
+    private suspend fun handleFarmChickenTasks() {
         try {
             val s = AntFarmRpcCall.listFarmChickenFarmTask()
             val jo = JSONObject(s)
@@ -3134,7 +3134,7 @@ class AntFarm : ModelTask() {
     }
 
     // 小鸡换装
-    internal fun listOrnaments() {
+    internal suspend fun listOrnaments() {
         try {
             val s = AntFarmRpcCall.queryLoveCabin(UserMap.currentUid)
             val jsonObject = JSONObject(s)
@@ -3217,7 +3217,7 @@ class AntFarm : ModelTask() {
     }
 
     // 一起拿小鸡饲料
-    private fun letsGetChickenFeedTogether() {
+    private suspend fun letsGetChickenFeedTogether() {
         try {
             var jo = JSONObject(AntFarmRpcCall.letsGetChickenFeedTogether())
             if (jo.optBoolean("success")) {
@@ -3589,7 +3589,7 @@ class AntFarm : ModelTask() {
      * 同步家庭亲密度状态
      * @param groupId 家庭组ID
      */
-    private fun syncFamilyStatusIntimacy(groupId: String?) {
+    private suspend fun syncFamilyStatusIntimacy(groupId: String?) {
         try {
             val userId = UserMap.currentUid
             val jo = JSONObject(AntFarmRpcCall.syncFamilyStatus(groupId, "INTIMACY_VALUE", userId))
@@ -3754,7 +3754,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun giftFamilyDrawFragment(giftUserId: String?, giftNum: Int) {
+    private suspend fun giftFamilyDrawFragment(giftUserId: String?, giftNum: Int) {
         try {
             val jo = JSONObject(AntFarmRpcCall.giftFamilyDrawFragment(giftUserId, giftNum))
             if (ResChecker.checkRes(TAG, jo)) {
@@ -3765,7 +3765,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun familyDrawListFarmTask(): JSONArray? {
+    private suspend fun familyDrawListFarmTask(): JSONArray? {
         try {
             val jo = JSONObject(AntFarmRpcCall.familyDrawListFarmTask())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -3781,7 +3781,7 @@ class AntFarm : ModelTask() {
      * 家庭扭蛋抽奖
      * @return 是否还有剩余抽奖次数
      */
-    private fun familyDraw(): Boolean {
+    private suspend fun familyDraw(): Boolean {
         try {
             val jo = JSONObject(AntFarmRpcCall.familyDraw())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -3868,7 +3868,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun familyDrawSignReceiveFarmTaskAward(taskId: String?, title: String?) {
+    private suspend fun familyDrawSignReceiveFarmTaskAward(taskId: String?, title: String?) {
         try {
             val jo = JSONObject(AntFarmRpcCall.familyDrawSignReceiveFarmTaskAward(taskId))
             if (ResChecker.checkRes(TAG, jo)) {
@@ -3883,7 +3883,7 @@ class AntFarm : ModelTask() {
         }
     }
 
-    private fun queryRecentFarmFood(queryNum: Int): JSONArray? {
+    private suspend fun queryRecentFarmFood(queryNum: Int): JSONArray? {
         try {
             val jo = JSONObject(AntFarmRpcCall.queryRecentFarmFood(queryNum))
             if (!ResChecker.checkRes(TAG, jo)) {
@@ -3910,7 +3910,7 @@ class AntFarm : ModelTask() {
         return null
     }
 
-    private fun familyFeedFriendAnimal(animals: JSONArray) {
+    private suspend fun familyFeedFriendAnimal(animals: JSONArray) {
         try {
             for (i in 0..<animals.length()) {
                 val animal = animals.getJSONObject(i)
@@ -3953,7 +3953,7 @@ class AntFarm : ModelTask() {
      * 点击领取活动食物
      * @param gift 礼物信息对象
      */
-    private  fun clickForGiftV2(gift: JSONObject?) {
+    private suspend fun clickForGiftV2(gift: JSONObject?) {
         if (gift == null) return
         try {
             val resultJson = JSONObject(
@@ -4039,7 +4039,7 @@ class AntFarm : ModelTask() {
 
 
     //乐园限定活动
-    private fun queryOptionalPlay() {
+    private suspend fun queryOptionalPlay() {
         try {
             val jo = JSONObject(AntFarmRpcCall.queryOptionalPlay())
             if (!ResChecker.checkRes(TAG+"限定活动：", jo)) {
@@ -4082,7 +4082,7 @@ class AntFarm : ModelTask() {
     /**
      * 手动触发遣返小鸡
      */
-    fun manualSendBackAnimal() {
+    suspend fun manualSendBackAnimal() {
         try {
             Log.record(TAG, "🚀 开始执行手动遣返小鸡任务...")
             // 必须先进入农场获取最新 animal 数据
@@ -4119,7 +4119,7 @@ class AntFarm : ModelTask() {
     /**
      * 手动执行庄园抽抽乐逻辑（供 ManualTask 调用）
      */
-    fun manualChouChouLeLogic() {
+    suspend fun manualChouChouLeLogic() {
         try {
             Log.record(TAG, "🚀 开始执行手动抽抽乐任务...")
             if (enterFarm() != null) {
@@ -4134,7 +4134,7 @@ class AntFarm : ModelTask() {
      * 手动使用特殊美食
      * @param count 期望使用的总数量（必须 > 0）
      */
-    fun manualUseSpecialFood(count: Int) {
+    suspend fun manualUseSpecialFood(count: Int) {
         try {
             // 1. 严格校验：如果数量 <= 0，则不执行任何逻辑
             if (count <= 0) {
@@ -4166,7 +4166,7 @@ class AntFarm : ModelTask() {
      * @param toolType 道具类型：BIG_EATER_TOOL, NEWEGGTOOL, FENCETOOL
      * @param toolCount 使用数量（仅 NEWEGGTOOL 有效）
      */
-    fun manualUseFarmTool(toolType: String, toolCount: Int) {
+    suspend fun manualUseFarmTool(toolType: String, toolCount: Int) {
         itemManager.manualUseFarmTool(toolType, toolCount)
     }
 }

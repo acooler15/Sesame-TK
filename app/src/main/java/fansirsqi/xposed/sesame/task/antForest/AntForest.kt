@@ -18,7 +18,7 @@ import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.FixedOrRangeIntervalLimit
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.IntervalLimit
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.addIntervalLimit
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.addIntervalLimit
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.task.antForest.EnergyPvpChallengePolicy
 import fansirsqi.xposed.sesame.task.antForest.EnergyPvpDecision
@@ -62,7 +62,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -944,10 +943,10 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * 定义一个 处理器接口
      */
     private fun interface JsonArrayHandler {
-        fun handle(array: JSONArray?)
+        suspend fun handle(array: JSONArray?)
     }
 
-    private fun processJsonArray(
+    private suspend fun processJsonArray(
         initialObj: JSONObject?,
         arrayKey: String?,
         handler: JsonArrayHandler
@@ -970,7 +969,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         } while (hasMore)
     }
 
-    private fun wateringBubbles(selfHomeObj: JSONObject?) {
+    private suspend fun wateringBubbles(selfHomeObj: JSONObject?) {
         processJsonArray(
             selfHomeObj,
             "wateringBubbles"
@@ -981,7 +980,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    private fun givenProps(selfHomeObj: JSONObject?) {
+    private suspend fun givenProps(selfHomeObj: JSONObject?) {
         processJsonArray(selfHomeObj, "givenProps") { givenProps: JSONArray? ->
             itemManager.collectGivenProps(
                 givenProps!!
@@ -992,7 +991,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     /**
      * 给好友浇水
      */
-    private fun waterFriends() {
+    private suspend fun waterFriends() {
         try {
             val friendMap = waterFriendList!!.value
             val notify = notifyFriend!!.value // 获取通知开关状态
@@ -1083,7 +1082,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      *
      * @return 用户的主页信息，如果发生错误则返回null。
      */
-    internal fun querySelfHome(): JSONObject? {
+    internal suspend fun querySelfHome(): JSONObject? {
         var userHomeObj: JSONObject? = null
         try {
             val start = System.currentTimeMillis()
@@ -1117,7 +1116,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * @param userId 好友ID
      * @return 更新后的好友主页信息，如果发生错误则返回null。
      */
-    internal fun queryFriendHome(userId: String?, fromAct: String?): JSONObject? {
+    internal suspend fun queryFriendHome(userId: String?, fromAct: String?): JSONObject? {
         var friendHomeObj: JSONObject? = null
         try {
             val start = System.currentTimeMillis()
@@ -1202,7 +1201,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * @param notifyFriend 是否通知好友
      * @return KVMap 包含浇水次数和是否可以继续浇水的状态
      */
-    internal fun returnFriendWater(
+    internal suspend fun returnFriendWater(
         userId: String?,
         bizNo: String?,
         count: Int,
@@ -1242,7 +1241,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                     break
                 } else if ("3000" == errorCode) { // 系统错误
                     Log.record(TAG, "好友浇水🚿系统错误，稍后重试: " + UserMap.getMaskName(userId))
-                    Thread.sleep(500)
+                    delay(500)
                     waterCount-- // 重试当前次数
                     waterCount++
                     continue
@@ -1309,7 +1308,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * @param forestSignVOList 森林签到列表
      * @return 获得的能量，如果签到失败或已签到则返回 0
      */
-    private fun dailyTask(forestSignVOList: JSONArray): Int {
+    private suspend fun dailyTask(forestSignVOList: JSONArray): Int {
         try {
             val forestSignVO = forestSignVOList.getJSONObject(0)
             val currentSignKey = forestSignVO.getString("currentSignKey") // 当前签到的 key
@@ -1351,7 +1350,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * 逛森林集市得能量,逛一逛618会场
      * 逛一逛点淘得红包,去一淘签到领红包
      */
-    private fun receiveTaskAward() {
+    private suspend fun receiveTaskAward() {
         try {
             // 使用统一的任务黑名单管理器，包含默认黑名单和用户自定义黑名单
             while (true) {
@@ -1377,7 +1376,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 }
 
                 // {{ 定义递归处理函数，支持处理嵌套子任务 }}
-                fun processTask(taskInfo: JSONObject): Boolean {
+                suspend fun processTask(taskInfo: JSONObject): Boolean {
                     var actionTaken = false
 
                     // 1. 获取基础信息
@@ -1485,7 +1484,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     /**
      * 查询并管理用户巡护任务
      */
-    private fun queryUserPatrol() {
+    private suspend fun queryUserPatrol() {
         val waitTime = 300L //增大查询等待时间，减少异常
         try {
             do {
@@ -1566,7 +1565,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      * @param nodeIndex 当前节点索引
      * @param patrolId  巡护任务ID
      */
-    private fun patrolKeepGoing(s: String?, nodeIndex: Int, patrolId: Int) {
+    private suspend fun patrolKeepGoing(s: String?, nodeIndex: Int, patrolId: Int) {
         var s = s
         try {
             do {
@@ -1620,7 +1619,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     /**
      * 查询并派遣伙伴
      */
-    private fun queryAndConsumeAnimal() {
+    private suspend fun queryAndConsumeAnimal() {
         try {
             // 查询动物属性列表
             var jo = JSONObject(AntForestRpcCall.queryAnimalPropList())
@@ -1652,7 +1651,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      *
      * @param animalProp 选择的动物属性
      */
-    private fun consumeAnimalProp(animalProp: JSONObject?) {
+    private suspend fun consumeAnimalProp(animalProp: JSONObject?) {
         if (animalProp == null) return  // 如果没有可派遣的伙伴，则返回
 
         try {
@@ -1675,7 +1674,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     /**
      * 查询动物及碎片信息，并尝试合成可合成的动物碎片。
      */
-    private fun queryAnimalAndPiece() {
+    private suspend fun queryAnimalAndPiece() {
         try {
             // 调用远程接口查询动物及碎片信息
             val response = JSONObject(AntForestRpcCall.queryAnimalAndPiece(0))
@@ -1736,7 +1735,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
      *
      * @param animalId 动物ID
      */
-    private fun combineAnimalPiece(animalId: Int) {
+    private suspend fun combineAnimalPiece(animalId: Int) {
         var animalId = animalId
         try {
             while (true) {
@@ -1799,7 +1798,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    private fun processGift7thSign() {
+    private suspend fun processGift7thSign() {
         try {
             val sceneCode = "ANTFOREST_GIFT7TH_SIGN_202506"
             val s = AntForestRpcCall.queryCommonSign(sceneCode)
@@ -1834,7 +1833,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    fun doforestgame() {
+    suspend fun doforestgame() {
         try {
             val response = AntForestRpcCall.queryGameList()
             val jo = JSONObject(response)
@@ -1921,7 +1920,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     }
 
     //森林乐园限定活动
-    fun queryOptionalPlay() {
+    suspend fun queryOptionalPlay() {
         try {
             val jo = JSONObject(AntForestRpcCall.queryOptionalPlay())
             if (!ResChecker.checkRes(TAG+"森林乐园限定活动", jo)) {
@@ -2086,7 +2085,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    private fun handleEnergyPvpChallenge() {
+    private suspend fun handleEnergyPvpChallenge() {
         if (energyPvpChallenge?.value != true ||
             Status.hasFlagToday(StatusFlags.FLAG_ANTFOREST_ENERGY_PVP_CHALLENGE_DONE)
         ) {
@@ -2129,7 +2128,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         }
     }
 
-    private fun claimEnergyPvpRewards(): Boolean {
+    private suspend fun claimEnergyPvpRewards(): Boolean {
         val response = parseEnergyPvpResponse(AntForestRpcCall.receivePvpRewards())
             ?: run {
                 Log.forest("1V1能量挑战领奖响应为空，可能是暂无可领取奖励")
@@ -2157,7 +2156,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         return true
     }
 
-    private fun reviewEnergyPvpRecords() {
+    private suspend fun reviewEnergyPvpRecords() {
         val response = parseEnergyPvpResponse(
             AntForestRpcCall.queryPvpBattleRecords(5)
         ) ?: return

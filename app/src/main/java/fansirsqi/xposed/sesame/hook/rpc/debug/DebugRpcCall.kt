@@ -6,7 +6,7 @@ object DebugRpcCall {
     private const val version = "2.0"
 
     @JvmStatic
-    fun queryBaseinfo(): String {
+    suspend fun queryBaseinfo(): String {
         return RequestManager.requestString(
             "com.alipay.neverland.biz.rpc.queryBaseinfo",
             "[{\"branchId\":\"WUFU\",\"source\":\"fuqiTown\"}]"
@@ -15,7 +15,7 @@ object DebugRpcCall {
 
     /** 行走格子 */
     @JvmStatic
-    fun walkGrid(): String {
+    suspend fun walkGrid(): String {
         return RequestManager.requestString(
             "com.alipay.neverland.biz.rpc.walkGrid",
             "[{\"drilling\":false,\"mapId\":\"MF1\",\"source\":\"fuqiTown\"}]"
@@ -24,7 +24,7 @@ object DebugRpcCall {
 
     /** 小游戏 */
     @JvmStatic
-    fun miniGameFinish(gameId: String?, gameKey: String?): String {
+    suspend fun miniGameFinish(gameId: String?, gameKey: String?): String {
         return RequestManager.requestString(
             "com.alipay.neverland.biz.rpc.miniGameFinish",
             "[{\"gameId\":\"" + gameId + "\",\"gameKey\":\"" + gameKey +
@@ -33,7 +33,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun taskFinish(bizId: String?): String {
+    suspend fun taskFinish(bizId: String?): String {
         return RequestManager.requestString(
             "com.alipay.adtask.biz.mobilegw.service.task.finish",
             "[{\"bizId\":\"" + bizId + "\"}]"
@@ -41,7 +41,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun queryAdFinished(bizId: String?, scene: String?): String {
+    suspend fun queryAdFinished(bizId: String?, scene: String?): String {
         return RequestManager.requestString(
             "com.alipay.neverland.biz.rpc.queryAdFinished",
             "[{\"adBizNo\":\"" + bizId + "\",\"scene\":\"" + scene +
@@ -50,7 +50,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun queryWufuTaskHall(): String {
+    suspend fun queryWufuTaskHall(): String {
         return RequestManager.requestString(
             "com.alipay.neverland.biz.rpc.queryWufuTaskHall",
             "[{\"source\":\"fuqiTown\"}]"
@@ -58,7 +58,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun fuQiTaskQuery(): String {
+    suspend fun fuQiTaskQuery(): String {
         return RequestManager.requestString(
             "com.alipay.wufudragonprod.biz.wufu2024.fuQiTown.fuQiTask.query",
             "[{}]"
@@ -66,7 +66,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun fuQiTaskTrigger(appletId: String?, stageCode: String?): String {
+    suspend fun fuQiTaskTrigger(appletId: String?, stageCode: String?): String {
         return RequestManager.requestString(
             "com.alipay.wufudragonprod.biz.wufu2024.fuQiTown.fuQiTask.trigger",
             "[{\"appletId\":\"" + appletId + "\",\"stageCode\":\"" + stageCode + "\"}]"
@@ -74,7 +74,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun queryEnvironmentCertDetailList(alias: String?, pageNum: Int, targetUserID: String?): String {
+    suspend fun queryEnvironmentCertDetailList(alias: String?, pageNum: Int, targetUserID: String?): String {
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryEnvironmentCertDetailList",
             "[{\"alias\":\"" + alias + "\",\"certId\":\"\",\"pageNum\":" + pageNum +
@@ -84,7 +84,7 @@ object DebugRpcCall {
     }
 
     @JvmStatic
-    fun sendTree(certificateId: String?, friendUserId: String?): String {
+    suspend fun sendTree(certificateId: String?, friendUserId: String?): String {
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.sendTree",
             "[{\"blessWords\":\"梭梭没有叶子，四季常青，从不掉发，祝你发量如梭。\",\"certificateId\":\"" + certificateId +

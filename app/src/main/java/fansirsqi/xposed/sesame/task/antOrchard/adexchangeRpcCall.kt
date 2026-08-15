@@ -24,7 +24,7 @@ object XLightRpcCall {
      * @param pageUrl 当前页面 url
      * @param pageFrom 页面来源
      */
-    fun xlightPlugin(
+    suspend fun xlightPlugin(
         pageUrl: String,
         pageFrom: String,
         session: String,
@@ -84,7 +84,7 @@ object XLightRpcCall {
      * @param iepTaskSceneCode extendInfo.iepTaskSceneCode
      * @param iepTaskType extendInfo.iepTaskType
      */
-    fun finishTask(
+    suspend fun finishTask(
         playBizId: String,
         playEventInfo: JSONObject,
         iepTaskSceneCode: String,

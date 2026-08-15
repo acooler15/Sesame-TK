@@ -10,7 +10,7 @@ data class FishPondRunResult(
 
 class FishPondWorkflow(private val gateway: FishPondGateway) {
 
-    fun run(
+    suspend fun run(
         taskEnabled: Boolean,
         autoFishEnabled: Boolean,
         todayFishCount: Int,
@@ -98,7 +98,7 @@ class FishPondWorkflow(private val gateway: FishPondGateway) {
         return state.result(retryNeeded = false)
     }
 
-    private fun handleTasks(state: RunState): Boolean {
+    private suspend fun handleTasks(state: RunState): Boolean {
         val subplotResponse = parseSuccess(gateway.querySubplotsActivity()) ?: return false
         val subplotData = payload(subplotResponse)
         val activities = subplotData.optJSONArray("subplotsActivityList") ?: return false
@@ -197,7 +197,7 @@ class FishPondWorkflow(private val gateway: FishPondGateway) {
         return true
     }
 
-    private fun handleSign(data: JSONObject, state: RunState): Boolean? {
+    private suspend fun handleSign(data: JSONObject, state: RunState): Boolean? {
         val signList = data.optJSONObject("signInfo")
             ?.optJSONArray("list")
             ?: return null
@@ -230,11 +230,11 @@ class FishPondWorkflow(private val gateway: FishPondGateway) {
         return true
     }
 
-    private fun syncAfterAction(syncTypes: List<String>): Boolean {
+    private suspend fun syncAfterAction(syncTypes: List<String>): Boolean {
         return parseSuccess(gateway.fishpondSyncIndex(syncTypes)) != null
     }
 
-    private fun refreshIndex(syncTypes: List<String>, state: RunState): JSONObject? {
+    private suspend fun refreshIndex(syncTypes: List<String>, state: RunState): JSONObject? {
         val synced = parseSuccess(gateway.fishpondSyncIndex(syncTypes)) ?: return null
         if (!canExchange(synced)) {
             return synced

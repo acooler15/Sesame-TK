@@ -34,7 +34,7 @@ class AntFishPond : ModelTask() {
         }
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         val taskEnabled = fishPondTask.value == true
         val autoFishEnabled = autoFish.value == true
         if (!taskEnabled && !autoFishEnabled) {

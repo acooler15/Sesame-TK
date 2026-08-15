@@ -11,7 +11,7 @@ object GreenLife {
 
     /** 森林集市 */
     @JvmStatic
-    fun ForestMarket(sourceType: String) {
+    suspend fun ForestMarket(sourceType: String) {
         try {
             var jo = JSONObject(AntForestRpcCall.consultForSendEnergyByAction(sourceType))
             if (ResChecker.checkRes(TAG, jo)) {

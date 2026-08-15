@@ -7,6 +7,7 @@ import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,7 +24,7 @@ object Vitality {
     fun ItemListByType(labelType: String): JSONArray? {
         var itemInfoVOList: JSONArray? = null
         try {
-            val jo = JSONObject(AntForestRpcCall.itemList(labelType))
+            val jo = JSONObject(runBlocking { AntForestRpcCall.itemList(labelType) })
             if (ResChecker.checkRes(TAG + "查询森林活力值商品列表失败:", jo)) {
                 itemInfoVOList = jo.optJSONArray("itemInfoVOList")
             }
@@ -37,7 +38,7 @@ object Vitality {
     @JvmStatic
     fun ItemDetailBySpuId(spuId: String) {
         try {
-            val jo = JSONObject(AntForestRpcCall.itemDetail(spuId))
+            val jo = JSONObject(runBlocking { AntForestRpcCall.itemDetail(spuId) })
             if (ResChecker.checkRes(TAG + "查询森林活力值商品详情失败:", jo)) {
                 val itemDetail = jo.getJSONObject("spuItemInfoVO")
                 handleItemDetail(itemDetail)
@@ -187,7 +188,7 @@ object Vitality {
 
     private fun VitalityExchange(spuId: String, skuId: String): Boolean {
         try {
-            val jo = JSONObject(AntForestRpcCall.exchangeBenefit(spuId, skuId))
+            val jo = JSONObject(runBlocking { AntForestRpcCall.exchangeBenefit(spuId, skuId) })
             if (!jo.optBoolean("success")) {
                 val resultCode = jo.optString("resultCode", "")
                 if ("QUOTA_USER_NOT_ENOUGH" == resultCode) {

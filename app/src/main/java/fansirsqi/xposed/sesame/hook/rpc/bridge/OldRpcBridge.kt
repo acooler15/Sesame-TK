@@ -4,17 +4,18 @@ import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.data.RuntimeInfo
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
 import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.StringUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.json.JSONException
 import org.json.JSONObject
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.util.Objects
 
 class OldRpcBridge : RpcBridge {
     private var loader: ClassLoader? = null
@@ -22,11 +23,6 @@ class OldRpcBridge : RpcBridge {
     private var rpcCallMethod: Method? = null
     private var getResponseMethod: Method? = null
     private var curH5PageImpl: Any? = null
-
-    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
-    override fun getVersion(): RpcVersion {
-        return RpcVersion.OLD // 返回 RPC 的版本
-    }
 
     /**
      * 加载 RPC 所需的类和方法。
@@ -84,12 +80,12 @@ class OldRpcBridge : RpcBridge {
      * @param retryInterval  重试间隔。
      * @return 响应字符串，如果失败则返回 null。
      */
-    override fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String? {
+    override suspend fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String? {
         val responseEntity = requestObject(rpcEntity, tryCount, retryInterval)
         return responseEntity?.responseString // 返回响应字符串或 null
     }
 
-    override fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity? {
+    override suspend fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity? {
         if (ApplicationHook.offline) {
             return null // 如果离线，直接返回 null
         }
@@ -98,10 +94,18 @@ class OldRpcBridge : RpcBridge {
         val args = rpcEntity.requestData // 获取请求参数
         for (count in 0 until tryCount) {
             try {
-                RpcIntervalLimit.enterIntervalLimit(Objects.requireNonNull(requestMethod) as String) // 进入 RPC 调用间隔限制
                 val method = requestMethod!! // 非空请求方法
-                val response = invokeRpcCall(method, args) // 调用 RPC 方法
-                return processResponse(rpcEntity, response, id, method, args, retryInterval) // 处理响应
+                // 获取限流许可（并发数限制 + per-method 间隔，挂起不阻塞线程）
+                GlobalRpcRateLimiter.acquire(requestMethod).use { _ ->
+                    // 反射调用本身是同步阻塞的，用 withContext(IO) 隔离，不占用调度线程
+                    val response = withContext(Dispatchers.IO) {
+                        invokeRpcCall(method, args) // 调用 RPC 方法
+                    }
+                    val result = processResponse(rpcEntity, response, id, method, args, retryInterval) // 处理响应
+                    if (result != null) {
+                        return result
+                    }
+                }
             } catch (t: Throwable) {
                 handleError(rpcEntity, t, requestMethod, id, args) // 处理错误
             }

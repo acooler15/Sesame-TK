@@ -11,6 +11,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.ChoiceModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.task.ModelTask
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.log.Log
@@ -223,7 +224,7 @@ class AntStall : ModelTask() {
         }
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         try {
             val tc = TimeCounter(TAG)
             Log.record(TAG, "执行开始-${getName()}")
@@ -322,7 +323,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 请走小摊
      */
-    private fun sendBack(
+    private suspend fun sendBack(
         billNo: String,
         seatId: String,
         shopId: String,
@@ -363,7 +364,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 邀请开店
      */
-    private fun inviteOpen(seatId: String, sentUserId: MutableSet<String>) {
+    private suspend fun inviteOpen(seatId: String, sentUserId: MutableSet<String>) {
         try {
             val response = AntStallRpcCall.rankInviteOpen()
             val json = JSONObject(response)
@@ -417,7 +418,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 处理摊位请走逻辑
      */
-    private fun sendBack(seatsMap: JSONObject) {
+    private suspend fun sendBack(seatsMap: JSONObject) {
         try {
             val sentUserId = mutableSetOf<String>()
 
@@ -487,15 +488,17 @@ class AntStall : ModelTask() {
                 } else {
                     val taskId = "SB|$seatId"
                     if (!hasChildTask(taskId)) {
-                        addChildTask(ChildModelTask(taskId, "SB", {
-                            if (stallAllowOpenReject.value) {
-                                sendBack(
-                                    rentLastBill,
-                                    seatId,
-                                    rentLastShop,
-                                    rentLastUser,
-                                    sentUserId
-                                )
+                        addChildTask(ChildModelTask(taskId, "SB", Runnable {
+                            CoroutineUtils.runBlockingSafe {
+                                if (stallAllowOpenReject.value) {
+                                    sendBack(
+                                        rentLastBill,
+                                        seatId,
+                                        rentLastShop,
+                                        rentLastUser,
+                                        sentUserId
+                                    )
+                                }
                             }
                         }, endTime))
                         Log.record(TAG, "添加蹲点请走⛪在[${TimeUtil.getCommonDate(endTime)}]执行")
@@ -510,7 +513,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 结算金币
      */
-    private fun settle(seatsMap: JSONObject) {
+    private suspend fun settle(seatsMap: JSONObject) {
         try {
             val seat = seatsMap.getJSONObject("MASTER")
             if (!seat.has("coinsMap")) return
@@ -538,7 +541,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 收摊
      */
-    private fun closeShop() {
+    private suspend fun closeShop() {
         try {
             val response = AntStallRpcCall.shopList()
             val json = JSONObject(response)
@@ -573,13 +576,15 @@ class AntStall : ModelTask() {
                 } else {
                     val taskId = "SH|$shopId"
                     if (!hasChildTask(taskId)) {
-                        addChildTask(ChildModelTask(taskId, "SH", {
-                            if (stallAutoClose.value) {
-                                shopClose(shopId, rentLastBill, rentLastUser)
-                            }
-                            GlobalThreadPools.sleepCompat(300L)
-                            if (stallAutoOpen.value) {
-                                openShop()
+                        addChildTask(ChildModelTask(taskId, "SH", Runnable {
+                            CoroutineUtils.runBlockingSafe {
+                                if (stallAutoClose.value) {
+                                    shopClose(shopId, rentLastBill, rentLastUser)
+                                }
+                                GlobalThreadPools.sleepCompat(300L)
+                                if (stallAutoOpen.value) {
+                                    openShop()
+                                }
                             }
                         }, shopTime))
                         Log.record(TAG, "添加蹲点收摊⛪在[${TimeUtil.getCommonDate(shopTime)}]执行")
@@ -594,7 +599,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 摆摊
      */
-    private fun openShop() {
+    private suspend fun openShop() {
         try {
             val response = AntStallRpcCall.shopList()
             val json = JSONObject(response)
@@ -630,7 +635,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 获取好友排行榜
      */
-    private fun rankCoinDonate(shopIds: Queue<String>) {
+    private suspend fun rankCoinDonate(shopIds: Queue<String>) {
         try {
             val response = AntStallRpcCall.rankCoinDonate()
             val json = JSONObject(response)
@@ -669,7 +674,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 在好友村庄开店
      */
-    private fun openShop(seatId: String, userId: String, shopId: String) {
+    private suspend fun openShop(seatId: String, userId: String, shopId: String) {
         try {
             val response = AntStallRpcCall.shopOpen(seatId, userId, shopId)
             val json = JSONObject(response)
@@ -685,7 +690,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 访问好友主页并开店
      */
-    private fun friendHomeOpen(seats: List<Seat>, shopIds: Queue<String>) {
+    private suspend fun friendHomeOpen(seats: List<Seat>, shopIds: Queue<String>) {
         val sortedSeats = seats.sortedByDescending { it.hot }
         val currentUid = UserMap.currentUid
 
@@ -731,7 +736,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 关闭商店
      */
-    private fun shopClose(shopId: String, billNo: String, userId: String) {
+    private suspend fun shopClose(shopId: String, billNo: String, userId: String) {
         try {
             val preResponse = AntStallRpcCall.preShopClose(shopId, billNo)
             val preJson = JSONObject(preResponse)
@@ -765,7 +770,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 处理任务列表
      */
-    private fun taskList() {
+    private suspend fun taskList() {
         try {
             val response = AntStallRpcCall.taskList()
             val json = JSONObject(response)
@@ -846,7 +851,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 处理X-light任务
      */
-    private fun handleXlightTask() {
+    private suspend fun handleXlightTask() {
         try {
             val response = AntStallRpcCall.xlightPlugin()
             val json = JSONObject(response)
@@ -888,7 +893,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 今日签到
      */
-    private fun signToday() {
+    private suspend fun signToday() {
         try {
             val response = AntStallRpcCall.signToday()
             val json = JSONObject(response)
@@ -906,7 +911,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 领取任务奖励
      */
-    private fun receiveTaskAward(taskType: String) {
+    private suspend fun receiveTaskAward(taskType: String) {
         if (!stallReceiveAward.value) return
 
         try {
@@ -926,7 +931,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 完成任务
      */
-    private fun finishTask(taskType: String): Boolean {
+    private suspend fun finishTask(taskType: String): Boolean {
         try {
             val response = AntStallRpcCall.finishTask(
                 "${taskType}_${System.currentTimeMillis()}",
@@ -948,7 +953,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 邀请好友注册
      */
-    private fun inviteRegister(): Boolean {
+    private suspend fun inviteRegister(): Boolean {
         if (!stallInviteRegister.value) return false
 
         try {
@@ -996,7 +1001,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 分享助力
      */
-    private fun shareP2P(): String? {
+    private suspend fun shareP2P(): String? {
         try {
             val response = AntStallRpcCall.shareP2P()
             val json = JSONObject(response)
@@ -1017,7 +1022,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 助力好友
      */
-    private fun assistFriend() {
+    private suspend fun assistFriend() {
         try {
             if (!Status.canAntStallAssistFriendToday()) {
                 Log.record(TAG, "今日新村助力次数已用完。")
@@ -1076,7 +1081,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 捐赠项目
      */
-    private fun donate() {
+    private suspend fun donate() {
         try {
             val response = AntStallRpcCall.projectList()
             val json = JSONObject(response)
@@ -1132,7 +1137,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 进入下一村
      */
-    private fun roadmap() {
+    private suspend fun roadmap() {
         try {
             val response = AntStallRpcCall.roadmap()
             val json = JSONObject(response)
@@ -1173,7 +1178,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 收集肥料
      */
-    private fun collectManure() {
+    private suspend fun collectManure() {
         try {
             val response = AntStallRpcCall.queryManureInfo()
             val json = JSONObject(response)
@@ -1204,7 +1209,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 丢肥料批量处理
      */
-    private fun throwManure(dynamicList: JSONArray) {
+    private suspend fun throwManure(dynamicList: JSONArray) {
         // 前置检查:如果今日已达上限,直接跳过
         if (Status.hasFlagToday(StatusFlags.FLAG_ANTSTALL_THROW_MANURE_LIMIT)) {
             return
@@ -1237,7 +1242,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 丢肥料主流程
      */
-    private fun throwManure() {
+    private suspend fun throwManure() {
         try {
             val response = AntStallRpcCall.dynamicLoss()
             val json = JSONObject(response)
@@ -1288,7 +1293,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 结算应收金币
      */
-    private fun settleReceivable() {
+    private suspend fun settleReceivable() {
         try {
             val response = AntStallRpcCall.settleReceivable()
             val json = JSONObject(response)
@@ -1304,7 +1309,7 @@ class AntStall : ModelTask() {
     /**
      * @brief 贴罚单
      */
-    private fun pasteTicket() {
+    private suspend fun pasteTicket() {
         try {
             if (!Status.canPasteTicketTime()) {
                 Log.record(TAG, "未到贴罚单时间或今日已贴完。")

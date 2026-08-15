@@ -13,6 +13,9 @@ import fansirsqi.xposed.sesame.task.antForest.Privilege.youthPrivilege
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -54,14 +57,14 @@ internal class ForestItemManager(private val task: AntForest) {
     @Volatile
     internal var robExpandCardEndTime: Long = 0
 
-    private val doubleCardLockObj = Any()
+    private val doubleCardLockObj = Mutex()
 
     private var cachedBagObject: JSONObject? = null
     private var lastQueryPropListTime: Long = 0
 
     internal var canConsumeAnimalProp = false
 
-    internal fun collectGivenProps(givenProps: JSONArray) {
+    internal suspend fun collectGivenProps(givenProps: JSONArray) {
         try {
             for (i in 0..<givenProps.length()) {
                 val jo = givenProps.getJSONObject(i)
@@ -98,7 +101,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param selfHomeObj 用户主页信息的JSON对象
      */
-    internal fun handleUserProps(selfHomeObj: JSONObject) {
+    internal suspend fun handleUserProps(selfHomeObj: JSONObject) {
         try {
             val usingUserProps = if (task.isTeam(selfHomeObj)) {
                 selfHomeObj.optJSONObject("teamHomeResult")
@@ -156,7 +159,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param selfHomeObj 用户主页信息的JSON对象
      */
-    internal fun collectEnergyBomb(selfHomeObj: JSONObject) {
+    internal suspend fun collectEnergyBomb(selfHomeObj: JSONObject) {
         try {
             val usingUserProps = if (task.isTeam(selfHomeObj)) {
                 selfHomeObj.optJSONObject("teamHomeResult")
@@ -213,7 +216,7 @@ internal class ForestItemManager(private val task: AntForest) {
     }
 
     @Throws(JSONException::class)
-    internal fun updateSelfHomePage() {
+    internal suspend fun updateSelfHomePage() {
         val s = AntForestRpcCall.queryHomePage()
         GlobalThreadPools.sleepCompat(100)
         val joHomePage = JSONObject(s)
@@ -225,7 +228,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param joHomePage 首页 JSON 对象
      */
-    internal fun updateSelfHomePage(joHomePage: JSONObject) {
+    internal suspend fun updateSelfHomePage(joHomePage: JSONObject) {
         try {
 
             val usingUserProps: JSONArray = if (task.isTeam(joHomePage)) {
@@ -317,7 +320,7 @@ internal class ForestItemManager(private val task: AntForest) {
         return Vitality.handleVitalityExchange("CR20230516000363")
     }
 
-    internal fun usePropBeforeCollectEnergy(userId: String?, skipPropCheck: Boolean = false) {
+    internal suspend fun usePropBeforeCollectEnergy(userId: String?, skipPropCheck: Boolean = false) {
         try {
             // 🚀 快速收取通道：跳过道具检查，直接返回
             if (skipPropCheck) {
@@ -371,7 +374,7 @@ internal class ForestItemManager(private val task: AntForest) {
                         ", needEnergyBombCard=" + needEnergyBombCard + ", needBubbleBoostCard=" + needBubbleBoostCard
             )
             if (needDouble || needStealth || needShield || needEnergyBombCard || needrobExpand || needBubbleBoostCard) {
-                synchronized(doubleCardLockObj) {
+                doubleCardLockObj.withLock {
                     val bagObject = queryPropList()
                     // Log.runtime(TAG, "bagObject=" + (bagObject == null ? "null" : bagObject.toString()));
                     if (needDouble) useDoubleCard(bagObject!!) // 使用双击卡
@@ -384,7 +387,7 @@ internal class ForestItemManager(private val task: AntForest) {
                         task.bubbleBoostTime!!.value,
                         "加速卡"
                     ) {
-                        useBubbleBoostCard()
+                        runBlocking { useBubbleBoostCard() }
                     } // 使用加速卡
                     if (needShield) {
                         Log.record(TAG, "尝试使用保护罩罩")
@@ -554,7 +557,7 @@ internal class ForestItemManager(private val task: AntForest) {
         return TimeUtil.checkInTimeRange(currentTimeMillis, task.doubleCardTime!!.value)
     }
 
-    internal fun giveProp() {
+    internal suspend fun giveProp() {
         val set = task.whoYouWantToGiveTo!!.value
         if (!set.isEmpty()) {
             for (userId in set) {
@@ -571,7 +574,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param targetUserId 目标用户的ID。
      */
-    private fun giveProp(targetUserId: String?) {
+    private suspend fun giveProp(targetUserId: String?) {
         try {
             do {
                 // 查询道具列表
@@ -631,7 +634,7 @@ internal class ForestItemManager(private val task: AntForest) {
         }
         try {
             Log.record(TAG, "刷新背包...")
-            val response = AntForestRpcCall.queryPropList(false)
+            val response = runBlocking { AntForestRpcCall.queryPropList(false) }
             // 检查响应是否为空，避免解析空字符串导致异常
             if (response.isNullOrBlank()) {
                 Log.record(TAG, "刷新背包失败: 响应为空")
@@ -723,7 +726,7 @@ internal class ForestItemManager(private val task: AntForest) {
      * @param propJsonObj 道具对象
      * @param needRefreshHome 是否需要刷新主页（默认true。加速卡等紧接着会查询主页的场景可设为false以优化延迟）
      */
-    internal fun usePropBag(propJsonObj: JSONObject?, needRefreshHome: Boolean = true): Boolean {
+    internal suspend fun usePropBag(propJsonObj: JSONObject?, needRefreshHome: Boolean = true): Boolean {
         if (propJsonObj == null) {
             Log.record(TAG, "要使用的道具不存在！")
             return false
@@ -817,7 +820,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param bagObject 背包的JSON对象
      */
-    private fun useDoubleCard(bagObject: JSONObject) {
+    private suspend fun useDoubleCard(bagObject: JSONObject) {
         try {
             // 前置检查1: 检查今日使用次数是否已达上限
             if (!Status.canDoubleToday()) {
@@ -939,7 +942,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param bagObject 背包的JSON对象
      */
-    private fun useStealthCard(bagObject: JSONObject?) {
+    private suspend fun useStealthCard(bagObject: JSONObject?) {
         val config = PropConfig(
             "隐身卡",
             arrayOf<String>("LIMIT_TIME_STEALTH_CARD", "STEALTH_CARD"),
@@ -955,7 +958,7 @@ internal class ForestItemManager(private val task: AntForest) {
      * 使用加速卡道具
      * 功能：加速能量球成熟时间，让等待中的能量球提前成熟，并立即收取自己的能量
      */
-    private fun useBubbleBoostCard(bag: JSONObject? = queryPropList()) {
+    private suspend fun useBubbleBoostCard(bag: JSONObject? = queryPropList()) {
         try {
             // 先检查自己是否有未成熟的能量球
             val selfHomeObj = task.querySelfHome()
@@ -1016,7 +1019,7 @@ internal class ForestItemManager(private val task: AntForest) {
      * 使用1.1倍能量卡道具
      * 功能：增加能量收取倍数，收取好友能量时获得1.1倍效果
      */
-    private fun userobExpandCard(bag: JSONObject? = queryPropList()) {
+    private suspend fun userobExpandCard(bag: JSONObject? = queryPropList()) {
         try {
             var jo = findPropBag(bag, "VITALITY_ROB_EXPAND_CARD_1.1_3DAYS")
             if (jo != null && usePropBag(jo)) {
@@ -1083,7 +1086,7 @@ internal class ForestItemManager(private val task: AntForest) {
      *
      * @param bagObject 背包的JSON对象
      */
-    private fun useEnergyBombCard(bagObject: JSONObject?) {
+    private suspend fun useEnergyBombCard(bagObject: JSONObject?) {
         try {
             Log.record(TAG, "尝试使用炸弹卡...")
             var jo = findPropBag(bagObject, "ENERGY_BOMB_CARD")
@@ -1165,7 +1168,7 @@ internal class ForestItemManager(private val task: AntForest) {
      * @param config       道具配置
      * @param constantMode 是否开启永动机模式
      */
-    private fun usePropTemplate(bagObject: JSONObject?, config: PropConfig, constantMode: Boolean) {
+    private suspend fun usePropTemplate(bagObject: JSONObject?, config: PropConfig, constantMode: Boolean) {
         try {
             if (config.condition != null && !config.condition.get()!!) {
                 Log.record(TAG, "不满足使用" + config.propName + "的条件")

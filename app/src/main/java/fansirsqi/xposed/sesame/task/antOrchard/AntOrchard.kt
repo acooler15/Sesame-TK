@@ -193,7 +193,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun orchardSpreadManure() {
+    private suspend fun orchardSpreadManure() {
         try {
             val modeSet = plantModeField.value
             // {{ 修改：分别获取两个配置的上限值 }}
@@ -219,7 +219,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun waterTree(targetScene: String, targetLimit: Int) {
+    private suspend fun waterTree(targetScene: String, targetLimit: Int) {
         val isMain = targetScene == "main"
         val sceneName = if (isMain) "种果树" else "种摇钱树"
         // 独立计数：果树使用原Flag，摇钱树使用新Key
@@ -366,7 +366,7 @@ class AntOrchard : ModelTask() {
     }
 
     // ... 其余方法保持不变 ...
-    private fun receiveMoneyTreeReward() {
+    private suspend fun receiveMoneyTreeReward() {
         try {
             val cal = Calendar.getInstance()
             val hour = cal.get(Calendar.HOUR_OF_DAY)
@@ -396,7 +396,7 @@ class AntOrchard : ModelTask() {
     }
 
     // 辅助方法：施肥后检测肥料礼盒
-    private fun checkFertilizerBox(currentPlantScene: String) {
+    private suspend fun checkFertilizerBox(currentPlantScene: String) {
         extraInfoGet(from = "water")
     }
 
@@ -404,7 +404,7 @@ class AntOrchard : ModelTask() {
      * 获取额外信息（包含每日肥料、施肥礼盒）
      * @param from "entry" 或 "water"
      */
-    private fun extraInfoGet(from: String = "entry") {
+    private suspend fun extraInfoGet(from: String = "entry") {
         try {
             val response = AntOrchardRpcCall.extraInfoGet(from)
             val jo = JSONObject(response)
@@ -429,7 +429,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun checkLotteryPlus() {
+    private suspend fun checkLotteryPlus() {
         try {
             if (treeLevel == null) return
             val response = AntOrchardRpcCall.querySubplotsActivity(treeLevel!!)
@@ -453,7 +453,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun drawLotteryPlus(lotteryPlusInfo: JSONObject) {
+    private suspend fun drawLotteryPlus(lotteryPlusInfo: JSONObject) {
         try {
             if (!lotteryPlusInfo.has("userSevenDaysGiftsItem")) return
 
@@ -494,7 +494,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun doOrchardDailyTask(userId: String) {
+    private suspend fun doOrchardDailyTask(userId: String) {
         try {
             val response = AntOrchardRpcCall.orchardListTask()
             val responseJson = JSONObject(response)
@@ -585,7 +585,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun orchardSign(signTaskInfo: JSONObject) {
+    private suspend fun orchardSign(signTaskInfo: JSONObject) {
         try {
             val currentSignItem = signTaskInfo.getJSONObject("currentSignItem")
             if (!currentSignItem.getBoolean("signed")) {
@@ -606,7 +606,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun smashedGoldenEgg(count: Int) {
+    private suspend fun smashedGoldenEgg(count: Int) {
         try {
             val response = AntOrchardRpcCall.smashedGoldenEgg(count)
             val jo = JSONObject(response)
@@ -627,7 +627,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun triggerTbTask() {
+    private suspend fun triggerTbTask() {
         try {
             val response = AntOrchardRpcCall.orchardListTask()
             val jo = JSONObject(response)
@@ -658,7 +658,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun receiveOrchardVisitAward() {
+    private suspend fun receiveOrchardVisitAward() {
         try {
             val awardSources = listOf(
                 Pair("tmall", "upgrade_tmall_exchange_task"),
@@ -700,7 +700,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun limitedTimeChallenge() {
+    private suspend fun limitedTimeChallenge() {
         try {
             val wua = SecurityBodyHelper.getSecurityBodyData(4).toString()
             val response = AntOrchardRpcCall.orchardSyncIndex(wua)
@@ -800,7 +800,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun querySubplotsActivity(taskRequire: Int) {
+    private suspend fun querySubplotsActivity(taskRequire: Int) {
         try {
             val response = AntOrchardRpcCall.querySubplotsActivity(treeLevel!!)
             val jo = JSONObject(response)
@@ -856,7 +856,7 @@ class AntOrchard : ModelTask() {
         }
     }
 
-    private fun orchardAssistFriend() {
+    private suspend fun orchardAssistFriend() {
         try {
             if (!Status.canAntOrchardAssistFriendToday()) {
                 Log.record(TAG, "今日已助力，跳过农场助力")

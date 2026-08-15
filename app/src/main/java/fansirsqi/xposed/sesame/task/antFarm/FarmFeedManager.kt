@@ -212,7 +212,7 @@ internal class FarmFeedManager(private val farm: AntFarm) {
         }
     }
 
-    internal fun feedAnimal(farmId: String?): Boolean {
+    internal suspend fun feedAnimal(farmId: String?): Boolean {
         try {
             // 检查小鸡是否在睡觉，如果在睡觉则直接返回
             if (AntFarm.AnimalFeedStatus.SLEEPY.name == farm.ownerAnimal.animalFeedStatus) {
@@ -385,7 +385,7 @@ internal class FarmFeedManager(private val farm: AntFarm) {
         }
     }
 
-    internal fun notifyFriend() {
+    internal suspend fun notifyFriend() {
         if (AntFarm.foodStock >= AntFarm.foodStockLimit) return
         try {
             var hasNext = false
@@ -459,7 +459,7 @@ internal class FarmFeedManager(private val farm: AntFarm) {
         }
     }
 
-    internal fun notifyFriend(
+    internal suspend fun notifyFriend(
         joAnimalStatusVO: JSONObject,
         friendFarmId: String?,
         animalId: String?,

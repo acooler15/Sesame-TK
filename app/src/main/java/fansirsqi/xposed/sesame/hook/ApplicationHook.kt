@@ -30,7 +30,7 @@ import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.cleanup
 import fansirsqi.xposed.sesame.hook.rpc.bridge.NewRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.OldRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.clearIntervalLimit
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.clearIntervalLimit
 import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
 import fansirsqi.xposed.sesame.hook.server.ModuleHttpServerManager.startIfNeeded
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.addHandler

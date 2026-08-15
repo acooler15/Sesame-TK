@@ -19,7 +19,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryOceanStatus(): String {
+    suspend fun queryOceanStatus(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanStatus",
             "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\"}]"
@@ -27,7 +27,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryHomePage(): String {
+    suspend fun queryHomePage(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryHomePage",
             "[{\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
@@ -35,7 +35,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun cleanOcean(userId: String?): String {
+    suspend fun cleanOcean(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.cleanOcean",
             "[{\"cleanedUserId\":\"$userId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -43,7 +43,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun ipOpenSurprise(): String {
+    suspend fun ipOpenSurprise(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.ipOpenSurprise",
             "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -51,7 +51,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun collectReplicaAsset(): String {
+    suspend fun collectReplicaAsset(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.collectReplicaAsset",
             "[{\"replicaCode\":\"avatar\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
@@ -59,7 +59,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun receiveTaskAward(sceneCode: String?, taskType: String?): String {
+    suspend fun receiveTaskAward(sceneCode: String?, taskType: String?): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
             "[{\"ignoreLimit\":false,\"requestType\":\"RPC\",\"sceneCode\":\"$sceneCode\",\"source\":\"ANT_FOREST\",\"taskType\":\"$taskType\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -67,7 +67,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun finishTask(sceneCode: String?, taskType: String?): String {
+    suspend fun finishTask(sceneCode: String?, taskType: String?): String {
         val outBizNo = taskType + "_" + RandomUtil.nextDouble()
         return RequestManager.requestString(
             "com.alipay.antiep.finishTask",
@@ -76,7 +76,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun unLockReplicaPhase(replicaCode: String?, replicaPhaseCode: String?): String {
+    suspend fun unLockReplicaPhase(replicaCode: String?, replicaPhaseCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.unLockReplicaPhase",
             "[{\"replicaCode\":\"$replicaCode\",\"replicaPhaseCode\":\"$replicaPhaseCode\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"20220707\"}]"
@@ -84,7 +84,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryReplicaHome(): String {
+    suspend fun queryReplicaHome(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryReplicaHome",
             "[{\"replicaCode\":\"avatar\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -92,7 +92,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun repairSeaArea(): String {
+    suspend fun repairSeaArea(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.repairSeaArea",
             "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -100,7 +100,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryOceanPropList(): String {
+    suspend fun queryOceanPropList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
             "[{\"propTypeList\":\"UNIVERSAL_PIECE\",\"skipPropId\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -108,7 +108,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun querySeaAreaDetailList(): String {
+    suspend fun querySeaAreaDetailList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.querySeaAreaDetailList",
             "[{\"seaAreaCode\":\"\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"targetUserId\":\"\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -116,7 +116,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryOceanChapterList(): String {
+    suspend fun queryOceanChapterList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanChapterList",
             "[{\"source\":\"chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -124,7 +124,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun switchOceanChapter(chapterCode: String?): String {
+    suspend fun switchOceanChapter(chapterCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.switchOceanChapter",
             "[{\"chapterCode\":\"$chapterCode\",\"source\":\"chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -132,7 +132,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryMiscInfo(): String {
+    suspend fun queryMiscInfo(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryMiscInfo",
             "[{\"queryBizTypes\":[\"HOME_TIPS_REFRESH\"],\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -140,7 +140,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun combineFish(fishId: String?): String {
+    suspend fun combineFish(fishId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.combineFish",
             "[{\"fishId\":\"$fishId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -148,7 +148,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun collectEnergy(bubbleId: String?, userId: String?): String {
+    suspend fun collectEnergy(bubbleId: String?, userId: String?): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.collectEnergy",
             "[{\"bubbleIds\":[$bubbleId],\"channel\":\"ocean\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"userId\":\"$userId\",\"version\":\"$VERSION\"}]"
@@ -156,7 +156,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun cleanFriendOcean(userId: String?): String {
+    suspend fun cleanFriendOcean(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.cleanFriendOcean",
             "[{\"cleanedUserId\":\"$userId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -164,7 +164,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryFriendPage(userId: String?): String {
+    suspend fun queryFriendPage(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryFriendPage",
             "[{\"friendUserId\":\"$userId\",\"interactFlags\":\"T\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
@@ -172,7 +172,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryUserRanking(): String {
+    suspend fun queryUserRanking(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryUserRanking",
             "[{\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -181,7 +181,7 @@ object AntOceanRpcCall {
 
     /* 保护海洋净滩行动 */
     @JvmStatic
-    fun queryCultivationList(): String {
+    suspend fun queryCultivationList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryCultivationList",
             "[{\"source\":\"ANT_FOREST\",\"version\":\"20231031\"}]"
@@ -189,7 +189,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryCultivationDetail(cultivationCode: String?, projectCode: String?): String {
+    suspend fun queryCultivationDetail(cultivationCode: String?, projectCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryCultivationDetail",
             "[{\"cultivationCode\":\"$cultivationCode\",\"projectCode\":\"$projectCode\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -197,7 +197,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun oceanExchangeTree(cultivationCode: String?, projectCode: String?): String {
+    suspend fun oceanExchangeTree(cultivationCode: String?, projectCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.exchangeTree",
             "[{\"cultivationCode\":\"$cultivationCode\",\"projectCode\":\"$projectCode\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -206,7 +206,7 @@ object AntOceanRpcCall {
 
     // 答题
     @JvmStatic
-    fun getQuestion(): String {
+    suspend fun getQuestion(): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.getQuestion",
             "[{\"activityId\":\"363\",\"dadaVersion\":\"1.3.0\",\"version\":1}]"
@@ -214,7 +214,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun record(): String {
+    suspend fun record(): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.mdap.record",
             "[{\"behavior\":\"visit\",\"dadaVersion\":\"1.3.0\",\"version\":\"1\"}]"
@@ -222,7 +222,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun submitAnswer(answer: String?, questionId: String?): String {
+    suspend fun submitAnswer(answer: String?, questionId: String?): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.submitAnswer",
             "[{\"activityId\":\"363\",\"answer\":\"$answer\",\"dadaVersion\":\"1.3.0\",\"outBizId\":\"ANTOCEAN_DATI_PINTU_722_new\",\"questionId\":\"$questionId\",\"version\":\"1\"}]"
@@ -231,7 +231,7 @@ object AntOceanRpcCall {
 
     // 潘多拉任务
     @JvmStatic
-    fun PDLqueryReplicaHome(): String {
+    suspend fun PDLqueryReplicaHome(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryReplicaHome",
             "[{\"replicaCode\":\"avatar\",\"source\":\"seaAreaList\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -239,7 +239,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryTaskList(): String {
+    suspend fun queryTaskList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryTaskList",
             "[{\"extend\":{},\"fromAct\":\"dynamic_task\",\"sceneCode\":\"ANTOCEAN_TASK\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
@@ -247,7 +247,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun PDLqueryTaskList(): String {
+    suspend fun PDLqueryTaskList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryTaskList",
             "[{\"fromAct\":\"dynamic_task\",\"sceneCode\":\"ANTOCEAN_AVATAR_TASK\",\"source\":\"seaAreaList\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
@@ -255,7 +255,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun PDLreceiveTaskAward(taskType: String?): String {
+    suspend fun PDLreceiveTaskAward(taskType: String?): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
             "[{\"ignoreLimit\":\"false\",\"requestType\":\"RPC\",\"sceneCode\":\"ANTOCEAN_AVATAR_TASK\",\"source\":\"ANTFOCEAN\",\"taskType\":\"$taskType\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -264,7 +264,7 @@ object AntOceanRpcCall {
 
     // 制作万能拼图
     @JvmStatic
-    fun exchangePropList(): String {
+    suspend fun exchangePropList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
             "[{\"skipPropId\":false,\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -272,7 +272,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun exchangeProp(): String {
+    suspend fun exchangeProp(): String {
         val timestamp = System.currentTimeMillis()
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.exchangeProp",
@@ -282,7 +282,7 @@ object AntOceanRpcCall {
 
     // 使用万能拼图
     @JvmStatic
-    fun usePropByTypeList(): String {
+    suspend fun usePropByTypeList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
             "[{\"propTypeList\":\"UNIVERSAL_PIECE\",\"skipPropId\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -290,7 +290,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun queryFishList(pageNum: Int): String {
+    suspend fun queryFishList(pageNum: Int): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryFishList",
             "[{\"combineStatus\":\"UNOBTAINED\",\"needSummary\":\"Y\",\"pageNum\":$pageNum,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"targetUserId\":\"\",\"uniqueId\":\"${getUniqueId()}\"}]"
@@ -298,7 +298,7 @@ object AntOceanRpcCall {
     }
 
     @JvmStatic
-    fun usePropByType(assets: Int, attachAssetsSet: Set<Int>?): String? {
+    suspend fun usePropByType(assets: Int, attachAssetsSet: Set<Int>?): String? {
         try {
             if (!attachAssetsSet.isNullOrEmpty()) {
                 val jsonArray = JSONArray()
@@ -325,7 +325,7 @@ object AntOceanRpcCall {
      * 限时挑战
      */
     @JvmStatic
-    fun createSeaAreaExtraCollect(): String {
+    suspend fun createSeaAreaExtraCollect(): String {
         try {
             val param = JSONObject()
             param.put("source", "chInfo_ch_appcenter__chsub_9patch")

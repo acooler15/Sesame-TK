@@ -51,7 +51,7 @@ class ForestChouChouLe {
         private fun JSONObject.check(): Boolean = ResChecker.checkRes(TAG, this)
 
         // 动态获取抽奖场景配置
-        private fun getScenes(): List<Scene> {
+        private suspend fun getScenes(): List<Scene> {
             val defaultScenes = listOf(
                 Scene("2025112701", SCENE_NORMAL, "森林寻宝", "forest::chouChouLe::normal::completed"),
                 Scene("20251024", SCENE_ACTIVITY, "森林寻宝IP", "forest::chouChouLe::activity::completed")
@@ -91,7 +91,7 @@ class ForestChouChouLe {
 
     private val taskTryCount = ConcurrentHashMap<String, AtomicInteger>()
 
-    fun chouChouLe() {
+    suspend fun chouChouLe() {
         runCatching {
             val scenes = getScenes()
             if (scenes.all { Status.hasFlagToday(it.flag) }) {
@@ -107,7 +107,7 @@ class ForestChouChouLe {
         }.onFailure { Log.printStackTrace(TAG, "执行异常", it) }
     }
 
-    private fun processScene(s: Scene) = runCatching {
+    private suspend fun processScene(s: Scene) = runCatching {
         if (Status.hasFlagToday(s.flag)) {
             Log.record("⏭️ ${s.name} 今天已完成, 跳过")
             return@runCatching
@@ -144,7 +144,7 @@ class ForestChouChouLe {
     /**
      * 循环处理任务列表
      */
-    private fun processTasksLoop(s: Scene) {
+    private suspend fun processTasksLoop(s: Scene) {
         repeat(3) { loop ->
             Log.record("${s.name} 第 ${loop + 1} 轮任务检查")
             val tasksResp = AntForestRpcCall.listTaskopengreen(s.taskCode, SOURCE).toJson() ?: return@repeat
@@ -171,7 +171,7 @@ class ForestChouChouLe {
     /**
      * 执行抽奖逻辑
      */
-    private fun processLottery(s: Scene) {
+    private suspend fun processLottery(s: Scene) {
         val enterResp = AntForestRpcCall.enterDrawActivityopengreen(s.id, s.code, SOURCE).toJson() ?: return
         if (!enterResp.check()) return
 
@@ -207,7 +207,7 @@ class ForestChouChouLe {
     /**
      * 检查是否所有任务都已完成，并设置 Flag
      */
-    private fun checkCompletion(s: Scene) {
+    private suspend fun checkCompletion(s: Scene) {
         val resp = AntForestRpcCall.listTaskopengreen(s.taskCode, SOURCE).toJson() ?: return
         if (!resp.check()) return
 
@@ -260,7 +260,7 @@ class ForestChouChouLe {
      * 处理单个任务分发
      * @return 任务状态是否有变更
      */
-    private fun processSingleTask(s: Scene, task: JSONObject): Boolean {
+    private suspend fun processSingleTask(s: Scene, task: JSONObject): Boolean {
         val baseInfo = task.optJSONObject("taskBaseInfo") ?: return false
         val bizInfoStr = baseInfo.optString("bizInfo")
         val bizInfo = if (bizInfoStr.isNotEmpty()) JSONObject(bizInfoStr) else JSONObject()
@@ -281,7 +281,7 @@ class ForestChouChouLe {
         }
     }
 
-    private fun handleTodoTask(s: Scene, name: String, code: String, type: String): Boolean {
+    private suspend fun handleTodoTask(s: Scene, name: String, code: String, type: String): Boolean {
         return if (type == "NORMAL_DRAW_EXCHANGE_VITALITY") {
             // 活力值兑换
             Log.record("${s.name} 兑换活力值: $name")
@@ -315,7 +315,7 @@ class ForestChouChouLe {
         }
     }
 
-    private fun handleFinishedTask(s: Scene, name: String, code: String, type: String): Boolean {
+    private suspend fun handleFinishedTask(s: Scene, name: String, code: String, type: String): Boolean {
         Log.record("${s.name} 领取奖励: $name")
         sleepCompat(100L)
         val res = AntForestRpcCall.receiveTaskAwardopengreen(SOURCE, code, type).toJson()

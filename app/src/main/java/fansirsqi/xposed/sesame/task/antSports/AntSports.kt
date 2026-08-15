@@ -29,6 +29,7 @@ import java.util.Random
 
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
 
 /**
  * @file AntSports.kt
@@ -273,7 +274,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 任务主入口
      */
-    override fun runJava() {
+    override suspend fun runSuspend() {
         Log.record(TAG, "执行开始-" + getName())
 
         try {
@@ -363,7 +364,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 首页金币收集逻辑
      */
-    internal fun receiveCoinAsset() {
+    internal suspend fun receiveCoinAsset() {
         try {
             val s = AntSportsRpcCall.queryCoinBubbleModule()
             var jo = JSONObject(s)
@@ -398,7 +399,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 抢好友主页查询 + 训练好友收益泡泡收集
      */
-    private fun queryClubHome() {
+    private suspend fun queryClubHome() {
         try {
             val maxCount = zeroCoinLimit.value
             if (zeroTrainCoinCount >= maxCount) {
@@ -424,7 +425,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 训练好友收益泡泡收集逻辑
      */
-    private fun processBubbleList(obj: JSONObject?) {
+    private suspend fun processBubbleList(obj: JSONObject?) {
         if (obj == null || !obj.has("bubbleList")) return
         try {
             val bubbleList = obj.getJSONArray("bubbleList")
@@ -472,7 +473,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 训练好友：选取可训练好友并执行一次训练
      */
-    private fun queryTrainItem() {
+    private suspend fun queryTrainItem() {
         try {
             val clubHomeData = JSONObject(AntSportsRpcCall.queryClubHome())
             val roomList = clubHomeData.optJSONArray("roomList") ?: return
@@ -555,7 +556,7 @@ class AntSports : ModelTask() {
     /**
      * @brief 抢好友大战：抢购好友逻辑
      */
-    private fun buyMember() {
+    private suspend fun buyMember() {
         try {
             val clubHomeResponse = AntSportsRpcCall.queryClubHome()
             GlobalThreadPools.sleepCompat(500)
@@ -692,7 +693,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 健康岛任务入口
          */
-        fun runNeverland() {
+        suspend fun runNeverland() {
             try {
                 Log.record(TAG, "开始执行健康岛任务")
                 if (neverlandTask.value) {
@@ -724,7 +725,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 健康岛签到流程
          */
-        private fun neverlandDoSign() {
+        private suspend fun neverlandDoSign() {
             try {
                 if (Status.hasFlagToday("AntSports::neverlandDoSign::已签到")) return
 
@@ -790,7 +791,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 循环处理健康岛任务大厅中的 PROMOKERNEL_TASK & LIGHT_TASK
          */
-        private fun loopHandleTaskCenter() {
+        private suspend fun loopHandleTaskCenter() {
             var errorCount = 0
             Log.record(TAG, "开始循环处理任务大厅（失败限制：$MAX_ERROR_COUNT 次）")
 
@@ -870,7 +871,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 处理单个大厅任务
          */
-        private fun handleSingleTask(task: JSONObject): Boolean {
+        private suspend fun handleSingleTask(task: JSONObject): Boolean {
             return try {
                 val title = task.optString("title", "未知任务")
                 val type = task.optString("taskType", "")
@@ -944,7 +945,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 处理健康岛浏览任务（LIGHT_FEEDS_TASK）
          */
-        private fun handleHealthIslandTask() {
+        private suspend fun handleHealthIslandTask() {
             try {
                 Log.record(TAG, "开始检查健康岛浏览任务")
                 var hasTask = true
@@ -1015,7 +1016,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 处理 PROMOKERNEL_TASK（活动类任务）
          */
-        private fun handlePromoKernelTask(task: JSONObject, title: String): Boolean {
+        private suspend fun handlePromoKernelTask(task: JSONObject, title: String): Boolean {
             return try {
                 task.put("scene", "MED_TASK_HALL")
                 val res = JSONObject(AntSportsRpcCall.NeverlandRpcCall.taskSend(task))
@@ -1035,7 +1036,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 处理 LIGHT_TASK（浏览类任务）
          */
-        private fun handleLightTask(task: JSONObject, title: String, jumpLink: String): Boolean {
+        private suspend fun handleLightTask(task: JSONObject, title: String, jumpLink: String): Boolean {
             return try {
                 var bizId = task.optString("bizId", "")
                 if (bizId.isEmpty()) {
@@ -1082,7 +1083,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 健康岛捡泡泡 + 浏览类泡泡任务
          */
-        private fun neverlandPickAllBubble() {
+        private suspend fun neverlandPickAllBubble() {
             try {
                 Log.record(TAG, "健康岛 · 检查可领取泡泡")
 
@@ -1240,7 +1241,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 健康岛走路建造任务入口
          */
-        private fun neverlandAutoTask() {
+        private suspend fun neverlandAutoTask() {
             try {
                 Log.record(TAG, "健康岛 · 启动走路建造任务")
 
@@ -1295,7 +1296,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 查询用户剩余能量
          */
-        private fun queryUserEnergy(): Int {
+        private suspend fun queryUserEnergy(): Int {
             return try {
                 val energyResp = JSONObject(AntSportsRpcCall.NeverlandRpcCall.queryUserEnergy())
                 if (!ResChecker.checkRes(TAG + " 查询用户能量失败:", energyResp) ||
@@ -1317,7 +1318,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 执行旧版行走任务（能量泵走路模式）
          */
-        private fun executeAutoWalk(
+        private suspend fun executeAutoWalk(
             branchId: String,
             mapId: String,
             remainSteps: Int,
@@ -1414,7 +1415,7 @@ class AntSports : ModelTask() {
                         chooseAvailableMap()
                         break
                     }
-                    Thread.sleep(888)
+                    delay(888)
                 }
                 Log.record(TAG, "自动走路任务完成 ✓")
             } catch (t: Throwable) {
@@ -1425,7 +1426,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 若有未领取的关卡奖励则尝试领取
          */
-        private fun tryReceiveStageReward(branchId: String, mapId: String, starData: JSONObject?) {
+        private suspend fun tryReceiveStageReward(branchId: String, mapId: String, starData: JSONObject?) {
             if (starData == null) return
 
             val rewardLevel = starData.optInt("rewardLevel", -1)
@@ -1508,7 +1509,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 查询地图列表，优先返回 DOING 地图，否则随机选择 LOCKED 地图并切换
          */
-        private fun chooseAvailableMap(): JSONObject? {
+        private suspend fun chooseAvailableMap(): JSONObject? {
             return try {
                 val mapResp = JSONObject(AntSportsRpcCall.NeverlandRpcCall.queryMapList())
                 if (!ResChecker.checkRes(TAG + " 查询地图失败:", mapResp)) {
@@ -1561,7 +1562,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 切换当前地图
          */
-        private fun chooseMap(map: JSONObject): JSONObject? {
+        private suspend fun chooseMap(map: JSONObject): JSONObject? {
             return try {
                 val mapId = map.optString("mapId")
                 val branchId = map.optString("branchId")
@@ -1601,7 +1602,7 @@ class AntSports : ModelTask() {
         /**
          * @brief 执行自动建造任务（新游戏模式）
          */
-        private fun executeAutoBuild(
+        private suspend fun executeAutoBuild(
             branchIdInit: String,
             mapIdInit: String,
             remainStepsInit: Int,

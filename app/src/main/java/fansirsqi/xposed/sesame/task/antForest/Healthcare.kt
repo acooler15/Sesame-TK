@@ -17,7 +17,7 @@ object Healthcare {
     val TAG: String = Healthcare::class.java.simpleName
 
     @JvmStatic
-    fun queryForestEnergy(scene: String) {
+    suspend fun queryForestEnergy(scene: String) {
         try {
             var jo = JSONObject(AntForestRpcCall.queryForestEnergy(scene))
             if (!ResChecker.checkRes(TAG, jo)) {
@@ -42,7 +42,7 @@ object Healthcare {
         }
     }
 
-    private fun produceForestEnergy(scene: String): JSONArray {
+    private suspend fun produceForestEnergy(scene: String): JSONArray {
         var energyGeneratedList = JSONArray()
         try {
             var jo = JSONObject(AntForestRpcCall.produceForestEnergy(scene))
@@ -62,7 +62,7 @@ object Healthcare {
         return energyGeneratedList
     }
 
-    private fun harvestForestEnergy(scene: String, bubbles: JSONArray): Boolean {
+    private suspend fun harvestForestEnergy(scene: String, bubbles: JSONArray): Boolean {
         try {
             var jo = JSONObject(AntForestRpcCall.harvestForestEnergy(scene, bubbles))
             if (!ResChecker.checkRes(TAG, jo)) {

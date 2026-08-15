@@ -58,7 +58,7 @@ internal class ForestShieldManager(private val task: AntForest) {
         return isProtected
     }
 
-    internal fun protectFriendEnergy(userHomeObj: JSONObject) {
+    internal suspend fun protectFriendEnergy(userHomeObj: JSONObject) {
         try {
             val wateringBubbles = userHomeObj.optJSONArray("wateringBubbles")
             val userEnergy = userHomeObj.optJSONObject("userEnergy")
@@ -199,7 +199,7 @@ internal class ForestShieldManager(private val task: AntForest) {
      *
      * @param bagObject 当前背包的 JSON 对象（可能为 null）
      */
-    internal fun useShieldCard(bagObject: JSONObject?) {
+    internal suspend fun useShieldCard(bagObject: JSONObject?) {
         try {
             Log.record(TAG, "尝试使用保护罩...")
 

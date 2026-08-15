@@ -46,7 +46,7 @@ class Reserve : ModelTask() {
         return modelFields
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         try {
             Log.record(TAG, "开始保护地任务")
             initReserve()
@@ -58,7 +58,7 @@ class Reserve : ModelTask() {
         }
     }
 
-    private fun animalReserve() {
+    private suspend fun animalReserve() {
         try {
             Log.record(TAG, "开始执行-" + getName())
             var s = ReserveRpcCall.queryTreeItemsForExchange()
@@ -103,7 +103,7 @@ class Reserve : ModelTask() {
         }
     }
 
-    private fun queryTreeForExchange(projectId: String): Boolean {
+    private suspend fun queryTreeForExchange(projectId: String): Boolean {
         try {
             val s = ReserveRpcCall.queryTreeForExchange(projectId)
             var jo = JSONObject(s)
@@ -132,7 +132,7 @@ class Reserve : ModelTask() {
         return false
     }
 
-    private fun exchangeTree(projectId: String, itemName: String, count: Int) {
+    private suspend fun exchangeTree(projectId: String, itemName: String, count: Int) {
         var appliedTimes = 0
         try {
             var s: String
@@ -178,7 +178,7 @@ class Reserve : ModelTask() {
          * 初始化保护地任务。通过 ReserveRpc 接口查询可兑换的树项目，将符合条件的保护地任务存入 ReserveIdMapUtil。 条件：项目类型为 "RESERVE" 且状态为 "AVAILABLE"。若调用失败则加载备份的 ReserveIdMapUtil。
          */
         @JvmStatic
-        fun initReserve() {
+        suspend fun initReserve() {
             try {
                 val response = ReserveRpcCall.queryTreeItemsForExchange()
                 val jsonResponse = JSONObject(response)

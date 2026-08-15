@@ -15,7 +15,7 @@ import org.json.JSONObject
 
 internal class MemberBenefitManager(private val member: AntMember) {
 
-    internal fun memberPointExchangeBenefit() {
+    internal suspend fun memberPointExchangeBenefit() {
         if (hasFlagToday("memberBenefit::refresh")) {
             return
         }
@@ -107,7 +107,7 @@ internal class MemberBenefitManager(private val member: AntMember) {
         }
     }
 
-    private fun exchangeBenefit(benefitId: String, itemid: String, userid: String?): Boolean {
+    private suspend fun exchangeBenefit(benefitId: String, itemid: String, userid: String?): Boolean {
         try {
             val resString = AntMemberRpcCall.exchangeBenefit(benefitId, itemid, userid)
             val jo = JSONObject(resString)

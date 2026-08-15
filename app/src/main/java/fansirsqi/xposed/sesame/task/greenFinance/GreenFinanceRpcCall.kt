@@ -17,7 +17,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun taskQuery(appletId: String?): String {
+    suspend fun taskQuery(appletId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.task.taskQuery",
             "[{\"appletId\":\"$appletId\",\"completedBottom\":true}]"
@@ -33,7 +33,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun taskTrigger(appletId: String?, stageCode: String?, taskCenId: String?): String {
+    suspend fun taskTrigger(appletId: String?, stageCode: String?, taskCenId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.task.taskTrigger",
             "[{\"appletId\":\"$appletId\",\"stageCode\":\"$stageCode\",\"taskCenId\":\"$taskCenId\"}]"
@@ -41,7 +41,7 @@ object GreenFinanceRpcCall {
     }
 
     @JvmStatic
-    fun signInTrigger(sceneId: String?): String {
+    suspend fun signInTrigger(sceneId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.signin.trigger",
             "[{\"extInfo\":{},\"sceneId\":\"$sceneId\"}]"
@@ -54,7 +54,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun greenFinanceIndex(): String {
+    suspend fun greenFinanceIndex(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinancePageQueryService.indexV2",
             "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\"}]"
@@ -68,7 +68,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun batchSelfCollect(bsnIds: JSONArray): String {
+    suspend fun batchSelfCollect(bsnIds: JSONArray): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinancePointCollectService.batchSelfCollect",
             "[{\"bsnIds\":$bsnIds,\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -82,7 +82,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun signInQuery(sceneId: String?): String {
+    suspend fun signInQuery(sceneId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.signin.query",
             "[{\"cycleCount\":7,\"cycleType\":\"d\",\"extInfo\":{},\"needContinuous\":1,\"sceneId\":\"$sceneId\"}]"
@@ -96,7 +96,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryUserTickItem(firstBehaviorType: String?): String {
+    suspend fun queryUserTickItem(firstBehaviorType: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceTickService.queryUserTickItem",
             "[{\"custType\":\"MERCHANT\",\"firstBehaviorType\":\"$firstBehaviorType\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -111,7 +111,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun submitTick(firstBehaviorType: String?, behaviorCode: String?): String {
+    suspend fun submitTick(firstBehaviorType: String?, behaviorCode: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceTickService.submitTick",
             "[{\"custType\":\"MERCHANT\",\"firstBehaviorType\":\"$firstBehaviorType\",\"uid\":\"${UserMap.currentUid}\",\"behaviorCode\":\"$behaviorCode\"}]"
@@ -125,7 +125,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryExpireMcaPoint(day: Long): String {
+    suspend fun queryExpireMcaPoint(day: Long): String {
         // {"ariverRpcTraceId":"client`ZWBWO+Zb5kQDAHgksDyLs/tHP11O+Xc_283027","result":{"expirePoint":{"amount":"6762.00","amountInt":"6762","cent":"676200"}},"resultView":"处理成功","success":true}
         // 十天后
         return RequestManager.requestString(
@@ -140,7 +140,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryAllDonationProjectNew(): String {
+    suspend fun queryAllDonationProjectNew(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceDonationService.queryAllDonationProjectNew",
             "[{\"custType\":\"MERCHANT\",\"subjectType\":\"ALL_DONATION\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -155,7 +155,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun donation(projectId: String?, amount: String?): String {
+    suspend fun donation(projectId: String?, amount: String?): String {
         // {"ariverRpcTraceId":"client`ZWBWO+Zb5kQDAHgksDyLs/tHP11fNHg_230398","result":{"amount":200,"bsnId":"202406231073250005003700277823650280","certificateId":"MBKO1043330320","custType":"MERCHANT","donateElectricityRatio":2,"donateTime":1719088281085,"gmtCreate":1652176865000,"gmtModify":32487667200000,"outBizNo":"1719088280762","projectId":"CLEAN_ENERGY_00001","projectName":"朝阳县光伏发电项目","showFlag":"Y","targetAmount":1162,"uid":"2088302146583284"},"resultView":"处理成功","success":true}
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceDonationService.donation",
@@ -169,7 +169,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun consultProveTaskList(): String {
+    suspend fun consultProveTaskList(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.consultProveTaskList",
             "[{\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -183,7 +183,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryPrizes(campId: String?): String {
+    suspend fun queryPrizes(campId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.camp.queryPrizes",
             "[{\"campIds\":[\"$campId\"]}]"
@@ -197,7 +197,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun campTrigger(campId: String?): String {
+    suspend fun campTrigger(campId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.camp.trigger",
             "[{\"campId\":\"$campId\"}]"
@@ -212,7 +212,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun proveTask(bizType: String?, imageUrl: String?): String {
+    suspend fun proveTask(bizType: String?, imageUrl: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.proveTask",
             "[{\"bizType\":\"$bizType\",\"custType\":\"MERCHANT\",\"imageUrl\":\"$imageUrl\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -226,7 +226,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryProveTaskStatus(taskId: String?): String {
+    suspend fun queryProveTaskStatus(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.queryProveTaskStatus",
             "[{\"taskId\":\"$taskId\",\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -239,7 +239,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryRankingList(startIndex: Int): String {
+    suspend fun queryRankingList(startIndex: Int): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinanceUserInteractionQueryService.queryRankingList",
             "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"includeMe\":true," +
@@ -254,7 +254,7 @@ object GreenFinanceRpcCall {
      * @return 结果
      */
     @JvmStatic
-    fun queryGuestIndexPoints(guestId: String?): String {
+    suspend fun queryGuestIndexPoints(guestId: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinanceUserInteractionQueryService.queryGuestIndexPoints",
             "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"guestCustType\":\"MERCHANT\",\"guestUid\":\"$guestId\",\"uid\":\"${UserMap.currentUid}\"}]"
@@ -262,7 +262,7 @@ object GreenFinanceRpcCall {
     }
 
     @JvmStatic
-    fun batchSteal(bsnIds: JSONArray, collectedUid: String?): String {
+    suspend fun batchSteal(bsnIds: JSONArray, collectedUid: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinancePointCollectService.batchSteal",
             "[{\"bsnIds\":$bsnIds,\"clientVersion\":\"VERSION2\",\"collectedCustType\":\"MERCHANT\"," +

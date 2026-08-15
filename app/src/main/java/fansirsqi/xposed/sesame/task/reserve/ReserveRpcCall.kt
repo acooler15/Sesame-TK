@@ -7,7 +7,7 @@ object ReserveRpcCall {
     private const val VERSION2 = "20230522"
 
     @JvmStatic
-    fun queryTreeItemsForExchange(): String {
+    suspend fun queryTreeItemsForExchange(): String {
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryTreeItemsForExchange",
             "[{\"cityCode\":\"370100\",\"itemTypes\":\"\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"version\":\"$VERSION2\"}]"
@@ -15,7 +15,7 @@ object ReserveRpcCall {
     }
 
     @JvmStatic
-    fun queryTreeForExchange(projectId: String?): String {
+    suspend fun queryTreeForExchange(projectId: String?): String {
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryTreeForExchange",
             "[{\"projectId\":\"$projectId\",\"version\":\"$VERSION\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\"}]"
@@ -23,7 +23,7 @@ object ReserveRpcCall {
     }
 
     @JvmStatic
-    fun exchangeTree(projectId: String): String {
+    suspend fun exchangeTree(projectId: String): String {
         val projectId_num = projectId.toInt()
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.exchangeTree",
@@ -33,12 +33,12 @@ object ReserveRpcCall {
 
     /* 查询地图树苗 */
     @JvmStatic
-    fun queryAreaTrees(): String {
+    suspend fun queryAreaTrees(): String {
         return RequestManager.requestString("alipay.antmember.forest.h5.queryAreaTrees", "[{}]")
     }
 
     @JvmStatic
-    fun queryTreeItemsForExchange(applyActions: String?, itemTypes: String?): String {
+    suspend fun queryTreeItemsForExchange(applyActions: String?, itemTypes: String?): String {
         val args = "[{\"applyActions\":\"$applyActions\",\"itemTypes\":\"$itemTypes\"}]"
         return RequestManager.requestString("alipay.antforest.forest.h5.queryTreeItemsForExchange", args)
     }

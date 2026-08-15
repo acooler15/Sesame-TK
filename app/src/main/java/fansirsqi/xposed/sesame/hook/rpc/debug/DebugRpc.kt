@@ -2,6 +2,7 @@ package fansirsqi.xposed.sesame.hook.rpc.debug
 
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.task.reserve.ReserveRpcCall
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.ResChecker
@@ -37,16 +38,16 @@ object DebugRpc {
     }
 
     private fun test(funName: String?, data: String?): String {
-        return RequestManager.requestString(funName, data)
+        return CoroutineUtils.runBlockingSafe { RequestManager.requestString(funName, data) } ?: ""
     }
 
     fun queryEnvironmentCertDetailList(alias: String?, pageNum: Int, targetUserID: String?): String {
-        return DebugRpcCall.queryEnvironmentCertDetailList(alias, pageNum, targetUserID)
+        return CoroutineUtils.runBlockingSafe { DebugRpcCall.queryEnvironmentCertDetailList(alias, pageNum, targetUserID) } ?: ""
     }
 
     private fun getNewTreeItems() {
         try {
-            val s = ReserveRpcCall.queryTreeItemsForExchange()
+            val s = CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryTreeItemsForExchange() } ?: ""
             var jo = JSONObject(s)
             if (ResChecker.checkRes(TAG, jo)) {
                 val ja = jo.getJSONArray("treeItems")
@@ -75,7 +76,7 @@ object DebugRpc {
     private fun queryTreeForExchange(projectId: String) {
         try {
             // 调用RPC方法查询树木交换信息
-            val response = ReserveRpcCall.queryTreeForExchange(projectId)
+            val response = CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryTreeForExchange(projectId) } ?: ""
             val jo = JSONObject(response)
             // 检查RPC调用结果码是否为"SUCCESS"，表示成功
             if (ResChecker.checkRes(TAG, jo)) {
@@ -120,7 +121,7 @@ object DebugRpc {
     private fun getTreeItems() {
         try {
             // 调用RPC方法查询可交换的树木项目列表
-            val response = ReserveRpcCall.queryTreeItemsForExchange()
+            val response = CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryTreeItemsForExchange() } ?: ""
             var jo = JSONObject(response)
             // 检查RPC调用结果码是否为"SUCCESS"，表示成功
             if (ResChecker.checkRes(TAG, jo)) {
@@ -166,7 +167,7 @@ object DebugRpc {
     private fun getTreeCurrentBudget(projectId: String, treeName: String) {
         try {
             // 调用RPC方法查询树木交换信息
-            val response = ReserveRpcCall.queryTreeForExchange(projectId)
+            val response = CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryTreeForExchange(projectId) } ?: ""
             val jo = JSONObject(response)
             // 检查RPC调用结果码是否为"SUCCESS"，表示成功
             if (ResChecker.checkRes(TAG, jo)) {
@@ -199,7 +200,7 @@ object DebugRpc {
     private fun walkGrid() {
         try {
             // 调用RPC方法模拟网格行走
-            val s = DebugRpcCall.walkGrid()
+            val s = CoroutineUtils.runBlockingSafe { DebugRpcCall.walkGrid() } ?: ""
             var jo = JSONObject(s)
             // 检查RPC调用是否成功
             if (jo.getBoolean("success")) {
@@ -216,7 +217,7 @@ object DebugRpc {
                     // 模拟等待迷你游戏完成
                     GlobalThreadPools.sleepCompat(4000L)
                     // 调用RPC方法完成迷你游戏
-                    jo = JSONObject(DebugRpcCall.miniGameFinish(gameId, key))
+                    jo = JSONObject(CoroutineUtils.runBlockingSafe { DebugRpcCall.miniGameFinish(gameId, key) } ?: "")
                     // 检查迷你游戏是否完成成功
                     if (jo.getBoolean("success")) {
                         val miniGamedata = jo.getJSONObject("data")
@@ -227,11 +228,11 @@ object DebugRpc {
                             if (adVO.has("adBizNo")) {
                                 val adBizNo = adVO.getString("adBizNo")
                                 // 调用RPC方法完成广告任务
-                                jo = JSONObject(DebugRpcCall.taskFinish(adBizNo))
+                                jo = JSONObject(CoroutineUtils.runBlockingSafe { DebugRpcCall.taskFinish(adBizNo) } ?: "")
                                 // 检查广告任务是否完成成功
                                 if (jo.getBoolean("success")) {
                                     // 查询广告任务是否真的完成
-                                    jo = JSONObject(DebugRpcCall.queryAdFinished(adBizNo, "NEVERLAND_DOUBLE_AWARD_AD"))
+                                    jo = JSONObject(CoroutineUtils.runBlockingSafe { DebugRpcCall.queryAdFinished(adBizNo, "NEVERLAND_DOUBLE_AWARD_AD") } ?: "")
                                     // 检查查询结果是否成功
                                     if (jo.getBoolean("success")) {
                                         Log.farm("完成双倍奖励🎁")
@@ -265,7 +266,7 @@ object DebugRpc {
 
     private fun queryAreaTrees() {
         try {
-            val jo = JSONObject(ReserveRpcCall.queryAreaTrees())
+            val jo = JSONObject(CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryAreaTrees() } ?: "")
             if (!ResChecker.checkRes(TAG, jo)) {
                 return
             }
@@ -288,7 +289,7 @@ object DebugRpc {
 
     private fun getUnlockTreeItems() {
         try {
-            val jo = JSONObject(ReserveRpcCall.queryTreeItemsForExchange("", "project"))
+            val jo = JSONObject(CoroutineUtils.runBlockingSafe { ReserveRpcCall.queryTreeItemsForExchange("", "project") } ?: "")
             if (!ResChecker.checkRes(TAG, jo)) {
                 return
             }

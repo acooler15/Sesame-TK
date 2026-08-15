@@ -3,17 +3,15 @@ package fansirsqi.xposed.sesame.hook.rpc.bridge
 import fansirsqi.xposed.sesame.entity.RpcEntity
 
 interface RpcBridge {
-    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
-    fun getVersion(): RpcVersion
-
     @Throws(Exception::class)
     fun load()
     fun unload()
 
-    fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String?
-    fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity?
+    // 核心：改为 suspend
+    suspend fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String?
+    suspend fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity?
 
-    fun requestString(rpcEntity: RpcEntity): String? {
+    suspend fun requestString(rpcEntity: RpcEntity): String? {
         return requestString(rpcEntity, 3, -1)
     }
 
@@ -24,7 +22,7 @@ interface RpcBridge {
      * @param data 请求数据
      * @return 响应字符串，如果请求失败则返回null
      */
-    fun requestString(method: String?, data: String?): String? {
+    suspend fun requestString(method: String?, data: String?): String? {
         return requestString(method, data, 3, 1500)
     }
 
@@ -36,31 +34,31 @@ interface RpcBridge {
      * @param relation 关联数据
      * @return 响应字符串，如果请求失败则返回null
      */
-    fun requestString(method: String?, data: String?, relation: String?): String? {
+    suspend fun requestString(method: String?, data: String?, relation: String?): String? {
         return requestString(method, data, relation, 3, 1500)
     }
 
-    fun requestString(method: String?, data: String?, appName: String?, methodName: String?, facadeName: String?): String? {
+    suspend fun requestString(method: String?, data: String?, appName: String?, methodName: String?, facadeName: String?): String? {
         return requestString(RpcEntity(method, data, appName, methodName, facadeName), 3, -1)
     }
 
-    fun requestString(method: String?, data: String?, tryCount: Int, retryInterval: Int): String? {
+    suspend fun requestString(method: String?, data: String?, tryCount: Int, retryInterval: Int): String? {
         return requestString(RpcEntity(method, data), tryCount, retryInterval)
     }
 
-    fun requestString(method: String?, data: String?, relation: String?, tryCount: Int, retryInterval: Int): String? {
+    suspend fun requestString(method: String?, data: String?, relation: String?, tryCount: Int, retryInterval: Int): String? {
         return requestString(RpcEntity(method, data, relation), tryCount, retryInterval)
     }
 
-    fun requestObject(method: String?, data: String?, relation: String?): RpcEntity? {
+    suspend fun requestObject(method: String?, data: String?, relation: String?): RpcEntity? {
         return requestObject(method, data, relation, 3, -1)
     }
 
-    fun requestObject(method: String?, data: String?, tryCount: Int, retryInterval: Int): RpcEntity? {
+    suspend fun requestObject(method: String?, data: String?, tryCount: Int, retryInterval: Int): RpcEntity? {
         return requestObject(RpcEntity(method, data), tryCount, retryInterval)
     }
 
-    fun requestObject(method: String?, data: String?, relation: String?, tryCount: Int, retryInterval: Int): RpcEntity? {
+    suspend fun requestObject(method: String?, data: String?, relation: String?, tryCount: Int, retryInterval: Int): RpcEntity? {
         return requestObject(RpcEntity(method, data, relation), tryCount, retryInterval)
     }
 }

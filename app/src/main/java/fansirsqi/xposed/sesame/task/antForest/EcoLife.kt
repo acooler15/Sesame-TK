@@ -29,7 +29,7 @@ object EcoLife {
      * 7. 如果光盘打卡设置为启用，执行 `photoGuangPan` 方法上传光盘照片。
      * 8. 异常发生时，记录错误信息并打印堆栈。
      */
-    fun ecoLife() {
+    suspend fun ecoLife() {
         try {
             // 查询首页信息
             var jsonObject = JSONObject(AntForestRpcCall.ecolifeQueryHomePage())
@@ -77,7 +77,7 @@ object EcoLife {
      * @return 是否成功开通绿色任务
      */
     @Throws(JSONException::class)
-    fun openEcoLife(): Boolean {
+    suspend fun openEcoLife(): Boolean {
         val jsonObject = JSONObject(AntForestRpcCall.ecolifeOpenEcolife())
         if (!jsonObject.optBoolean("success")) {
             Log.record("$TAG.ecoLife.openEcolife", jsonObject.optString("resultDesc"))
@@ -103,7 +103,7 @@ object EcoLife {
      * @param actionListVO 任务列表，每个任务包含多个子任务
      * @param dayPoint     任务的日期标识，用于标识任务的日期
      */
-    fun ecoLifeTick(actionListVO: JSONArray, dayPoint: String?) {
+    suspend fun ecoLifeTick(actionListVO: JSONArray, dayPoint: String?) {
         try {
             val source = "source"
             for (i in 0..<actionListVO.length()) {
@@ -142,7 +142,7 @@ object EcoLife {
      *
      * @param dayPoint 任务的日期标识，用于标识任务的日期
      */
-    fun photoGuangPan(dayPoint: String?) {
+    suspend fun photoGuangPan(dayPoint: String?) {
         try {
             if (Status.hasFlagToday("EcoLife::photoGuangPan")) return
 

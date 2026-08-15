@@ -123,7 +123,7 @@ class AntOcean : ModelTask() {
         return modelFields
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         try {
             Log.record(TAG, "执行开始-" + getName())
 
@@ -158,7 +158,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun queryOceanStatus(): Boolean {
+    private suspend fun queryOceanStatus(): Boolean {
         try {
             val jo = JSONObject(AntOceanRpcCall.queryOceanStatus())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -176,7 +176,7 @@ class AntOcean : ModelTask() {
         return false
     }
 
-    private fun queryHomePage() {
+    private suspend fun queryHomePage() {
         try {
             val joHomePage = JSONObject(AntOceanRpcCall.queryHomePage())
             if (ResChecker.checkRes(TAG + "查询海洋主页失败:", joHomePage)) {
@@ -208,7 +208,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun queryMiscInfo() {
+    private suspend fun queryMiscInfo() {
         try {
             val s = AntOceanRpcCall.queryMiscInfo()
             val jo = JSONObject(s)
@@ -227,7 +227,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun switchOceanChapter() {
+    private suspend fun switchOceanChapter() {
         var s = AntOceanRpcCall.queryOceanChapterList()
         try {
             var jo = JSONObject(s)
@@ -273,7 +273,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun querySeaAreaDetailList() {
+    private suspend fun querySeaAreaDetailList() {
         try {
             val s = AntOceanRpcCall.querySeaAreaDetailList()
             val jo = JSONObject(s)
@@ -336,7 +336,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun cleanFriendOcean(fillFlag: JSONObject) {
+    private suspend fun cleanFriendOcean(fillFlag: JSONObject) {
         if (!fillFlag.optBoolean("canClean")) {
             return
         }
@@ -369,7 +369,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun queryUserRanking() {
+    private suspend fun queryUserRanking() {
         try {
             val s = AntOceanRpcCall.queryUserRanking()
             val jo = JSONObject(s)
@@ -389,7 +389,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun receiveTaskAward() {
+    private suspend fun receiveTaskAward() {
         try {
             val presetBad: MutableSet<String> = LinkedHashSet(listOf("DEMO", "DEMO1"))
 
@@ -471,7 +471,7 @@ class AntOcean : ModelTask() {
         }
     }
 
-    private fun protectOcean() {
+    private suspend fun protectOcean() {
         try {
             val s = AntOceanRpcCall.queryCultivationList()
             var jo = JSONObject(s)
@@ -510,7 +510,7 @@ class AntOcean : ModelTask() {
         private lateinit var userprotectType: ChoiceModelField
 
         @JvmStatic
-        fun initBeach() {
+        suspend fun initBeach() {
             try {
                 val response = AntOceanRpcCall.queryCultivationList()
                 val jsonResponse = JSONObject(response)
@@ -555,7 +555,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun collectEnergy(bubbleVOList: JSONArray) {
+        private suspend fun collectEnergy(bubbleVOList: JSONArray) {
             try {
                 for (i in 0..<bubbleVOList.length()) {
                     val bubble = bubbleVOList.getJSONObject(i)
@@ -589,7 +589,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun cleanOcean(userId: String, rubbishNumber: Int) {
+        private suspend fun cleanOcean(userId: String, rubbishNumber: Int) {
             try {
                 for (i in 0..<rubbishNumber) {
                     val s = AntOceanRpcCall.cleanOcean(userId)
@@ -608,7 +608,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun ipOpenSurprise() {
+        private suspend fun ipOpenSurprise() {
             try {
                 val s = AntOceanRpcCall.ipOpenSurprise()
                 val jo = JSONObject(s)
@@ -623,7 +623,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun checkAndCreateExtraCollect() {
+        private suspend fun checkAndCreateExtraCollect() {
             try {
                 val s = AntOceanRpcCall.querySeaAreaDetailList()
                 val jo = JSONObject(s)
@@ -643,7 +643,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun combineFish(fishId: String, logType: String) {
+        private suspend fun combineFish(fishId: String, logType: String) {
             try {
                 val s = AntOceanRpcCall.combineFish(fishId)
                 val jo = JSONObject(s)
@@ -665,7 +665,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun checkReward(rewards: JSONArray) {
+        private suspend fun checkReward(rewards: JSONArray) {
             try {
                 for (i in 0..<rewards.length()) {
                     val reward = rewards.getJSONObject(i)
@@ -692,7 +692,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun collectReplicaAsset(canCollectAssetNum: Int) {
+        private suspend fun collectReplicaAsset(canCollectAssetNum: Int) {
             try {
                 for (i in 0..<canCollectAssetNum) {
                     val s = AntOceanRpcCall.collectReplicaAsset()
@@ -708,7 +708,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun unLockReplicaPhase(replicaCode: String, replicaPhaseCode: String) {
+        private suspend fun unLockReplicaPhase(replicaCode: String, replicaPhaseCode: String) {
             try {
                 val s = AntOceanRpcCall.unLockReplicaPhase(replicaCode, replicaPhaseCode)
                 val jo = JSONObject(s)
@@ -723,7 +723,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun queryReplicaHome() {
+        private suspend fun queryReplicaHome() {
             try {
                 val s = AntOceanRpcCall.queryReplicaHome()
                 val jo = JSONObject(s)
@@ -749,7 +749,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun queryOceanPropList() {
+        private suspend fun queryOceanPropList() {
             try {
                 val jo = JSONObject(AntOceanRpcCall.queryOceanPropList())
                 if (ResChecker.checkRes(TAG + "查询海洋道具列表失败:", jo)) {
@@ -763,7 +763,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun answerQuestion() {
+        private suspend fun answerQuestion() {
             try {
                 val questionResponse = AntOceanRpcCall.getQuestion()
                 val questionJson = JSONObject(questionResponse)
@@ -790,7 +790,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun doOceanPDLTask() {
+        private suspend fun doOceanPDLTask() {
             try {
                 Log.record(TAG, "执行潘多拉海域任务")
                 val homeResponse = AntOceanRpcCall.PDLqueryReplicaHome()
@@ -830,7 +830,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun oceanExchangeTree(cultivationCode: String, projectCode: String, itemName: String, count: Int) {
+        private suspend fun oceanExchangeTree(cultivationCode: String, projectCode: String, itemName: String, count: Int) {
             try {
                 var s: String
                 var jo: JSONObject
@@ -866,7 +866,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun queryCultivationDetail(cultivationCode: String, projectCode: String, count: Int): Int {
+        private suspend fun queryCultivationDetail(cultivationCode: String, projectCode: String, count: Int): Int {
             var appliedTimes = -1
             try {
                 val s = AntOceanRpcCall.queryCultivationDetail(cultivationCode, projectCode)
@@ -897,7 +897,7 @@ class AntOcean : ModelTask() {
             return appliedTimes
         }
 
-        private fun exchangeProp() {
+        private suspend fun exchangeProp() {
             try {
                 var shouldContinue = true
                 while (shouldContinue) {
@@ -925,7 +925,7 @@ class AntOcean : ModelTask() {
             }
         }
 
-        private fun usePropByType() {
+        private suspend fun usePropByType() {
             try {
                 val propListJson = AntOceanRpcCall.usePropByTypeList()
                 val propListObj = JSONObject(propListJson)

@@ -14,7 +14,7 @@ internal class FarmItemManager(private val farm: AntFarm) {
     /**
      * 加载持有道具信息
      */
-    internal fun listFarmTool(): List<AntFarm.FarmTool>? {
+    internal suspend fun listFarmTool(): List<AntFarm.FarmTool>? {
         try {
             var jo = JSONObject(AntFarmRpcCall.listFarmTool())
             if (ResChecker.checkRes(AntFarm.TAG, jo)) {
@@ -200,7 +200,7 @@ internal class FarmItemManager(private val farm: AntFarm) {
         return isUseAccelerateTool
     }
 
-    internal fun useFarmTool(targetFarmId: String?, toolType: AntFarm.ToolType): Boolean {
+    internal suspend fun useFarmTool(targetFarmId: String?, toolType: AntFarm.ToolType): Boolean {
         try {
             var s = AntFarmRpcCall.listFarmTool()
             var jo = JSONObject(s)
@@ -252,7 +252,7 @@ internal class FarmItemManager(private val farm: AntFarm) {
         return false
     }
 
-    internal fun receiveToolTaskReward() {
+    internal suspend fun receiveToolTaskReward() {
         try {
             var s = AntFarmRpcCall.listToolTaskDetails()
             var jo = JSONObject(s)
@@ -309,7 +309,7 @@ internal class FarmItemManager(private val farm: AntFarm) {
      * @param toolType 道具类型：BIG_EATER_TOOL, NEWEGGTOOL, FENCETOOL
      * @param toolCount 使用数量（仅 NEWEGGTOOL 有效）
      */
-    internal fun manualUseFarmTool(toolType: String, toolCount: Int) {
+    internal suspend fun manualUseFarmTool(toolType: String, toolCount: Int) {
         try {
             if (farm.enterFarm() != null) {
                 farm.syncAnimalStatus(farm.ownerFarmId)
@@ -359,7 +359,7 @@ internal class FarmItemManager(private val farm: AntFarm) {
                         return@repeat
                     }
                     // 使用多个时稍微延迟，避免过快
-                    if (actualCount > 1) Thread.sleep(1000)
+                    if (actualCount > 1) delay(1000)
                 }
             }
         } catch (t: Throwable) {

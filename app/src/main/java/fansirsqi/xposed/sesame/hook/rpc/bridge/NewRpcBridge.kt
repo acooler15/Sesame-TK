@@ -5,15 +5,16 @@ import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.Toast
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
 import fansirsqi.xposed.sesame.model.BaseModel
-import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
-import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.app.SwipeUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.util.concurrent.atomic.AtomicInteger
@@ -65,11 +66,6 @@ class NewRpcBridge : RpcBridge {
         if (shouldShowErrorLog(methodName)) {
             Log.error(TAG, "RPC返回null | 方法: $methodName | 原因: $reason | 重试: $count")
         }
-    }
-
-    @Deprecated("rpcVersion 死字段已清理，版本信息暂无消费方")
-    override fun getVersion(): RpcVersion {
-        return RpcVersion.NEW
     }
 
     @Throws(Exception::class)
@@ -149,7 +145,7 @@ class NewRpcBridge : RpcBridge {
      * @param retryInterval 重试间隔（毫秒），负值表示使用默认延迟，0表示立即重试
      * @return 响应字符串，如果请求失败则返回null
      */
-    override fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String? {
+    override suspend fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String? {
         val resRpcEntity = requestObject(rpcEntity, tryCount, retryInterval)
         if (resRpcEntity != null) {
             return resRpcEntity.responseString
@@ -173,7 +169,7 @@ class NewRpcBridge : RpcBridge {
      * @param retryInterval 重试间隔（毫秒），负值表示使用默认延迟，0表示立即重试
      * @return 包含响应数据的RPC实体，如果请求失败则返回null
      */
-    override fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity? {
+    override suspend fun requestObject(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): RpcEntity? {
         // 方法开始时，将成员变量赋值给局部变量，以避免在方法执行期间因其他线程的unload()调用而导致成员变量变为null
         var localNewRpcCallMethod = newRpcCallMethod
         var localParseObjectMethod = parseObjectMethod
@@ -215,144 +211,149 @@ class NewRpcBridge : RpcBridge {
             do {
                 count++
                 try {
-                    RpcIntervalLimit.enterIntervalLimit(rpcEntity.requestMethod!!)
                     val finalLocalBridgeCallbackClazzArray = localBridgeCallbackClazzArray
-                    localNewRpcCallMethod.invoke(
-                            localNewRpcInstance, rpcEntity.requestMethod, false, false, "json", localParseObjectMethod.invoke(null,
-                                    rpcEntity.rpcFullRequestData), "", null, true, false, 0, false, "", null, null, null, Proxy.newProxyInstance(localLoader,
-                                    finalLocalBridgeCallbackClazzArray) { proxy, innerMethod, args ->
-                                        if ("equals" == innerMethod.name) {
-                                            return@newProxyInstance proxy === args!![0]
-                                        }
-                                        if ("hashCode" == innerMethod.name) {
-                                            return@newProxyInstance System.identityHashCode(proxy)
-                                        }
-                                        if ("toString" == innerMethod.name) {
-                                            return@newProxyInstance "Proxy for " + finalLocalBridgeCallbackClazzArray[0].name
-                                        }
-                                        if (args != null && args.size >= 1 && "sendJSONResponse" == innerMethod.name) {
-                                            try {
-                                                val obj = args[0]
-                                                // 获取 JSON 字符串，失败时重试一次
-                                                var jsonString: String? = null
-                                                try {
-                                                    jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
-                                                } catch (e: Exception) {
-                                                    // 第一次失败，尝试重试
+                    // 获取限流许可（并发数限制 + per-method 间隔，挂起不阻塞线程）
+                    GlobalRpcRateLimiter.acquire(rpcEntity.requestMethod).use { _ ->
+                        // 反射调用本身是同步阻塞的，用 withContext(IO) 隔离，不占用调度线程
+                        withContext(Dispatchers.IO) {
+                            localNewRpcCallMethod.invoke(
+                                    localNewRpcInstance, rpcEntity.requestMethod, false, false, "json", localParseObjectMethod.invoke(null,
+                                            rpcEntity.rpcFullRequestData), "", null, true, false, 0, false, "", null, null, null, Proxy.newProxyInstance(localLoader,
+                                            finalLocalBridgeCallbackClazzArray) { proxy, innerMethod, args ->
+                                                if ("equals" == innerMethod.name) {
+                                                    return@newProxyInstance proxy === args!![0]
+                                                }
+                                                if ("hashCode" == innerMethod.name) {
+                                                    return@newProxyInstance System.identityHashCode(proxy)
+                                                }
+                                                if ("toString" == innerMethod.name) {
+                                                    return@newProxyInstance "Proxy for " + finalLocalBridgeCallbackClazzArray[0].name
+                                                }
+                                                if (args != null && args.size >= 1 && "sendJSONResponse" == innerMethod.name) {
                                                     try {
-                                                        GlobalThreadPools.sleepCompat(100L)
-                                                        jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
-                                                    } catch (retryException: Exception) {
-                                                        // 重试后仍失败，记录日志并标记错误，触发外层RPC重试
-                                                        Log.record(TAG, "toJSONString 重试后仍然失败，将触发整个 RPC 请求重试: " + retryException.message)
-                                                        rpcEntity.setResponseObject(obj, null)
+                                                        val obj = args[0]
+                                                        // 获取 JSON 字符串，失败时重试一次
+                                                        var jsonString: String? = null
+                                                        try {
+                                                            jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
+                                                        } catch (e: Exception) {
+                                                            // 第一次失败，尝试重试
+                                                            try {
+                                                                Thread.sleep(100L)
+                                                                jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
+                                                            } catch (retryException: Exception) {
+                                                                // 重试后仍失败，记录日志并标记错误，触发外层RPC重试
+                                                                Log.record(TAG, "toJSONString 重试后仍然失败，将触发整个 RPC 请求重试: " + retryException.message)
+                                                                rpcEntity.setResponseObject(obj, null)
+                                                                rpcEntity.setError()
+                                                                return@newProxyInstance null
+                                                            }
+                                                        }
+
+                                                        rpcEntity.setResponseObject(obj, jsonString)
+                                                        if (!(XposedHelpers.callMethod(obj, "containsKey", "success") as Boolean)
+                                                                && !(XposedHelpers.callMethod(obj, "containsKey", "isSuccess") as Boolean)) {
+                                                            rpcEntity.setError()
+                                                            if (shouldShowErrorLog(rpcEntity.requestMethod)) {
+                                                                Log.error(TAG, "new rpc response1 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + "\n " +
+                                                                        "args: " + rpcEntity.requestData + " |\n data: " + rpcEntity.responseString)
+                                                            }
+                                                        }
+                                                    } catch (e: Exception) {
                                                         rpcEntity.setError()
-                                                        return@newProxyInstance null
+                                                        Log.printStackTrace(TAG,"new rpc response2 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod +
+                                                                " err:",e)
                                                     }
                                                 }
-
-                                                rpcEntity.setResponseObject(obj, jsonString)
-                                                if (!(XposedHelpers.callMethod(obj, "containsKey", "success") as Boolean)
-                                                        && !(XposedHelpers.callMethod(obj, "containsKey", "isSuccess") as Boolean)) {
-                                                    rpcEntity.setError()
-                                                    if (shouldShowErrorLog(rpcEntity.requestMethod)) {
-                                                        Log.error(TAG, "new rpc response1 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + "\n " +
-                                                                "args: " + rpcEntity.requestData + " |\n data: " + rpcEntity.responseString)
-                                                    }
-                                                }
-                                            } catch (e: Exception) {
-                                                rpcEntity.setError()
-                                                Log.printStackTrace(TAG,"new rpc response2 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod +
-                                                        " err:",e)
+                                                null
                                             }
-                                        }
-                                        null
-                                    }
-                    )
-                    if (!rpcEntity.hasResult) {
-                        logNullResponse(rpcEntity, "无响应结果", count)
-                        return null
-                    }
-                    if (!rpcEntity.hasError) {
-                        return rpcEntity
-                    }
-                    try {
-                        val errorCode = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "error") as String?
-                        val errorMessage = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "errorMessage") as String?
-                        val response = rpcEntity.responseString
-                        val methodName = rpcEntity.requestMethod
-
-                        // 检测安全验证错误，自动启动目标应用（带防抖和版本检查）
-
-                        if (errorMessage != null && errorMessage.contains("为了保障您的操作安全，请进行验证后继续")) {
-                            // 检查版本号，只有版本低于等于10.6.58.99999才自动启动目标应用
-                            if (!ApplicationHook.shouldEnableSimplePageManager()) {
-                              //  Log.record(TAG, "目标应用版本不支持自动启动目标应用进行滑块验证，跳过")
-                                return null
-                            }
-                            var currentTime = System.currentTimeMillis()
-                            var timeSinceLastStart = currentTime - lastAlipayStartTime
-                            if (timeSinceLastStart < ALIPAY_START_DEBOUNCE_TIME) {
-                                 Log.record(TAG, "距离上次启动目标应用仅 " + timeSinceLastStart + "ms，跳过本次启动")
-                            } else {
-                                synchronized(alipayStartLock) {
-                                    // 双重检查，防止多线程竞争
-                                    currentTime = System.currentTimeMillis()
-                                    timeSinceLastStart = currentTime - lastAlipayStartTime
-                                    if (timeSinceLastStart < ALIPAY_START_DEBOUNCE_TIME) {
-                                         Log.record(TAG, "距离上次启动目标应用仅 " + timeSinceLastStart + "ms，跳过本次启动（双重检查）")
-                                    } else {
-                                        lastAlipayStartTime = currentTime
-                                         Log.record(TAG, "检测到安全验证错误，自动启动目标应用进行滑块中...")
-                                        Toast.show(
-                                                "为了保障您的操作安全，请进行验证后继续,自动启动目标应用进行滑块中..."
-                                        )
-                                        // 使用增强的shell命令启动目标应用，
-                                        SwipeUtil.startAlipay(ApplicationHook.appContext!!)
-                                    }
-                                }
-                            }
+                            )
+                        }
+                        if (!rpcEntity.hasResult) {
+                            logNullResponse(rpcEntity, "无响应结果", count)
                             return null
                         }
+                        if (!rpcEntity.hasError) {
+                            return rpcEntity
+                        }
+                        try {
+                            val errorCode = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "error") as String?
+                            val errorMessage = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "errorMessage") as String?
+                            val response = rpcEntity.responseString
+                            val methodName = rpcEntity.requestMethod
 
-                        if ((errorCode != null && errorMark.contains(errorCode)) || (errorMessage != null && errorStringMark.contains(errorMessage))) {
-                            val currentErrorCount = maxErrorCount.incrementAndGet()
-                            if (!ApplicationHook.offline) {
-                                if (currentErrorCount > setMaxErrorCount) {
-                                    ApplicationHook.offline = true
-                                    Notify.updateStatusText("网络连接异常，已进入离线模式")
-                                    if (BaseModel.errNotify.value) {
-                                        Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常次数超过阈值[" + setMaxErrorCount + "]", response)
+                            // 检测安全验证错误，自动启动目标应用（带防抖和版本检查）
+
+                            if (errorMessage != null && errorMessage.contains("为了保障您的操作安全，请进行验证后继续")) {
+                                // 检查版本号，只有版本低于等于10.6.58.99999才自动启动目标应用
+                                if (!ApplicationHook.shouldEnableSimplePageManager()) {
+                                  //  Log.record(TAG, "目标应用版本不支持自动启动目标应用进行滑块验证，跳过")
+                                    return null
+                                }
+                                var currentTime = System.currentTimeMillis()
+                                var timeSinceLastStart = currentTime - lastAlipayStartTime
+                                if (timeSinceLastStart < ALIPAY_START_DEBOUNCE_TIME) {
+                                     Log.record(TAG, "距离上次启动目标应用仅 " + timeSinceLastStart + "ms，跳过本次启动")
+                                } else {
+                                    synchronized(alipayStartLock) {
+                                        // 双重检查，防止多线程竞争
+                                        currentTime = System.currentTimeMillis()
+                                        timeSinceLastStart = currentTime - lastAlipayStartTime
+                                        if (timeSinceLastStart < ALIPAY_START_DEBOUNCE_TIME) {
+                                             Log.record(TAG, "距离上次启动目标应用仅 " + timeSinceLastStart + "ms，跳过本次启动（双重检查）")
+                                        } else {
+                                            lastAlipayStartTime = currentTime
+                                             Log.record(TAG, "检测到安全验证错误，自动启动目标应用进行滑块中...")
+                                            Toast.show(
+                                                    "为了保障您的操作安全，请进行验证后继续,自动启动目标应用进行滑块中..."
+                                            )
+                                            // 使用增强的shell命令启动目标应用，
+                                            SwipeUtil.startAlipay(ApplicationHook.appContext!!)
+                                        }
                                     }
                                 }
+                                return null
+                            }
+
+                            if ((errorCode != null && errorMark.contains(errorCode)) || (errorMessage != null && errorStringMark.contains(errorMessage))) {
+                                val currentErrorCount = maxErrorCount.incrementAndGet()
+                                if (!ApplicationHook.offline) {
+                                    if (currentErrorCount > setMaxErrorCount) {
+                                        ApplicationHook.offline = true
+                                        Notify.updateStatusText("网络连接异常，已进入离线模式")
+                                        if (BaseModel.errNotify.value) {
+                                            Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常次数超过阈值[" + setMaxErrorCount + "]", response)
+                                        }
+                                    }
 //                                if (BaseModel.errNotify.value) {
 //                                    Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常: " + methodName, response)
 //                                }//做得多错的多，不做就不会错
-                                if (BaseModel.timeoutRestart.value) {
-                                    Log.record(TAG, "尝试重新登录")
-                                    ApplicationHook.reLoginByBroadcast()
+                                    if (BaseModel.timeoutRestart.value) {
+                                        Log.record(TAG, "尝试重新登录")
+                                        ApplicationHook.reLoginByBroadcast()
+                                    }
                                 }
+                                logNullResponse(rpcEntity, "网络错误: $errorCode/$errorMessage", count)
+                                return null
                             }
-                            logNullResponse(rpcEntity, "网络错误: $errorCode/$errorMessage", count)
-                            return null
+                            return rpcEntity
+                        } catch (e: Exception) {
+                            Log.error(TAG, "new rpc response | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + " get err:")
+                            Log.printStackTrace(e)
                         }
-                        return rpcEntity
-                    } catch (e: Exception) {
-                        Log.error(TAG, "new rpc response | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + " get err:")
-                        Log.printStackTrace(e)
-                    }
-                    if (retryInterval < 0) {
-                        CoroutineUtils.sleepCompat((600 + RandomUtil.delay()).toLong())
-                    } else if (retryInterval > 0) {
-                        CoroutineUtils.sleepCompat(retryInterval.toLong())
+                        if (retryInterval < 0) {
+                            delay((600 + RandomUtil.delay()).toLong())
+                        } else if (retryInterval > 0) {
+                            delay(retryInterval.toLong())
+                        }
                     }
                 } catch (t: Throwable) {
                     Log.error(TAG, "new rpc request | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + " err:")
                     Log.printStackTrace(t)
                     if (retryInterval < 0) {
-                        CoroutineUtils.sleepCompat((600 + RandomUtil.delay()).toLong())
+                        delay((600 + RandomUtil.delay()).toLong())
                     } else if (retryInterval > 0) {
-                        CoroutineUtils.sleepCompat(retryInterval.toLong())
+                        delay(retryInterval.toLong())
                     }
                 }
             } while (count < tryCount)

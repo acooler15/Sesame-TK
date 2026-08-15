@@ -22,7 +22,7 @@ object ReadingDada {
      * @param bizInfo 业务信息JSON对象
      * @return 是否回答成功
      */
-    fun answerQuestion(bizInfo: JSONObject): Boolean {
+    suspend fun answerQuestion(bizInfo: JSONObject): Boolean {
         try {
             // 获取任务跳转URL
             val taskJumpUrl = bizInfo.optString("taskJumpUrl").takeIf { it.isNotEmpty() }

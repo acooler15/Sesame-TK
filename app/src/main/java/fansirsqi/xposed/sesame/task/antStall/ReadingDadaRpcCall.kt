@@ -20,7 +20,7 @@ object ReadingDadaRpcCall {
      * @param answer 答案
      * @return 返回结果字符串
      */
-    fun submitAnswer(
+    suspend fun submitAnswer(
         activityId: String,
         outBizId: String,
         questionId: String,
@@ -44,7 +44,7 @@ object ReadingDadaRpcCall {
      * @param activityId 活动ID
      * @return 返回结果字符串
      */
-    fun getQuestion(activityId: String): String {
+    suspend fun getQuestion(activityId: String): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.getQuestion",
             "[{\"activityId\":\"$activityId\",\"dadaVersion\":\"1.3.0\",\"version\":$VERSION}]"

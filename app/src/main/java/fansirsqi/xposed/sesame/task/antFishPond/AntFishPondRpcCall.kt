@@ -6,17 +6,17 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 interface FishPondGateway {
-    fun fishpondIndex(): String
-    fun fishpondSyncIndex(syncTypes: List<String>): String
-    fun querySubplotsActivity(): String
-    fun triggerSubplotsActivity(activityType: String, actionType: String): String
-    fun listTask(): String
-    fun sign(signKey: String): String
-    fun fishpondExchangeReward(): String
-    fun finishTask(taskType: String, sceneCode: String): String
-    fun receiveTaskAward(taskType: String, sceneCode: String): String
-    fun fishpondAngle(riskToken: String): String
-    fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String
+    suspend fun fishpondIndex(): String
+    suspend fun fishpondSyncIndex(syncTypes: List<String>): String
+    suspend fun querySubplotsActivity(): String
+    suspend fun triggerSubplotsActivity(activityType: String, actionType: String): String
+    suspend fun listTask(): String
+    suspend fun sign(signKey: String): String
+    suspend fun fishpondExchangeReward(): String
+    suspend fun finishTask(taskType: String, sceneCode: String): String
+    suspend fun receiveTaskAward(taskType: String, sceneCode: String): String
+    suspend fun fishpondAngle(riskToken: String): String
+    suspend fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String
 }
 
 object AntFishPondRpcCall {
@@ -34,29 +34,29 @@ object AntFishPondRpcCall {
 
     private fun indexArgs(): JSONObject = baseArgs().put("appMode", "normal")
 
-    private fun request(method: String, args: JSONObject): String {
+    private suspend fun request(method: String, args: JSONObject): String {
         return RequestManager.requestString(method, JSONArray().put(args).toString())
     }
 
-    fun fishpondIndex(): String {
+    suspend fun fishpondIndex(): String {
         return request(
             "com.alipay.antfishpond.fishpondIndex",
             indexArgs().put("darwinSceneList", JSONArray().put("taskFullAreaClick"))
         )
     }
 
-    fun fishpondSyncIndex(syncTypes: List<String>): String {
+    suspend fun fishpondSyncIndex(syncTypes: List<String>): String {
         return request(
             "com.alipay.antfishpond.fishpondSyncIndex",
             indexArgs().put("syncTypeList", JSONArray(syncTypes))
         )
     }
 
-    fun querySubplotsActivity(): String {
+    suspend fun querySubplotsActivity(): String {
         return request("com.alipay.antfishpond.querySubplotsActivity", indexArgs())
     }
 
-    fun triggerSubplotsActivity(activityType: String, actionType: String): String {
+    suspend fun triggerSubplotsActivity(activityType: String, actionType: String): String {
         return request(
             "com.alipay.antfishpond.triggerSubplotsActivity",
             baseArgs()
@@ -65,19 +65,19 @@ object AntFishPondRpcCall {
         )
     }
 
-    fun listTask(): String {
+    suspend fun listTask(): String {
         return request("com.alipay.antfishpond.listTask", indexArgs())
     }
 
-    fun sign(signKey: String): String {
+    suspend fun sign(signKey: String): String {
         return request("com.alipay.antfishpond.sign", baseArgs().put("signKey", signKey))
     }
 
-    fun fishpondExchangeReward(): String {
+    suspend fun fishpondExchangeReward(): String {
         return request("com.alipay.antfishpond.fishpondExchangeReward", baseArgs())
     }
 
-    fun finishTask(taskType: String, sceneCode: String): String {
+    suspend fun finishTask(taskType: String, sceneCode: String): String {
         val args = JSONObject()
             .put(
                 "outBizNo",
@@ -90,7 +90,7 @@ object AntFishPondRpcCall {
         return request("com.alipay.antiep.finishTask", args)
     }
 
-    fun receiveTaskAward(taskType: String, sceneCode: String): String {
+    suspend fun receiveTaskAward(taskType: String, sceneCode: String): String {
         val args = baseArgs()
             .put("ignoreLimit", false)
             .put("sceneCode", sceneCode)
@@ -98,7 +98,7 @@ object AntFishPondRpcCall {
         return request("com.alipay.antiep.receiveTaskAward", args)
     }
 
-    fun fishpondAngle(riskToken: String): String {
+    suspend fun fishpondAngle(riskToken: String): String {
         return request(
             "com.alipay.antfishpond.fishpondAngle",
             baseArgs()
@@ -107,7 +107,7 @@ object AntFishPondRpcCall {
         )
     }
 
-    fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String {
+    suspend fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String {
         return request(
             "com.alipay.antfishpond.fishpondAngleRodPositioning",
             baseArgs()
@@ -118,33 +118,33 @@ object AntFishPondRpcCall {
 }
 
 class AntFishPondRpcGateway : FishPondGateway {
-    override fun fishpondIndex(): String = AntFishPondRpcCall.fishpondIndex()
+    override suspend fun fishpondIndex(): String = AntFishPondRpcCall.fishpondIndex()
 
-    override fun fishpondSyncIndex(syncTypes: List<String>): String =
+    override suspend fun fishpondSyncIndex(syncTypes: List<String>): String =
         AntFishPondRpcCall.fishpondSyncIndex(syncTypes)
 
-    override fun querySubplotsActivity(): String =
+    override suspend fun querySubplotsActivity(): String =
         AntFishPondRpcCall.querySubplotsActivity()
 
-    override fun triggerSubplotsActivity(activityType: String, actionType: String): String =
+    override suspend fun triggerSubplotsActivity(activityType: String, actionType: String): String =
         AntFishPondRpcCall.triggerSubplotsActivity(activityType, actionType)
 
-    override fun listTask(): String = AntFishPondRpcCall.listTask()
+    override suspend fun listTask(): String = AntFishPondRpcCall.listTask()
 
-    override fun sign(signKey: String): String = AntFishPondRpcCall.sign(signKey)
+    override suspend fun sign(signKey: String): String = AntFishPondRpcCall.sign(signKey)
 
-    override fun fishpondExchangeReward(): String =
+    override suspend fun fishpondExchangeReward(): String =
         AntFishPondRpcCall.fishpondExchangeReward()
 
-    override fun finishTask(taskType: String, sceneCode: String): String =
+    override suspend fun finishTask(taskType: String, sceneCode: String): String =
         AntFishPondRpcCall.finishTask(taskType, sceneCode)
 
-    override fun receiveTaskAward(taskType: String, sceneCode: String): String =
+    override suspend fun receiveTaskAward(taskType: String, sceneCode: String): String =
         AntFishPondRpcCall.receiveTaskAward(taskType, sceneCode)
 
-    override fun fishpondAngle(riskToken: String): String =
+    override suspend fun fishpondAngle(riskToken: String): String =
         AntFishPondRpcCall.fishpondAngle(riskToken)
 
-    override fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String =
+    override suspend fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String =
         AntFishPondRpcCall.fishpondAngleRodPositioning(bizNo, areaType)
 }

@@ -72,7 +72,7 @@ class EcoProtection : ModelTask() {
 
     companion object {
         private val TAG: String = EcoProtection::class.java.getSimpleName()
-        private fun ancientTree(ancientTreeCityCodeList: MutableCollection<String?>) {
+        private suspend fun ancientTree(ancientTreeCityCodeList: MutableCollection<String?>) {
             try {
                 for (cityCode in ancientTreeCityCodeList) {
                     if (!canAncientTreeToday(cityCode!!)) continue
@@ -84,7 +84,7 @@ class EcoProtection : ModelTask() {
             }
         }
 
-        private fun ancientTreeProtect(cityCode: String) {
+        private suspend fun ancientTreeProtect(cityCode: String) {
             try {
                 val jo = JSONObject(EcoProtectionRpcCall.homePage(cityCode))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -109,7 +109,7 @@ class EcoProtection : ModelTask() {
             }
         }
 
-        private fun districtDetail(districtCode: String?) {
+        private suspend fun districtDetail(districtCode: String?) {
             try {
                 var jo = JSONObject(EcoProtectionRpcCall.districtDetail(districtCode))
                 if (ResChecker.checkRes(TAG, jo)) {

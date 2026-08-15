@@ -67,7 +67,7 @@ class GreenFinance : ModelTask() {
         return modelFields
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         try {
             Log.record(TAG, "执行开始-" + getName())
             val s = GreenFinanceRpcCall.greenFinanceIndex()
@@ -124,7 +124,7 @@ class GreenFinance : ModelTask() {
      *
      * @param bsnIds Ids
      */
-    private fun batchSelfCollect(bsnIds: JSONArray) {
+    private suspend fun batchSelfCollect(bsnIds: JSONArray) {
         val s = GreenFinanceRpcCall.batchSelfCollect(bsnIds)
         try {
             val joSelfCollect = JSONObject(s)
@@ -144,7 +144,7 @@ class GreenFinance : ModelTask() {
      *
      * @param sceneId sceneId
      */
-    private fun signIn(sceneId: String) {
+    private suspend fun signIn(sceneId: String) {
         try {
             var s = GreenFinanceRpcCall.signInQuery(sceneId)
             var jo = JSONObject(s)
@@ -172,7 +172,7 @@ class GreenFinance : ModelTask() {
     /**
      * 打卡
      */
-    private fun behaviorTick() {
+    private suspend fun behaviorTick() {
         //绿色行动
         if (greenFinanceLsxd.value) {
             doTick("lsxd")
@@ -200,7 +200,7 @@ class GreenFinance : ModelTask() {
      *
      * @param type 打开类型
      */
-    private fun doTick(type: String) {
+    private suspend fun doTick(type: String) {
         try {
             var str = GreenFinanceRpcCall.queryUserTickItem(type)
             var jsonObject = JSONObject(str)
@@ -234,7 +234,7 @@ class GreenFinance : ModelTask() {
     /**
      * 捐助
      */
-    private fun donation() {
+    private suspend fun donation() {
         if (!greenFinanceDonation.value) {
             return
         }
@@ -301,7 +301,7 @@ class GreenFinance : ModelTask() {
     /**
      * 评级奖品
      */
-    private fun prizes() {
+    private suspend fun prizes() {
         try {
             if (Status.canGreenFinancePrizesMap()) {
                 return
@@ -343,7 +343,7 @@ class GreenFinance : ModelTask() {
     /**
      * 收好友金币
      */
-    private fun batchStealFriend() {
+    private suspend fun batchStealFriend() {
         try {
             if (Status.canGreenFinancePointFriend() || !greenFinancePointFriend.value) {
                 return
@@ -459,7 +459,7 @@ class GreenFinance : ModelTask() {
          * @param name 中文说明
          */
         @JvmStatic
-        fun doTask(appletId: String, tag: String, name: String) {
+        suspend fun doTask(appletId: String, tag: String, name: String) {
             try {
                 var s = GreenFinanceRpcCall.taskQuery(appletId)
                 var jo = JSONObject(s)

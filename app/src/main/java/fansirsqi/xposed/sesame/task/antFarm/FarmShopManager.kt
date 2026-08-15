@@ -56,7 +56,7 @@ internal class FarmShopManager(private val farm: AntFarm) {
         }
     }
 
-    private fun exchangeBenefit(spuId: String?): Boolean {
+    private suspend fun exchangeBenefit(spuId: String?): Boolean {
         try {
             val jo = JSONObject(AntFarmRpcCall.getMallItemDetail(spuId))
             if (!ResChecker.checkRes(AntFarm.TAG, jo)) {
@@ -84,7 +84,7 @@ internal class FarmShopManager(private val farm: AntFarm) {
         return false
     }
 
-    private fun exchangeBenefit(spuId: String?, skuId: String?): Boolean {
+    private suspend fun exchangeBenefit(spuId: String?, skuId: String?): Boolean {
         try {
             val jo = JSONObject(AntFarmRpcCall.buyMallItem(spuId, skuId))
             return ResChecker.checkRes(AntFarm.TAG, jo)

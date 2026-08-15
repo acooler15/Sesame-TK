@@ -51,7 +51,7 @@ data object AntFarmFamily {
     private var eatTogetherConfig: JSONObject = JSONObject()
 
 
-    fun run(familyOptions: SelectModelField, notInviteList: SelectModelField) {
+    suspend fun run(familyOptions: SelectModelField, notInviteList: SelectModelField) {
         try {
             enterFamily(familyOptions, notInviteList)
         } catch (e: Exception) {
@@ -62,7 +62,7 @@ data object AntFarmFamily {
     /**
      * 进入家庭
      */
-    fun enterFamily(familyOptions: SelectModelField, notInviteList: SelectModelField) {
+    suspend fun enterFamily(familyOptions: SelectModelField, notInviteList: SelectModelField) {
         try {
             val enterRes = JSONObject(AntFarmRpcCall.enterFamily());
             if (ResChecker.checkRes(TAG, enterRes)) {
@@ -130,7 +130,7 @@ data object AntFarmFamily {
     /**
      * 家庭签到
      */
-    fun familySign() {
+    suspend fun familySign() {
         try {
             if (Status.hasFlagToday("farmfamily::dailySign")) return
             val res = JSONObject(AntFarmRpcCall.familyReceiveFarmTaskAward("FAMILY_SIGN_TASK"))
@@ -145,7 +145,7 @@ data object AntFarmFamily {
     /**
      * 领取家庭奖励
      */
-    fun familyClaimRewardList() {
+    suspend fun familyClaimRewardList() {
         try {
             var jo = JSONObject(AntFarmRpcCall.familyAwardList())
             if (ResChecker.checkRes(TAG, jo)) {
@@ -176,7 +176,7 @@ data object AntFarmFamily {
     /**
      * 顶梁柱
      */
-    fun assignFamilyMember(jsonObject: JSONObject, userIds: MutableList<String>) {
+    suspend fun assignFamilyMember(jsonObject: JSONObject, userIds: MutableList<String>) {
         try {
             userIds.remove(UserMap.currentUid)
             //随机选一个家庭成员
@@ -201,7 +201,7 @@ data object AntFarmFamily {
      * 帮好友喂小鸡
      * @param animals 家庭动物列表
      */
-    fun familyFeedFriendAnimal(animals: JSONArray) {
+    suspend fun familyFeedFriendAnimal(animals: JSONArray) {
         try {
             for (i in 0 until animals.length()) {
                 val animal = animals.getJSONObject(i)
@@ -266,7 +266,7 @@ data object AntFarmFamily {
      * @param familyInteractActions 互动功能列表
      * @param familyUserIds 家庭成员列表
      */
-    private fun familyEatTogether(eatTogetherConfig: JSONObject, familyInteractActions: JSONArray, familyUserIds: MutableList<String>) {
+    private suspend fun familyEatTogether(eatTogetherConfig: JSONObject, familyInteractActions: JSONArray, familyUserIds: MutableList<String>) {
         try {
             var isEat = false
             val periodItemList = eatTogetherConfig.optJSONArray("periodItemList")
@@ -331,7 +331,7 @@ data object AntFarmFamily {
      * 查询最近的几份美食
      * @param queryNum 查询数量
      */
-    fun queryRecentFarmFood(queryNum: Int): JSONArray? {
+    suspend fun queryRecentFarmFood(queryNum: Int): JSONArray? {
         try {
             val jo = JSONObject(AntFarmRpcCall.queryRecentFarmFood(queryNum))
             if (!ResChecker.checkRes(TAG, jo)) {
@@ -388,7 +388,7 @@ data object AntFarmFamily {
      *
      * @param familyUserIds 家庭成员 userId 列表（包含自己，方法内部会移除当前账号）
      */
-    fun deliverMsgSend(familyUserIds: MutableList<String>) {
+    suspend fun deliverMsgSend(familyUserIds: MutableList<String>) {
         try {
             // 1. 时间窗口控制：仅允许在「早安时间段」内自动发送（06:00 ~ 10:00）
             val now = Calendar.getInstance()
@@ -543,7 +543,7 @@ data object AntFarmFamily {
      * @param familyUserIds 好友列表
      * @param notInviteList 不邀请列表
      */
-    private fun familyShareToFriends(familyUserIds: MutableList<String>, notInviteList: SelectModelField) {
+    private suspend fun familyShareToFriends(familyUserIds: MutableList<String>, notInviteList: SelectModelField) {
         try {
             if (Status.hasFlagToday("antFarm::familyShareToFriends")) {
                 return
@@ -591,7 +591,7 @@ data object AntFarmFamily {
     /**
      * 自动购买家具
      */
-    fun autoExchangeFamilyDecoration() {
+    suspend fun autoExchangeFamilyDecoration() {
         Log.record(TAG, "[家庭装扮] 启动分类购买任务...")
         try {
             // 获取活动 ID

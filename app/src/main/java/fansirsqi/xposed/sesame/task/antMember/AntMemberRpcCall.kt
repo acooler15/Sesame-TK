@@ -15,19 +15,19 @@ object AntMemberRpcCall {
 
     /* ant member point */
     @JvmStatic
-    fun queryPointCert(page: Int, pageSize: Int): String {
+    suspend fun queryPointCert(page: Int, pageSize: Int): String {
         val args1 = "[{\"page\":$page,\"pageSize\":$pageSize}]"
         return RequestManager.requestString("alipay.antmember.biz.rpc.member.h5.queryPointCert", args1)
     }
 
     @JvmStatic
-    fun receivePointByUser(certId: String?): String {
+    suspend fun receivePointByUser(certId: String?): String {
         val args1 = "[{\"certId\":$certId}]"
         return RequestManager.requestString("alipay.antmember.biz.rpc.member.h5.receivePointByUser", args1)
     }
 
     @JvmStatic
-    fun queryMemberSigninCalendar(): String {
+    suspend fun queryMemberSigninCalendar(): String {
         return RequestManager.requestString(
             "com.alipay.amic.biz.rpc.signin.h5.queryMemberSigninCalendar",
             "[{\"autoSignIn\":true,\"invitorUserId\":\"\",\"sceneCode\":\"QUERY\"}]"
@@ -36,7 +36,7 @@ object AntMemberRpcCall {
 
     /* 商家开门打卡任务 */
     @JvmStatic
-    fun signIn(activityNo: String?): String {
+    suspend fun signIn(activityNo: String?): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.signIn",
             "[{\"activityNo\":\"$activityNo\"}]"
@@ -44,7 +44,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun signUp(activityNo: String?): String {
+    suspend fun signUp(activityNo: String?): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.signUp",
             "[{\"activityNo\":\"$activityNo\"}]"
@@ -53,7 +53,7 @@ object AntMemberRpcCall {
 
     /* 商家服务 */
     @JvmStatic
-    fun transcodeCheck(): String {
+    suspend fun transcodeCheck(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchbusiness.sign.transcode.check",
             "[{}]"
@@ -61,7 +61,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun merchantSign(): String {
+    suspend fun merchantSign(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchpoint.sqyj.homepage.signin.v1",
             "[{}]"
@@ -69,7 +69,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun taskListQuery(): String {
+    suspend fun taskListQuery(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.task.more.query",
             "[{\"paramMap\":{\"platform\":\"Android\"},\"taskItemCode\":\"\"}]"
@@ -77,7 +77,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun queryActivity(): String {
+    suspend fun queryActivity(): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.query.activity",
             "[{\"scene\":\"activityCenter\"}]"
@@ -86,7 +86,7 @@ object AntMemberRpcCall {
 
     /* 商家服务任务 */
     @JvmStatic
-    fun taskFinish(bizId: String?): String {
+    suspend fun taskFinish(bizId: String?): String {
         return RequestManager.requestString(
             "com.alipay.adtask.biz.mobilegw.service.task.finish",
             "[{\"bizId\":\"$bizId\"}]"
@@ -94,7 +94,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun taskReceive(taskCode: String?): String {
+    suspend fun taskReceive(taskCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.sqyj.task.receive",
             "[{\"compId\":\"ZTS_TASK_RECEIVE\",\"extInfo\":{\"taskCode\":\"$taskCode\"}}]"
@@ -102,7 +102,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun actioncode(actionCode: String?): String {
+    suspend fun actioncode(actionCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.task.query.by.actioncode",
             "[{\"actionCode\":\"$actionCode\"}]"
@@ -110,7 +110,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun produce(actionCode: String?): String {
+    suspend fun produce(actionCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.biz.task.action.produce",
             "[{\"actionCode\":\"$actionCode\"}]"
@@ -118,7 +118,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun ballReceive(ballIds: String?): String {
+    suspend fun ballReceive(ballIds: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchpoint.ball.receive",
             "[{\"ballIds\":[\"$ballIds\"],\"channel\":\"MRCH_SELF\",\"outBizNo\":\"${getUniqueId()}\"}]"
@@ -126,7 +126,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun executeTask(bizParam: String?, bizSubType: String?, bizType: String?, taskConfigId: Long?): String {
+    suspend fun executeTask(bizParam: String?, bizSubType: String?, bizType: String?, taskConfigId: Long?): String {
         return RequestManager.requestString(
             "alipay.antmember.biz.rpc.membertask.h5.executeTask",
             "[{\"bizOutNo\":\"${TimeUtil.getFormatDate().replace("-", "")}\",\"bizParam\":\"$bizParam\",\"bizSubType\":\"$bizSubType\",\"bizType\":\"$bizType\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"myTab\",\"unid\":\"\"},\"syncProcess\":true,\"taskConfigId\":\"$taskConfigId\"}]"
@@ -134,7 +134,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun queryAllStatusTaskList(): String {
+    suspend fun queryAllStatusTaskList(): String {
         return RequestManager.requestString(
             "alipay.antmember.biz.rpc.membertask.h5.queryAllStatusTaskList",
             "[{\"sourceBusiness\":\"signInAd\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"myTab\",\"unid\":\"\"}}]"
@@ -146,7 +146,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v3.querySignInBall
      */
     @JvmStatic
-    fun querySignInBall(): String {
+    suspend fun querySignInBall(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.querySignInBall",
             "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
@@ -158,7 +158,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.continueSignIn
      */
     @JvmStatic
-    fun continueSignIn(): String {
+    suspend fun continueSignIn(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.continueSignIn",
             "[{\"sceneId\":\"GAME_CENTER\",\"signType\":\"NORMAL_SIGN\",\"source\":\"ch_alipaysearch__chsub_normal\"}]"
@@ -170,7 +170,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v4.queryTaskList
      */
     @JvmStatic
-    fun queryGameCenterTaskList(): String {
+    suspend fun queryGameCenterTaskList(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v4.queryTaskList",
             "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
@@ -182,7 +182,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v3.queryPointBallList
      */
     @JvmStatic
-    fun queryPointBallList(): String {
+    suspend fun queryPointBallList(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.queryPointBallList",
             "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
@@ -194,7 +194,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v3.batchReceivePointBall
      */
     @JvmStatic
-    fun batchReceivePointBall(): String {
+    suspend fun batchReceivePointBall(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.batchReceivePointBall",
             "[{}]"
@@ -206,7 +206,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSend
      */
     @JvmStatic
-    fun doTaskSend(taskId: String?): String {
+    suspend fun doTaskSend(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSend",
             "[{\"taskId\":\"$taskId\"}]"
@@ -218,7 +218,7 @@ object AntMemberRpcCall {
      * 对应: com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSignup
      */
     @JvmStatic
-    fun doTaskSignup(taskId: String?): String {
+    suspend fun doTaskSignup(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSignup",
             "[{\"source\":\"ch_alipaysearch__chsub_normal\",\"taskId\":\"$taskId\"}]"
@@ -229,7 +229,7 @@ object AntMemberRpcCall {
      * 芝麻信用首页
      */
     @JvmStatic
-    fun queryHome(): String {
+    suspend fun queryHome(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryHome",
             "[{\"invokeSource\":\"zmHome\",\"miniZmGrayInside\":\"\",\"version\":\"week\"}]"
@@ -241,7 +241,7 @@ object AntMemberRpcCall {
      * 对应: com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryServiceCard
      */
     @JvmStatic
-    fun queryServiceCard(): String {
+    suspend fun queryServiceCard(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryServiceCard",
             "[{}]"
@@ -255,7 +255,7 @@ object AntMemberRpcCall {
      * @param sceneCode   "zml" 对应芝麻粒福利签到, "alchemy" 对应芝麻炼金签到
      */
     @JvmStatic
-    fun zmCheckInCompleteTask(checkInDate: String?, sceneCode: String?): String {
+    suspend fun zmCheckInCompleteTask(checkInDate: String?, sceneCode: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.CheckInTaskRpcManager.completeTask",
             "[{\"checkInDate\":\"$checkInDate\",\"sceneCode\":\"$sceneCode\"}]"
@@ -266,7 +266,7 @@ object AntMemberRpcCall {
      * 获取芝麻信用任务列表
      */
     @JvmStatic
-    fun queryAvailableSesameTask(): String {
+    suspend fun queryAvailableSesameTask(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.queryListV3",
             "[{}]"
@@ -277,7 +277,7 @@ object AntMemberRpcCall {
      * 芝麻信用领取任务
      */
     @JvmStatic
-    fun joinSesameTask(taskTemplateId: String?): String {
+    suspend fun joinSesameTask(taskTemplateId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.promise.PromiseRpcManager.joinActivity",
             "[{\"chInfo\":\"seasameList\",\"joinFromOuter\":false,\"templateId\":\"$taskTemplateId\"}]"
@@ -288,7 +288,7 @@ object AntMemberRpcCall {
      * 芝麻信用获取任务回调
      */
     @JvmStatic
-    fun feedBackSesameTask(taskTemplateId: String?): String {
+    suspend fun feedBackSesameTask(taskTemplateId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.taskFeedback",
             "[{\"actionType\":\"TO_COMPLETE\",\"templateId\":\"$taskTemplateId\"}]",
@@ -300,7 +300,7 @@ object AntMemberRpcCall {
      * 芝麻信用完成任务
      */
     @JvmStatic
-    fun finishSesameTask(recordId: String?): String {
+    suspend fun finishSesameTask(recordId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.promise.PromiseRpcManager.pushActivity",
             "[{\"recordId\":\"$recordId\"}]"
@@ -311,7 +311,7 @@ object AntMemberRpcCall {
      * 查询可收取的芝麻粒
      */
     @JvmStatic
-    fun queryCreditFeedback(): String {
+    suspend fun queryCreditFeedback(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.queryCreditFeedback",
             "[{\"queryPotential\":false,\"size\":20,\"status\":\"UNCLAIMED\"}]"
@@ -322,7 +322,7 @@ object AntMemberRpcCall {
      * 一键收取芝麻粒
      */
     @JvmStatic
-    fun collectAllCreditFeedback(): String {
+    suspend fun collectAllCreditFeedback(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.collectCreditFeedback",
             "[{\"collectAll\":true,\"status\":\"UNCLAIMED\"}]"
@@ -335,7 +335,7 @@ object AntMemberRpcCall {
      * @param creditFeedbackId creditFeedbackId
      */
     @JvmStatic
-    fun collectCreditFeedback(creditFeedbackId: String?): String {
+    suspend fun collectCreditFeedback(creditFeedbackId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.collectCreditFeedback",
             "[{\"collectAll\":false,\"creditFeedbackId\":\"$creditFeedbackId\",\"status\":\"UNCLAIMED\"}]"
@@ -346,7 +346,7 @@ object AntMemberRpcCall {
      * 获取所有可领取的保障金
      */
     @JvmStatic
-    fun queryAvailableCollectInsuredGold(): String {
+    suspend fun queryAvailableCollectInsuredGold(): String {
         return RequestManager.requestString(
             "com.alipay.insgiftbff.insgiftMain.queryMultiSceneWaitToGainList",
             "[{\"entrance\":\"wealth_entry\",\"eventToWaitParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"helpChildParamDTO\":{\"giftProdCode\":\"GIFT_HEALTH_GOLD_CHILD\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"priorityChannelParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"signInParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]}}]",
@@ -358,7 +358,7 @@ object AntMemberRpcCall {
      * 领取保障金
      */
     @JvmStatic
-    fun collectInsuredGold(goldBallObj: JSONObject): String {
+    suspend fun collectInsuredGold(goldBallObj: JSONObject): String {
         return RequestManager.requestString(
             "com.alipay.insgiftbff.insgiftMain.gainMyAndFamilySumInsured",
             goldBallObj.toString(), "insgiftbff", "gainMyAndFamilySumInsured", "insgiftMain"
@@ -367,7 +367,7 @@ object AntMemberRpcCall {
 
     // 安心豆
     @JvmStatic
-    fun querySignInProcess(appletId: String?, scene: String?): String {
+    suspend fun querySignInProcess(appletId: String?, scene: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.bean.querySignInProcess",
             "[{\"appletId\":\"$appletId\",\"scene\":\"$scene\"}]"
@@ -375,7 +375,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun signInTrigger(appletId: String?, scene: String?): String {
+    suspend fun signInTrigger(appletId: String?, scene: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.bean.signInTrigger",
             "[{\"appletId\":\"$appletId\",\"scene\":\"$scene\"}]"
@@ -383,7 +383,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun beanExchangeDetail(itemId: String?): String {
+    suspend fun beanExchangeDetail(itemId: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.onestop.planTrigger",
             "[{\"extParams\":{\"itemId\":\"$itemId\"},\"planCode\":\"bluebean_onestop\",\"planOperateCode\":\"exchangeDetail\"}]"
@@ -391,7 +391,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun beanExchange(itemId: String?, pointAmount: Int): String {
+    suspend fun beanExchange(itemId: String?, pointAmount: Int): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.onestop.planTrigger",
             "[{\"extParams\":{\"itemId\":\"$itemId\",\"pointAmount\":\"$pointAmount\"},\"planCode\":\"bluebean_onestop\",\"planOperateCode\":\"exchange\"}]"
@@ -399,7 +399,7 @@ object AntMemberRpcCall {
     }
 
     @JvmStatic
-    fun queryUserAccountInfo(pointProdCode: String?): String {
+    suspend fun queryUserAccountInfo(pointProdCode: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.point.queryUserAccountInfo",
             "[{\"channel\":\"HiChat\",\"pointProdCode\":\"$pointProdCode\",\"pointUnitType\":\"COUNT\"}]"
@@ -410,7 +410,7 @@ object AntMemberRpcCall {
      * 查询会员信息
      */
     @JvmStatic
-    fun queryMemberInfo(): String {
+    suspend fun queryMemberInfo(): String {
         val data = "[{\"needExpirePoint\":true,\"needGrade\":true,\"needPoint\":true,\"queryScene\":\"POINT_EXCHANGE_SCENE\",\"source\":\"POINT_EXCHANGE_SCENE\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"\",\"unid\":\"\"}}]"
         return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.member.h5.queryMemberInfo", data)
     }
@@ -422,14 +422,14 @@ object AntMemberRpcCall {
      * @param pointBalance 当前可用会员积分
      */
     @JvmStatic
-    fun queryShandieEntityList(userId: String?, pointBalance: String?): String {
+    suspend fun queryShandieEntityList(userId: String?, pointBalance: String?): String {
         val uniqueId = "${System.currentTimeMillis()}$userId" + "94000SR202501061144200394000SR2025010611458003"
         val data = "[{\"blackIds\":[],\"deliveryIdList\":[\"94000SR2025010611442003\",\"94000SR2025010611458003\"],\"filterCityCode\":false,\"filterPointNoEnough\":false,\"filterStockNoEnough\":false,\"pageNum\":1,\"pageSize\":18,\"point\":$pointBalance,\"previewCopyDbId\":\"\",\"queryType\":\"DELIVERY_ID_LIST\",\"source\":\"member_day\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"0yuandui\",\"unid\":\"\"},\"topIds\":[],\"uniqueId\":\"$uniqueId\"}]"
         return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.config.h5.queryShandieEntityList", data)
     }
 
     @JvmStatic
-    fun queryDeliveryZoneDetail(deliveryIdList: List<String>, pageNum: Int, pageSize: Int): String {
+    suspend fun queryDeliveryZoneDetail(deliveryIdList: List<String>, pageNum: Int, pageSize: Int): String {
         // 1. 处理 uniqueId 的拼接逻辑
         // 固定前缀：17665547901390and99999999INTELLIGENT_SORT92524974
         val idsJoined = deliveryIdList.joinToString(",")
@@ -484,7 +484,7 @@ object AntMemberRpcCall {
         return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.exchange.h5.exchangeBenefit", data);
     }*/
     @JvmStatic
-    fun exchangeBenefit(benefitId: String?, itemId: String?, userId: String?): String {
+    suspend fun exchangeBenefit(benefitId: String?, itemId: String?, userId: String?): String {
         val now = System.currentTimeMillis()
 
         // 1. 生成请求ID
@@ -547,7 +547,7 @@ object AntMemberRpcCall {
      * @param pageSize 每页数量
      */
     @JvmStatic
-    fun queryExchangeList(page: Int, pageSize: Int): String {
+    suspend fun queryExchangeList(page: Int, pageSize: Int): String {
         // 参数构造参考抓包: [{"currentPage":1,"formDelivery":"false","pageSize":20,"privilegeSource":"","privilegeTab":"","tabList":[]}]
         val args = "[{\"currentPage\":$page,\"formDelivery\":\"false\",\"pageSize\":$pageSize,\"privilegeSource\":\"\",\"privilegeTab\":\"\",\"tabList\":[]}]"
         return RequestManager.requestString(
@@ -563,7 +563,7 @@ object AntMemberRpcCall {
      * @param templateId 商品ID (awardTemplateId)
      */
     @JvmStatic
-    fun obtainAward(templateId: String?): String {
+    suspend fun obtainAward(templateId: String?): String {
         // 参数构造参考抓包: [{"awardTemplateId":"245213012"}]
         val args = "[{\"awardTemplateId\":\"$templateId\"}]"
         return RequestManager.requestString(
@@ -606,7 +606,7 @@ object AntMemberRpcCall {
      *   independent_component_task_reward_v2_02888775_independent_component_task_reward_query
      */
     @JvmStatic
-    fun annualReviewQueryTasks(): String? {
+    suspend fun annualReviewQueryTasks(): String? {
         try {
             val body = buildAnnualReviewBasePayload()
             val components = JSONObject()
@@ -629,7 +629,7 @@ object AntMemberRpcCall {
      *   independent_component_task_reward_v2_02888775_independent_component_task_reward_apply
      */
     @JvmStatic
-    fun annualReviewApplyTask(code: String?): String? {
+    suspend fun annualReviewApplyTask(code: String?): String? {
         try {
             val body = buildAnnualReviewBasePayload()
             val compBody = JSONObject()
@@ -658,7 +658,7 @@ object AntMemberRpcCall {
      *   independent_component_task_reward_v2_02888775_independent_component_task_reward_process
      */
     @JvmStatic
-    fun annualReviewProcessTask(code: String?, recordNo: String?): String? {
+    suspend fun annualReviewProcessTask(code: String?, recordNo: String?): String? {
         try {
             val body = buildAnnualReviewBasePayload()
             val compBody = JSONObject()
@@ -685,7 +685,7 @@ object AntMemberRpcCall {
      * 在任务完成后，根据 code + recordNo 领取成长值奖励。
      */
     @JvmStatic
-    fun annualReviewGetReward(code: String?, recordNo: String?): String? {
+    suspend fun annualReviewGetReward(code: String?, recordNo: String?): String? {
         try {
             val body = buildAnnualReviewBasePayload()
             val compBody = JSONObject()
@@ -716,7 +716,7 @@ object AntMemberRpcCall {
      * 查询芝麻树首页
      */
     @JvmStatic
-    fun zhimaTreeHomePage(): String? {
+    suspend fun zhimaTreeHomePage(): String? {
         try {
             val args = JSONObject()
             args.put("operation", "ZHIMA_TREE_HOME_PAGE")
@@ -736,7 +736,7 @@ object AntMemberRpcCall {
      * 净化芝麻树 (消耗净化值)
      */
     @JvmStatic
-    fun zhimaTreeCleanAndPush(treeCode: String?): String? {
+    suspend fun zhimaTreeCleanAndPush(treeCode: String?): String? {
         try {
             val args = JSONObject()
             args.put("operation", "ZHIMA_TREE_CLEAN_AND_PUSH")
@@ -760,7 +760,7 @@ object AntMemberRpcCall {
      * 查询做任务赚净化值列表
      */
     @JvmStatic
-    fun queryRentGreenTaskList(): String? {
+    suspend fun queryRentGreenTaskList(): String? {
         try {
             val args = JSONObject()
             args.put("operation", "RENT_GREEN_TASK_LIST_QUERY")
@@ -785,7 +785,7 @@ object AntMemberRpcCall {
      * @param stageCode "send" 表示去完成/开始, "receive" 表示领取奖励
      */
     @JvmStatic
-    fun rentGreenTaskFinish(taskId: String?, stageCode: String?): String? {
+    suspend fun rentGreenTaskFinish(taskId: String?, stageCode: String?): String? {
         try {
             val args = JSONObject()
             args.put("operation", "RENT_GREEN_TASK_FINISH")
@@ -810,7 +810,7 @@ object AntMemberRpcCall {
      * [新] 福利中心首页
      */
     @JvmStatic
-    fun queryWelfareHome(): String? {
+    suspend fun queryWelfareHome(): String? {
         try {
             val args = JSONObject()
             args.put("isResume", true)
@@ -828,7 +828,7 @@ object AntMemberRpcCall {
      * [新] 任务查询推送
      */
     @JvmStatic
-    fun taskQueryPush(taskId: String?): String? {
+    suspend fun taskQueryPush(taskId: String?): String? {
         try {
             val args = JSONObject()
             args.put("mode", 1) // 固定参数
@@ -849,7 +849,7 @@ object AntMemberRpcCall {
      * @param type "SIGN"
      */
     @JvmStatic
-    fun welfareCenterTrigger(type: String?): String? {
+    suspend fun welfareCenterTrigger(type: String?): String? {
         try {
             val args = JSONObject()
             args.put("type", type)
@@ -866,7 +866,7 @@ object AntMemberRpcCall {
      * 任务触发/报名
      */
     @JvmStatic
-    fun goldBillTaskTrigger(taskId: String?): String? {
+    suspend fun goldBillTaskTrigger(taskId: String?): String? {
         try {
             val args = JSONObject()
             args.put("taskId", taskId)
@@ -884,7 +884,7 @@ object AntMemberRpcCall {
      * 用于获取最新的可用数量、基金ID (productId) 和 赠送份数 (bonusAmount)
      */
     @JvmStatic
-    fun queryConsumeHome(): String? {
+    suspend fun queryConsumeHome(): String? {
         try {
             val args = JSONObject()
             args.put("tabBubbleDeliverParam", JSONObject())
@@ -906,7 +906,7 @@ object AntMemberRpcCall {
      * @param bonusAmount 额外赠送数量
      */
     @JvmStatic
-    fun submitConsume(amount: Int, productId: String?, bonusAmount: Int): String? {
+    suspend fun submitConsume(amount: Int, productId: String?, bonusAmount: Int): String? {
         try {
             val args = JSONObject()
             args.put("exchangeAmount", amount)
@@ -931,7 +931,7 @@ object AntMemberRpcCall {
      * @param month 月份
      */
     @JvmStatic
-    fun queryStickerCanReceive(year: String?, month: String?): String {
+    suspend fun queryStickerCanReceive(year: String?, month: String?): String {
         val data = "[{" +
                 "\"isFirstShow\":\"false\"," +
                 "\"month\":\"$month\"," +
@@ -946,7 +946,7 @@ object AntMemberRpcCall {
      * @param stickerIds 贴纸ID集合
      */
     @JvmStatic
-    fun receiveSticker(year: String?, month: String?, stickerIds: List<String>?): String? {
+    suspend fun receiveSticker(year: String?, month: String?, stickerIds: List<String>?): String? {
         if (stickerIds.isNullOrEmpty()) return null
 
         // 构建 stickerIds 的 JSON 数组字符串
@@ -985,7 +985,7 @@ object AntMemberRpcCall {
          * @param invokeVersion   抓包中的 invokeVersion，例如 "1.0.2025.10.27"
          */
         @JvmStatic
-        fun queryGrowthGuideToDoList(guideBehaviorId: String?, invokeVersion: String?): String {
+        suspend fun queryGrowthGuideToDoList(guideBehaviorId: String?, invokeVersion: String?): String {
             var guideBehaviorId = guideBehaviorId
             var invokeVersion = invokeVersion
             if (guideBehaviorId.isNullOrEmpty()) {
@@ -1017,7 +1017,7 @@ object AntMemberRpcCall {
          * behaviorId 直接来自 queryToDoList 返回的 toDoList[i].behaviorId。
          */
         @JvmStatic
-        fun openBehaviorCollect(behaviorId: String?): String {
+        suspend fun openBehaviorCollect(behaviorId: String?): String {
             val data = "[{\"behaviorId\":\"$behaviorId\"}]"
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthbehavior.apiGrowthBehaviorRpcManager.openBehaviorCollect",
@@ -1035,7 +1035,7 @@ object AntMemberRpcCall {
          * @param behaviorId 行为 ID（例如 "meiriwenda"）
          */
         @JvmStatic
-        fun queryDailyQuiz(behaviorId: String?): String {
+        suspend fun queryDailyQuiz(behaviorId: String?): String {
             val data = "[{\"behaviorId\":\"$behaviorId\"}]"
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthtask.api.GrowthTaskRpcManager.queryDailyQuiz",
@@ -1065,7 +1065,7 @@ object AntMemberRpcCall {
          * @param answerStatus  答案状态：RIGHT / WRONG
          */
         @JvmStatic
-        fun pushDailyTask(
+        suspend fun pushDailyTask(
             behaviorId: String?, bizDate: Long,
             answerId: String?, questionId: String?,
             answerStatus: String?
@@ -1114,7 +1114,7 @@ object AntMemberRpcCall {
          * @param answerStatus RIGHT / WRONG，默认 RIGHT
          */
         @JvmStatic
-        fun pushVideoQuizTask(
+        suspend fun pushVideoQuizTask(
             bizDate: Long,
             answerId: String?,
             questionId: String?,
@@ -1148,7 +1148,7 @@ object AntMemberRpcCall {
          * 接口: com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryScoreProgress
          */
         @JvmStatic
-        fun queryScoreProgress(): String? {
+        suspend fun queryScoreProgress(): String? {
             try {
                 val args = JSONObject()
                 args.put("needTotalProcess", "TRUE")
@@ -1169,7 +1169,7 @@ object AntMemberRpcCall {
          * 接口: com.antgroup.zmxy.zmcustprod.biz.rpc.growthbehavior.api.GrowthBehaviorRpcManager.collectProgressBall
          */
         @JvmStatic
-        fun collectProgressBall(ballIdList: JSONArray?): String? {
+        suspend fun collectProgressBall(ballIdList: JSONArray?): String? {
             try {
                 val args = JSONObject()
                 args.put("ballIdList", ballIdList) // 直接用 JSONArray
@@ -1188,7 +1188,7 @@ object AntMemberRpcCall {
              * 芝麻炼金/积分首页
              */
             @JvmStatic
-            fun alchemyQueryHome(): String {
+            suspend fun alchemyQueryHome(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.queryHome",
                     "[{}]"
@@ -1201,7 +1201,7 @@ object AntMemberRpcCall {
              * Params: [null]
              */
             @JvmStatic
-            fun alchemyExecute(): String {
+            suspend fun alchemyExecute(): String {
                 // 日志中 requestData 为 [null]
                 return RequestManager.requestString("com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.alchemy", "[{}]")
             }
@@ -1216,7 +1216,7 @@ object AntMemberRpcCall {
              * Method: com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.CheckInTaskRpcManager.queryTaskLists
              */
             @JvmStatic
-            fun alchemyQueryCheckIn(scenecode: String?): String {
+            suspend fun alchemyQueryCheckIn(scenecode: String?): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.CheckInTaskRpcManager.queryTaskLists",
                     "[{\"sceneCode\":\"$scenecode\",\"version\":\"$Version\"}]"
@@ -1228,7 +1228,7 @@ object AntMemberRpcCall {
              * Method: com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.TimeLimitedTaskRpcManager.queryTask
              */
             @JvmStatic
-            fun alchemyQueryTimeLimitedTask(): String {
+            suspend fun alchemyQueryTimeLimitedTask(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.TimeLimitedTaskRpcManager.queryTask",
                     "[{}]"
@@ -1259,7 +1259,7 @@ object AntMemberRpcCall {
              * }
              */
             @JvmStatic
-            fun alchemyCompleteTimeLimitedTask(templateId: String?): String {
+            suspend fun alchemyCompleteTimeLimitedTask(templateId: String?): String {
                 val body = "[{\n" +
                         "    \"templateId\": \"$templateId\"\n" +
                         "}]"
@@ -1274,7 +1274,7 @@ object AntMemberRpcCall {
              * Method: com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.queryListV3
              */
             @JvmStatic
-            fun alchemyQueryListV3(): String {
+            suspend fun alchemyQueryListV3(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.queryListV3",
                     "[{\"chInfo\":\"\",\"deliverStatus\":\"\",\"deliveryTemplateId\":\"\",\"searchSubscribeTask\":true,\"version\":\"alchemy\"}]"
@@ -1287,7 +1287,7 @@ object AntMemberRpcCall {
              * Method: com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.claimAward
              */
             @JvmStatic
-            fun claimAward(): String {
+            suspend fun claimAward(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.claimAward",
                     "[{}]"

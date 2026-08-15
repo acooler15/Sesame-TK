@@ -4,7 +4,7 @@ import fansirsqi.xposed.sesame.hook.RequestManager.requestString
 
 object EcoProtectionRpcCall {
     private const val VERSION = "20230522"
-    fun homePage(selectCityCode: String?): String {
+    suspend fun homePage(selectCityCode: String?): String {
         return requestString(
             "alipay.greenmatrix.rpc.h5.ancienttree.homePage",
             ("[{\"cityCode\":\"330100\",\"selectCityCode\":\"" + selectCityCode
@@ -12,7 +12,7 @@ object EcoProtectionRpcCall {
         )
     }
 
-    fun queryTreeItemsForExchange(cityCode: String?): String {
+    suspend fun queryTreeItemsForExchange(cityCode: String?): String {
         return requestString(
             "alipay.antforest.forest.h5.queryTreeItemsForExchange",
             ("[{\"cityCode\":\"" + cityCode
@@ -21,14 +21,14 @@ object EcoProtectionRpcCall {
         )
     }
 
-    fun districtDetail(districtCode: String?): String {
+    suspend fun districtDetail(districtCode: String?): String {
         return requestString(
             "alipay.greenmatrix.rpc.h5.ancienttree.districtDetail",
             "[{\"districtCode\":\"" + districtCode + "\",\"source\":\"antforesthome\"}]"
         )
     }
 
-    fun projectDetail(ancientTreeProjectId: String?, cityCode: String?): String {
+    suspend fun projectDetail(ancientTreeProjectId: String?, cityCode: String?): String {
         return requestString(
             "alipay.greenmatrix.rpc.h5.ancienttree.projectDetail",
             ("[{\"ancientTreeProjectId\":\"" + ancientTreeProjectId
@@ -37,7 +37,7 @@ object EcoProtectionRpcCall {
         )
     }
 
-    fun protect(activityId: String?, ancientTreeProjectId: String?, cityCode: String?): String {
+    suspend fun protect(activityId: String?, ancientTreeProjectId: String?, cityCode: String?): String {
         return requestString(
             "alipay.greenmatrix.rpc.h5.ancienttree.protect",
             ("[{\"ancientTreeActivityId\":\"" + activityId + "\",\"ancientTreeProjectId\":\""

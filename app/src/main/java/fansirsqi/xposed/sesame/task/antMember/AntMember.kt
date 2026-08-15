@@ -206,10 +206,9 @@ class AntMember : ModelTask() {
         return modelFields
     }
 
-    override fun runJava() {
+    override suspend fun runSuspend() {
         // 使用协程上下文运行
-        runBlocking {
-            try {
+        try {
                 record(TAG, "执行开始-${getName()}")
                 // 异步获取位置信息-for 2101
                 requestLocationSuspend()
@@ -330,10 +329,9 @@ class AntMember : ModelTask() {
             } finally {
                 record(TAG, "执行结束-${getName()}")
             }
-        }
     }
 
-    private fun handleGrowthGuideTasks() {
+    private suspend fun handleGrowthGuideTasks() {
         try {
             record("$TAG.", "开始执行信誉任务领取")
             var resp: String?
@@ -954,7 +952,7 @@ class AntMember : ModelTask() {
      * 基于 HomeV8RpcManager.queryServiceCard 返回的 serviceCardVOList
      * 通过 itemAttrs.checkInModuleVO.currentDateCheckInTaskVO 判断今日是否可签到
      */
-    private fun doSesameZmlCheckIn() {
+    private suspend fun doSesameZmlCheckIn() {
         try {
             val checkInRes = AntMemberRpcCall.Zmxy.Alchemy.alchemyQueryCheckIn("zml")
             val checkInJo = JSONObject(checkInRes)
@@ -995,7 +993,7 @@ class AntMember : ModelTask() {
         }
     }
 
-    private fun doSesameAlchemyNextDayAward() = CoroutineUtils.run {
+    private suspend fun doSesameAlchemyNextDayAward() = CoroutineUtils.run {
         try {
             // ===== 调用领取奖励 RPC =====
 
@@ -1138,7 +1136,7 @@ class AntMember : ModelTask() {
      * @param doSignIn 是否执行签到
      * @param doConsume 是否执行提取
      */
-    private fun doGoldTicketTask(doSignIn: Boolean, doConsume: Boolean) {
+    private suspend fun doGoldTicketTask(doSignIn: Boolean, doConsume: Boolean) {
         try {
             record("开始执行黄金票...")
 
@@ -1171,7 +1169,7 @@ class AntMember : ModelTask() {
     /**
      * 黄金票签到逻辑 (使用新接口 welfareCenterTrigger)
      */
-    private fun doGoldTicketSignIn(homeResult: JSONObject) {
+    private suspend fun doGoldTicketSignIn(homeResult: JSONObject) {
         try {
             val signObj = homeResult.optJSONObject("sign")
             if (signObj != null) {
@@ -1202,7 +1200,7 @@ class AntMember : ModelTask() {
     /**
      * 黄金票提取逻辑 (使用新接口 queryConsumeHome 和 submitConsume)
      */
-    private fun doGoldTicketConsume() {
+    private suspend fun doGoldTicketConsume() {
         try {
             record("黄金票🎫[准备检查余额及提取]")
 
@@ -1519,7 +1517,7 @@ class AntMember : ModelTask() {
         }
     }
 
-    private fun beanSignIn() {
+    private suspend fun beanSignIn() {
         try {
             try {
                 val signInProcessStr = AntMemberRpcCall.querySignInProcess("AP16242232", "INS_BLUE_BEAN_SIGN")
@@ -1549,7 +1547,7 @@ class AntMember : ModelTask() {
         }
     }
 
-    private fun beanExchangeBubbleBoost() {
+    private suspend fun beanExchangeBubbleBoost() {
         try {
             // 检查RPC调用是否可用
             try {
@@ -2141,7 +2139,7 @@ class AntMember : ModelTask() {
         return prizeName
     }
 
-    private fun doTaskAction(taskId: String?, stageCode: String?): Boolean {
+    private suspend fun doTaskAction(taskId: String?, stageCode: String?): Boolean {
         try {
             val s = AntMemberRpcCall.rentGreenTaskFinish(taskId, stageCode) ?: return false
             val json = JSONObject(s)
@@ -2220,7 +2218,7 @@ class AntMember : ModelTask() {
      * 查询 + 自动领取贴纸
      */
     @SuppressLint("DefaultLocale")
-    fun queryAndCollectStickers() {
+    suspend fun queryAndCollectStickers() {
         try {
             if (hasFlagToday(StatusFlags.FLAG_ANTMEMBER_STICKER)) {
                 record(TAG, "今日已兑换贴纸，跳过")
@@ -2310,7 +2308,7 @@ class AntMember : ModelTask() {
          * 查询 + 自动领取可领取球（精简一行输出领取信息）
          */
         @SuppressLint("DefaultLocale")
-        fun queryAndCollect() {
+        suspend fun queryAndCollect() {
             try {
                 // 1. 查询进度球状态
                 val queryResp = AntMemberRpcCall.Zmxy.queryScoreProgress()
@@ -2347,7 +2345,7 @@ class AntMember : ModelTask() {
          * 检查是否满足运行芽麻信用任务的条件
          * @return bool
          */
-        private fun checkSesameCanRun(): Boolean {
+        private suspend fun checkSesameCanRun(): Boolean {
             try {
                 val s = AntMemberRpcCall.queryHome()
                 val jo = JSONObject(s)
@@ -2493,7 +2491,7 @@ class AntMember : ModelTask() {
         /**
          * 商家开门打卡签到
          */
-        private fun kmdkSignIn() = CoroutineUtils.run {
+        private suspend fun kmdkSignIn() = CoroutineUtils.run {
             try {
                 val s = AntMemberRpcCall.queryActivity()
                 val jo = JSONObject(s)
@@ -2556,7 +2554,7 @@ class AntMember : ModelTask() {
         /**
          * 商家积分签到
          */
-        private fun doMerchantSign() = CoroutineUtils.run {
+        private suspend fun doMerchantSign() = CoroutineUtils.run {
             try {
                 val s = AntMemberRpcCall.merchantSign()
                 var jo = JSONObject(s)
@@ -2776,7 +2774,7 @@ class AntMember : ModelTask() {
     /**
      * 执行具体的芝麻粒兑换请求
      */
-    private fun exchangeSesameGift(templateId: String, name: String, point: String): Boolean {
+    private suspend fun exchangeSesameGift(templateId: String, name: String, point: String): Boolean {
         try {
             // 调用兑换接口
             val resString = AntMemberRpcCall.obtainAward(templateId)

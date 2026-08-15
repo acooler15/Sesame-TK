@@ -8,7 +8,7 @@ import fansirsqi.xposed.sesame.hook.RequestManager
  */
 object DadaDailyRpcCall {
     @JvmStatic
-    fun home(activityId: String?): String {
+    suspend fun home(activityId: String?): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dadaDaily.home",
             "[{\"activityId\":$activityId,\"dadaVersion\":\"1.3.0\",\"version\":1}]"
@@ -16,7 +16,7 @@ object DadaDailyRpcCall {
     }
 
     @JvmStatic
-    fun submit(activityId: String?, answer: String?, questionId: Long?): String {
+    suspend fun submit(activityId: String?, answer: String?, questionId: Long?): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dadaDaily.submit",
             "[{\"activityId\":$activityId,\"answer\":\"$answer\",\"dadaVersion\":\"1.3.0\",\"questionId\":$questionId,\"version\":1}]"

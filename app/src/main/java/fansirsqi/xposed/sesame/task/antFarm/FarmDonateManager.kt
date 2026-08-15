@@ -8,7 +8,7 @@ import org.json.JSONObject
 
 internal class FarmDonateManager(private val farm: AntFarm) {
 
-    internal fun harvestProduce(farmId: String?) {
+    internal suspend fun harvestProduce(farmId: String?) {
         try {
             val s = AntFarmRpcCall.harvestProduce(farmId)
             val jo = JSONObject(s)
@@ -27,7 +27,7 @@ internal class FarmDonateManager(private val farm: AntFarm) {
     }
 
     /* 捐赠爱心鸡蛋 */
-    internal fun handleDonation(donationType: Int) {
+    internal suspend fun handleDonation(donationType: Int) {
         try {
             val s = AntFarmRpcCall.listActivityInfo()
             var jo = JSONObject(s)
@@ -66,7 +66,7 @@ internal class FarmDonateManager(private val farm: AntFarm) {
         }
     }
 
-    private fun performDonation(activityId: String?, activityName: String?): Boolean {
+    private suspend fun performDonation(activityId: String?, activityName: String?): Boolean {
         try {
             val s = AntFarmRpcCall.donation(activityId, 1)
             val donationResponse = JSONObject(s)

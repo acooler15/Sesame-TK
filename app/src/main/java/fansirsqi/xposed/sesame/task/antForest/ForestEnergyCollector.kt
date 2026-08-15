@@ -162,7 +162,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
      *
      * @param wateringBubbles 包含不同类型金球的对象数组
      */
-    internal fun collectWateringBubbles(wateringBubbles: JSONArray) {
+    internal suspend fun collectWateringBubbles(wateringBubbles: JSONArray) {
         for (i in 0..<wateringBubbles.length()) {
             try {
                 val wateringBubble = wateringBubbles.getJSONObject(i)
@@ -184,7 +184,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
         }
     }
 
-    private fun collectWater(wateringBubble: JSONObject) {
+    private suspend fun collectWater(wateringBubble: JSONObject) {
         try {
             val id = wateringBubble.getLong("id")
             val response = AntForestRpcCall.collectEnergy("jiaoshui", task.selfId, id)
@@ -194,7 +194,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
         }
     }
 
-    private fun collectRebornEnergy() {
+    private suspend fun collectRebornEnergy() {
         try {
             val response = AntForestRpcCall.collectRebornEnergy()
             processCollectResult(response, "收取金球🍯复活")
@@ -203,7 +203,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
         }
     }
 
-    private fun collectReturnEnergy(wateringBubble: JSONObject) {
+    private suspend fun collectReturnEnergy(wateringBubble: JSONObject) {
         try {
             val friendId = wateringBubble.getString("userId")
             val id = wateringBubble.getLong("id")
@@ -600,7 +600,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
      */
     private fun interface RpcSupplier<T> {
         @Throws(Exception::class)
-        fun get(): T?
+        suspend fun get(): T?
     }
 
     /**
@@ -790,7 +790,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
      * 使用找能量功能收取好友能量（协程版本 - 修正版）
      * 逻辑：服务器自动轮询，返回空 friendId 代表无更多目标
      */
-    internal fun collectEnergyByTakeLook() {
+    internal suspend fun collectEnergyByTakeLook() {
         // 1. 冷却检查
         val currentTime = System.currentTimeMillis()
         if (currentTime < nextTakeLookTime) {
@@ -917,7 +917,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
     /**
      * 7点-7点30分快速收取能量，跳过道具判断
      */
-    private fun quickcollectEnergyByTakeLook() {
+    private suspend fun quickcollectEnergyByTakeLook() {
         // 1. 冷却检查
         val currentTime = System.currentTimeMillis()
         if (currentTime < nextTakeLookTime) {
@@ -1153,7 +1153,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
      * @param flag 标记是普通好友还是PK好友
      */
     @Throws(Exception::class)
-    private fun processEnergyInternal(obj: JSONObject, flag: String?) {
+    private suspend fun processEnergyInternal(obj: JSONObject, flag: String?) {
         if (AntForest.errorWait) return
         val userId = obj.getString("userId")
         if (userId == task.selfId) return  // 跳过自己
@@ -1223,7 +1223,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
     /**
      * 协程版本：收取排名靠前好友能量
      */
-    private fun collectGiftBox(userHomeObj: JSONObject) {
+    private suspend fun collectGiftBox(userHomeObj: JSONObject) {
         try {
             val giftBoxInfo = userHomeObj.optJSONObject("giftBoxInfo")
             val userEnergy = userHomeObj.optJSONObject("userEnergy")
@@ -1270,7 +1270,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
                 val userId = collectEnergyEntity.userId
                 // 从 CollectEnergyEntity 中读取是否跳过道具检查的标记
                 val skipPropCheck = collectEnergyEntity.skipPropCheck ?: false
-                task.itemManager.usePropBeforeCollectEnergy(userId, skipPropCheck)
+                runBlocking { task.itemManager.usePropBeforeCollectEnergy(userId, skipPropCheck) }
                 val rpcEntity = collectEnergyEntity.rpcEntity!!
                 val needDouble = collectEnergyEntity.needDouble
                 val needRetry = collectEnergyEntity.needRetry
@@ -1301,7 +1301,9 @@ internal class ForestEnergyCollector(private val task: AntForest) {
                     collectEnergyLockLimit.setForce(startTime)
                 }
 
-                requestString(rpcEntity, 0, 0)
+                runBlocking {
+                    requestString(rpcEntity, 0, 0)
+                }
                 val spendTime = System.currentTimeMillis() - startTime
                 if (task.balanceNetworkDelay!!.value) {
                     delayTimeMath.nextInteger((spendTime / 3).toInt())
@@ -1437,7 +1439,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
                             if (returnCount > 0) {
                                 // ✅ 调用 returnFriendWater 增加通知好友开关
                                 val notify = task.notifyFriend!!.value // 从配置获取
-                                task.returnFriendWater(userId, bizNo, 1, returnCount, notify)
+                                runBlocking { task.returnFriendWater(userId, bizNo, 1, returnCount, notify) }
                             }
                         }
                     }
@@ -1477,7 +1479,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
     /**
      * 立即收取自己能量（专用方法）
      */
-    internal fun collectSelfEnergyImmediately(tag: String = "立即收取") {
+    internal suspend fun collectSelfEnergyImmediately(tag: String = "立即收取") {
         try {
             // querySelfHome 内部会处理 updateSelfHomePage 逻辑，确保道具倒计时等状态同步
             val selfHomeObj = task.querySelfHome()

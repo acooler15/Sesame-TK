@@ -3,6 +3,7 @@ package fansirsqi.xposed.sesame.task.antSports
 import android.annotation.SuppressLint
 import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.ResChecker
@@ -98,7 +99,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 新版行走路线主流程 主入口
      */
-    internal fun walk() {
+    internal suspend fun walk() {
         try {
             val user = JSONObject(AntSportsRpcCall.queryUser())
             if (!ResChecker.checkRes(AntSports.TAG, user)) {
@@ -153,7 +154,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 新版路线行走一步
      */
-    private fun walkGo(pathId: String, useStepCount: Int, pathName: String) {
+    private suspend fun walkGo(pathId: String, useStepCount: Int, pathName: String) {
         try {
             val date = Date()
             @SuppressLint("SimpleDateFormat") val sdf = SimpleDateFormat("yyyy-MM-dd")
@@ -172,7 +173,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 查询世界地图
      */
-    private fun queryWorldMap(themeId: String?): JSONObject? {
+    private suspend fun queryWorldMap(themeId: String?): JSONObject? {
         var theme: JSONObject? = null
         if (themeId.isNullOrEmpty()) return null
         try {
@@ -192,7 +193,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
      * @brief 查询指定城市的路线详情
      * @param cityId 城市 ID
      */
-    private fun queryCityPath(cityId: String): JSONObject? {
+    private suspend fun queryCityPath(cityId: String): JSONObject? {
         var city: JSONObject? = null
         try {
             val jo = JSONObject(AntSportsRpcCall.queryCityPath(cityId))
@@ -235,7 +236,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
 
 
     //这里会返回路线详情
-    private fun queryPath(pathId: String): JSONObject? {
+    private suspend fun queryPath(pathId: String): JSONObject? {
         try {
             val dateStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
             val response = AntSportsRpcCall.queryPath(dateStr, pathId)
@@ -275,7 +276,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 新版路线开启宝箱并打印奖励
      */
-    private fun receiveEvent(eventBillNo: String) {
+    private suspend fun receiveEvent(eventBillNo: String) {
         try {
             val jo = JSONObject(AntSportsRpcCall.receiveEvent(eventBillNo))
             if (!ResChecker.checkRes(AntSports.TAG, jo)) return
@@ -296,7 +297,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 根据主题 ID 挑选可加入的 pathId
      */
-    private fun queryJoinPath(themeId: String?): String? {
+    private suspend fun queryJoinPath(themeId: String?): String? {
         // 🎯 自定义路径优先
         if (sports.walkCustomPath.value) {
             return sports.walkCustomPathId.value
@@ -352,7 +353,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 加入新版路线
      */
-    private fun joinPath(pathId: String?) {
+    private suspend fun joinPath(pathId: String?) {
         var realPathId = pathId
         if (realPathId == null) {
             // 默认龙年祈福线
@@ -391,7 +392,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 旧版行走路线首页逻辑（开宝箱 + 行走 + 加入路线）
      */
-    internal fun queryMyHomePage(loader: ClassLoader) {
+    internal suspend fun queryMyHomePage(loader: ClassLoader) {
         try {
             var s = AntSportsRpcCall.queryMyHomePage()
             var jo = JSONObject(s)
@@ -448,7 +449,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 旧版路线加入逻辑（根据可解锁路径列表）
      */
-    private fun join(
+    private suspend fun join(
         loader: ClassLoader,
         allPathBaseInfoList: JSONArray,
         otherAllPathBaseInfoList: JSONArray,
@@ -506,7 +507,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 旧版路线行走逻辑
      */
-    private fun go(loader: ClassLoader, day: String, rankCacheKey: String, stepCount: Int, title: String) {
+    private suspend fun go(loader: ClassLoader, day: String, rankCacheKey: String, stepCount: Int, title: String) {
         try {
             val s = AntSportsRpcCall.go(day, rankCacheKey, stepCount)
             val jo = JSONObject(s)
@@ -532,7 +533,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 解析旧版宝箱模型并按时间安排子任务开箱
      */
-    private fun parseTreasureBoxModel(loader: ClassLoader, jo: JSONObject, rankCacheKey: String) {
+    private suspend fun parseTreasureBoxModel(loader: ClassLoader, jo: JSONObject, rankCacheKey: String) {
         try {
             val canOpenTime = jo.getString("canOpenTime")
             val issueTime = jo.getString("issueTime")
@@ -560,7 +561,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                                 Log.record(AntSports.TAG, "蹲点开箱开始")
                                 val startTime = System.currentTimeMillis()
                                 while (System.currentTimeMillis() - startTime < 5_000) {
-                                    if (openTreasureBox(boxNo, userId) > 0) {
+                                    if (CoroutineUtils.runBlockingSafe { openTreasureBox(boxNo, userId) } ?: 0 > 0) {
                                         break
                                     }
                                     GlobalThreadPools.sleepCompat(200)
@@ -580,7 +581,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
      * @brief 旧版宝箱开启
      * @return 获得的奖励数量
      */
-    private fun openTreasureBox(boxNo: String, userId: String): Int {
+    private suspend fun openTreasureBox(boxNo: String, userId: String): Int {
         try {
             val s = AntSportsRpcCall.openTreasureBox(boxNo, userId)
             var jo = JSONObject(s)
@@ -612,7 +613,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 查询慈善项目列表并执行捐赠
      */
-    internal fun queryProjectList(loader: ClassLoader) {
+    internal suspend fun queryProjectList(loader: ClassLoader) {
         try {
             var jo = JSONObject(AntSportsRpcCall.queryProjectList(0))
             if (ResChecker.checkRes(AntSports.TAG, jo)) {
@@ -646,7 +647,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 执行一次慈善捐赠
      */
-    private fun donate(loader: ClassLoader, donateCharityCoin: Int, projectId: String, title: String) {
+    private suspend fun donate(loader: ClassLoader, donateCharityCoin: Int, projectId: String, title: String) {
         try {
             val s = AntSportsRpcCall.donate(donateCharityCoin, projectId)
             val jo = JSONObject(s)
@@ -663,7 +664,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
     /**
      * @brief 查询行走步数，并根据条件自动捐步
      */
-    internal fun queryWalkStep(loader: ClassLoader) {
+    internal suspend fun queryWalkStep(loader: ClassLoader) {
         try {
             var s = AntSportsRpcCall.queryWalkStep()
             var jo = JSONObject(s)

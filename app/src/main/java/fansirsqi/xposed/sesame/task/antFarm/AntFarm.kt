@@ -1838,7 +1838,11 @@ class AntFarm : ModelTask() {
                                     }
                                 }
                             }
-                        } catch (_: Exception) { }
+                        } catch (e: CancellationException) {
+                            throw e  // 协程取消属于正常控制流程，必须重新抛出
+                        } catch (e: Exception) {
+                            Log.printStackTrace(TAG, "解析庄园签到奖励异常", e)
+                        }
 
                         val haveEnoughSpace = if (needFarmGame) foodSpace > gameRewardMax!!.value else foodSpace >= awardCount
                         val shouldSign = signRegardless!!.value || timeReached || haveEnoughSpace

@@ -25,6 +25,7 @@ import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.SesameGiftMap
 import fansirsqi.xposed.sesame.util.maps.UserMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -376,7 +377,10 @@ class AntMember : ModelTask() {
                 var task: JSONObject? = null
                 try {
                     task = toDoList.optJSONObject(i)
-                } catch (_: Throwable) {
+                } catch (e: CancellationException) {
+                    throw e  // 协程取消属于正常控制流程，必须重新抛出
+                } catch (e: Exception) {
+                    Log.printStackTrace(TAG, "handleGrowthGuideTasks 解析待办任务异常", e)
                 }
 
                 if (task == null) continue
@@ -638,9 +642,12 @@ class AntMember : ModelTask() {
                     val it = components.keys()
                     if (it.hasNext()) {
                         queryComp = components.optJSONObject(it.next())
+                        }
+                    } catch (e: CancellationException) {
+                        throw e  // 协程取消属于正常控制流程，必须重新抛出
+                    } catch (e: Exception) {
+                        Log.printStackTrace(TAG, "doAnnualReview 兜底取查询组件异常", e)
                     }
-                } catch (_: Throwable) {
-                }
             }
             if (queryComp == null) {
                 record("$TAG.doAnnualReview", "年度回顾[未找到查询组件]")
@@ -734,7 +741,10 @@ class AntMember : ModelTask() {
                         if (it2.hasNext()) {
                             applyComp = applyComps.optJSONObject(it2.next())
                         }
-                    } catch (_: Throwable) {
+                    } catch (e: CancellationException) {
+                        throw e  // 协程取消属于正常控制流程，必须重新抛出
+                    } catch (e: Exception) {
+                        Log.printStackTrace(TAG, "doAnnualReview 兜底取申请组件异常", e)
                     }
                 }
                 if (applyComp == null || !applyComp.optBoolean("isSuccess", true)) {
@@ -793,7 +803,10 @@ class AntMember : ModelTask() {
                         if (it3.hasNext()) {
                             processComp = processComps.optJSONObject(it3.next())
                         }
-                    } catch (_: Throwable) {
+                    } catch (e: CancellationException) {
+                        throw e  // 协程取消属于正常控制流程，必须重新抛出
+                    } catch (e: Exception) {
+                        Log.printStackTrace(TAG, "doAnnualReview 兜底取进度组件异常", e)
                     }
                 }
                 if (processComp == null || !processComp.optBoolean("isSuccess", true)) {
@@ -829,7 +842,10 @@ class AntMember : ModelTask() {
                                             if (it4.hasNext()) {
                                                 rewardComp = rewardComps.optJSONObject(it4.next())
                                             }
-                                        } catch (_: Throwable) {
+                                        } catch (e: CancellationException) {
+                                            throw e  // 协程取消属于正常控制流程，必须重新抛出
+                                        } catch (e: Exception) {
+                                            Log.printStackTrace(TAG, "doAnnualReview 兜底取奖励组件异常", e)
                                         }
                                     }
                                     if (rewardComp != null && rewardComp.optBoolean(
@@ -2134,7 +2150,8 @@ class AntMember : ModelTask() {
                     }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.printStackTrace(TAG, "getPrizeName 解析任务奖励异常", e)
         }
         return prizeName
     }

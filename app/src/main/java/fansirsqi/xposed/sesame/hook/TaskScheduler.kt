@@ -168,7 +168,10 @@ object TaskScheduler {
         }
         try {
             save(now)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            // 关键路径：持久化失败必须抛出，不能静默吞掉
+            Log.printStackTrace(TAG, "save 持久化失败", e)
+            throw e
         }
     }
 

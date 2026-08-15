@@ -7,7 +7,6 @@ import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.entity.AlipayUser
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
@@ -683,9 +682,9 @@ class AntSports : ModelTask() {
 
         private val TAG = "Neverland"
 
-        /** @brief 最大失败次数（优先使用 BaseModel 配置，默认 5 次） */
+        /** @brief 最大失败次数（优先使用全局配置，默认 5 次） */
         private val MAX_ERROR_COUNT: Int =
-            if (BaseModel.setMaxErrorCount.value > 0) BaseModel.setMaxErrorCount.value else 5
+            if (ApplicationHook.config.setMaxErrorCount.value > 0) ApplicationHook.config.setMaxErrorCount.value else 5
 
         /** @brief 任务循环间隔（毫秒） */
         private val TASK_LOOP_DELAY: Long = 1000

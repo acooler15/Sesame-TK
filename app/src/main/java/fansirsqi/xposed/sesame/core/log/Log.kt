@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.core.log
 import android.content.Context
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
@@ -57,7 +57,7 @@ object Log {
 
     @JvmStatic
     fun record(msg: String) {
-        if (BaseModel.recordLog.value == true) {
+        if (ApplicationHook.config.recordLog.value == true) {
             RECORD_LOGGER.info("$DEFAULT_TAG{}", msg)
         }
     }

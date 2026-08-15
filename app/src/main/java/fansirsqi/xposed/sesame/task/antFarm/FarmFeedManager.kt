@@ -6,7 +6,7 @@ import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.hook.Toast
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.task.ModelTask.ChildModelTask
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.CancellationException
@@ -238,7 +238,7 @@ internal class FarmFeedManager(private val farm: AntFarm) {
                     val remainingFood = jo.optInt("foodStock", 0).coerceAtLeast(0)
                     Log.farm("${UserMap.getCurrentMaskName()}投喂小鸡🥣[180g]#剩余饲料${remainingFood}g")
 
-                    val interval = BaseModel.checkInterval.value
+                    val interval = ApplicationHook.config.checkInterval.value
                     var timeSendBackAnimal = 0
                     if (farm.timeSendBack!!.value in 10..interval){
                         timeSendBackAnimal = farm.timeSendBack!!.value

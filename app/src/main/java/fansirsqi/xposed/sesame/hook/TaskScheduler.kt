@@ -12,9 +12,6 @@ import fansirsqi.xposed.sesame.hook.ApplicationHook.Companion.appContext
 import fansirsqi.xposed.sesame.hook.ApplicationHook.Companion.classLoader
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.initialize
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.schedule
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.checkInterval
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.execAtTimeList
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.wakenAtTimeList
 import fansirsqi.xposed.sesame.task.MainTask
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
 import fansirsqi.xposed.sesame.task.TaskRunnerAdapter
@@ -78,7 +75,7 @@ object TaskScheduler {
                 val currentTime = System.currentTimeMillis()
                 if (currentTime - lastExecTime < 2000) {
                     record(TAG, "⚠️ 间隔过短，跳过")
-                    schedule(checkInterval.value.toLong(), "间隔重试") {
+                    schedule(ApplicationHook.config.checkInterval.value.toLong(), "间隔重试") {
                         execHandler()
                     }
                     return
@@ -111,8 +108,8 @@ object TaskScheduler {
     fun scheduleNextExecutionInternal(lastTime: Long) {
         try {
             checkInactiveTime()
-            val checkInterval = checkInterval.value
-            val execAtTimeList = execAtTimeList.value
+            val checkInterval = ApplicationHook.config.checkInterval.value
+            val execAtTimeList = ApplicationHook.config.execAtTimeList.value
             if (execAtTimeList != null && execAtTimeList.contains("-1")) {
                 record(TAG, "定时执行未开启")
                 return
@@ -202,7 +199,7 @@ object TaskScheduler {
         if (appContext == null) return
         ensureScheduler()
 
-        val wakenAtTimeList = wakenAtTimeList.value
+        val wakenAtTimeList = ApplicationHook.config.wakenAtTimeList.value
         if (wakenAtTimeList != null && wakenAtTimeList.contains("-1")) return
 
         // 1. 每日0点

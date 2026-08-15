@@ -1,7 +1,6 @@
 package fansirsqi.xposed.sesame.task
 
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.Model
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,7 +46,7 @@ class TaskRunnerAdapter {
      * @param mode 该参数已被忽略，新版Runner使用内部并发控制
      */
     fun run(isFirst: Boolean, mode: ModelTask.TaskExecutionMode?) {
-        run(isFirst, mode, BaseModel.taskExecutionRounds.value)
+        run(isFirst, mode, ApplicationHook.config.taskExecutionRounds.value)
     }
 
     /**

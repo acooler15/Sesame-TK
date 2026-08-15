@@ -6,9 +6,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.showToast
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.toastOffsetY
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.toastPerfix
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 
 object ToastUtil {
     private const val TAG = "ToastUtil"
@@ -33,8 +31,8 @@ object ToastUtil {
     fun showToast(context: Context?, message: String?) {
         // 1. 修复逻辑错误：处理前缀拼接
         var finalMessage = message
-        val shouldShow = showToast.value
-        val prefix = toastPerfix.value
+        val shouldShow = ApplicationHook.config.showToast.value
+        val prefix = ApplicationHook.config.toastPerfix.value
 
       //  Log.record(TAG, "prefix::$prefix")
 
@@ -55,7 +53,7 @@ object ToastUtil {
 
     fun makeText(context: Context?, message: String?, duration: Int): Toast {
         var finalMessage = message
-        val prefix = toastPerfix.value
+        val prefix = ApplicationHook.config.toastPerfix.value
 
        // Log.record(TAG, "prefix::$prefix")
 
@@ -92,7 +90,7 @@ object ToastUtil {
         // 尝试设置会被系统忽略并打印 Error 日志
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             try {
-                toast.setGravity(toast.gravity, toast.xOffset, toastOffsetY.value)
+                toast.setGravity(toast.gravity, toast.xOffset, ApplicationHook.config.toastOffsetY.value)
             } catch (e: Exception) {
                 Log.printStackTrace(TAG, e)
             }

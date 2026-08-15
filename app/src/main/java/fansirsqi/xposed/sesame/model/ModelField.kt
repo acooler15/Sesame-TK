@@ -15,7 +15,7 @@ import java.util.Objects
  * Jackson 序列化 value 属性时优先走 getValue() getter，子类可通过覆写改变输出
  * （如 ReadOnlyTextModelField 返回 null，配合 NON_NULL 序列化为 {}）。
  */
-abstract class ModelField<T> : Serializable {
+abstract class ModelField<T>(initValue: T) : Serializable {
     // 存储字段值的类型
     @JsonIgnore
     val valueType: Type?
@@ -28,40 +28,23 @@ abstract class ModelField<T> : Serializable {
     @JsonIgnore
     open var name: String = ""
 
-    // 默认值
+    // 默认值（由各带参构造函数显式传入，杜绝隐式 null 默认值）
     @JsonIgnore
-    var defaultValue: T = castNull()
+    var defaultValue: T = initValue
 
     @JsonIgnore
     open var desc: String? = null
 
     // 当前值（序列化经属性 getter 输出，与旧 Java 版 public volatile T value 行为一致）
     @Volatile
-    open var value: T = defaultValue
+    open var value: T = initValue
 
     /**
-     * 默认构造函数，初始化字段值类型
+     * 默认构造函数，初始化字段值类型并设置当前值
      */
     init {
         valueType = TypeUtil.getTypeArgument(this.javaClass.genericSuperclass, 0)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun castNull(): T = null as T
-
-    /**
-     * 无参构造函数，仅初始化字段值类型
-     */
-    constructor()
-
-    /**
-     * 构造函数，接受初始值
-     *
-     * @param value 初始值
-     */
-    constructor(value: T) {
-        defaultValue = value // 设置默认值
-        setObjectValue(value) // 设置当前值
+        setObjectValue(initValue) // 经类型转换链路设置当前值
     }
 
     /**
@@ -71,19 +54,15 @@ abstract class ModelField<T> : Serializable {
      * @param name  字段名称
      * @param value 字段初始值
      */
-    constructor(code: String?, name: String?, value: T) {
+    constructor(code: String?, name: String?, value: T) : this(value) {
         this.code = code ?: ""
         this.name = name ?: ""
-        defaultValue = value // 设置默认值
-        setObjectValue(value) // 设置当前值
     }
 
-    constructor(code: String?, name: String?, value: T, desc: String?) {
+    constructor(code: String?, name: String?, value: T, desc: String?) : this(value) {
         this.code = code ?: ""
         this.name = name ?: ""
-        defaultValue = value
         this.desc = desc
-        setObjectValue(value)
     }
 
     /**

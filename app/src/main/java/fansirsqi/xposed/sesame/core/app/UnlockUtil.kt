@@ -4,7 +4,7 @@ import fansirsqi.xposed.sesame.core.log.Log
 import android.app.KeyguardManager
 import android.content.Context
 import android.os.PowerManager
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import kotlinx.coroutines.delay
 
 /**
@@ -36,7 +36,7 @@ object UnlockUtil {
      * @return true 表示命令已发送且等待完成，false 表示未配置、无需解锁或发送失败
      */
     suspend fun triggerUnlock(context: Context): Boolean {
-        val command = BaseModel.unlockShellCommand.value
+        val command = ApplicationHook.config.unlockShellCommand.value
         if (command.isNullOrBlank()) {
             return false
         }
@@ -59,7 +59,7 @@ object UnlockUtil {
             }
 
             // 等待外部脚本完成解锁操作
-            val waitSec = BaseModel.unlockWaitSeconds.value.toLong()
+            val waitSec = ApplicationHook.config.unlockWaitSeconds.value.toLong()
             if (waitSec > 0) {
                 Log.record(TAG, "[外部解锁] 等待 ${waitSec}s 让外部脚本完成解锁...")
                 delay(waitSec * 1000L)

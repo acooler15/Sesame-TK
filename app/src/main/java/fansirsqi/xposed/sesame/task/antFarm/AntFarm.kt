@@ -13,7 +13,6 @@ import fansirsqi.xposed.sesame.entity.OtherEntityProvider.farmFamilyOption
 import fansirsqi.xposed.sesame.entity.ParadiseCoinBenefit
 import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.addIntervalLimit
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField

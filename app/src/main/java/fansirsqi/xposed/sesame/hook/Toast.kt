@@ -3,8 +3,6 @@ package fansirsqi.xposed.sesame.hook
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.showToast
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.toastPerfix
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
@@ -25,8 +23,8 @@ object Toast {
             return
         }
         var finalMessage = message
-        val shouldShow = showToast.value
-        val perfix = toastPerfix.value
+        val shouldShow = ApplicationHook.config.showToast.value
+        val perfix = ApplicationHook.config.toastPerfix.value
         if (!perfix.isNullOrBlank() && perfix != "null") {
             finalMessage = "$perfix:$message"
         }

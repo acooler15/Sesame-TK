@@ -13,6 +13,7 @@ import fansirsqi.xposed.sesame.core.app.Files
 import fansirsqi.xposed.sesame.core.json.JsonUtil
 import fansirsqi.xposed.sesame.core.util.ListUtil
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
@@ -201,7 +202,7 @@ object CustomSettings {
         }
 
         val now = System.currentTimeMillis()
-        val interval = BaseModel.checkInterval.value.toLong()
+        val interval = ApplicationHook.config.checkInterval.value.toLong()
         val isSpecialTime = autoHandleOnceDailyTimes.value.any { timeStr ->
             val startCal = TimeUtil.getTodayCalendarByTimeStr(timeStr)
             if (startCal != null) {

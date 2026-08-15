@@ -1,6 +1,6 @@
 package fansirsqi.xposed.sesame.task
 
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 
@@ -27,10 +27,10 @@ object TaskCommon {
         val currentTimeMillis = System.currentTimeMillis()
 
         // 只收能量时间检查
-        IS_ENERGY_TIME = checkTimeRangeConfig(BaseModel.energyTime.value, "只收能量时间", currentTimeMillis)
+        IS_ENERGY_TIME = checkTimeRangeConfig(ApplicationHook.config.energyTime.value, "只收能量时间", currentTimeMillis)
 
         // 模块休眠时间检查
-        IS_MODULE_SLEEP_TIME = checkTimeRangeConfig(BaseModel.modelSleepTime.value, "模块休眠时间", currentTimeMillis)
+        IS_MODULE_SLEEP_TIME = checkTimeRangeConfig(ApplicationHook.config.modelSleepTime.value, "模块休眠时间", currentTimeMillis)
 
         // 是否过了 8 点
         IS_AFTER_8AM = TimeUtil.isAfterOrCompareTimeStr(currentTimeMillis, "0800")

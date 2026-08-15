@@ -5,7 +5,6 @@ import fansirsqi.xposed.sesame.data.RuntimeInfo
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.StringUtil
@@ -221,7 +220,7 @@ class OldRpcBridge : RpcBridge {
         if (!ApplicationHook.offline) {
             ApplicationHook.offline = true
             Notify.updateStatusText("登录超时")
-            if (BaseModel.timeoutRestart.value) {
+            if (ApplicationHook.config.timeoutRestart.value) {
                 Log.record(TAG, "尝试重新登录")
                 ApplicationHook.reLoginByBroadcast()
             }
@@ -232,8 +231,8 @@ class OldRpcBridge : RpcBridge {
      * 处理能量收集异常的情况。
      */
     private fun handleEnergyCollectException() {
-        if (BaseModel.waitWhenException.value > 0) {
-            val waitTime = System.currentTimeMillis() + BaseModel.waitWhenException.value
+        if (ApplicationHook.config.waitWhenException.value > 0) {
+            val waitTime = System.currentTimeMillis() + ApplicationHook.config.waitWhenException.value
             RuntimeInfo.getInstance().put(RuntimeInfo.RuntimeInfoKey.ForestPauseTime, waitTime)
             Notify.updateStatusText("异常")
             Log.record(TAG, "触发异常, 等待至" + TimeUtil.getCommonDate(waitTime))

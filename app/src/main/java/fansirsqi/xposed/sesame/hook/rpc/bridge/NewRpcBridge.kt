@@ -6,7 +6,6 @@ import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.RandomUtil
@@ -29,7 +28,6 @@ class NewRpcBridge : RpcBridge {
     private var bridgeCallbackClazzArray: Array<Class<*>>? = null
     private var newRpcCallMethod: Method? = null
     private val maxErrorCount = AtomicInteger(0)
-    private val setMaxErrorCount = BaseModel.setMaxErrorCount.value
 
     private val errorMark = ArrayList(listOf(
             "1004", "1009", "2000", "46", "48"
@@ -318,17 +316,17 @@ class NewRpcBridge : RpcBridge {
                             if ((errorCode != null && errorMark.contains(errorCode)) || (errorMessage != null && errorStringMark.contains(errorMessage))) {
                                 val currentErrorCount = maxErrorCount.incrementAndGet()
                                 if (!ApplicationHook.offline) {
-                                    if (currentErrorCount > setMaxErrorCount) {
+                                    if (currentErrorCount > ApplicationHook.config.setMaxErrorCount.value) {
                                         ApplicationHook.offline = true
                                         Notify.updateStatusText("网络连接异常，已进入离线模式")
-                                        if (BaseModel.errNotify.value) {
-                                            Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常次数超过阈值[" + setMaxErrorCount + "]", response)
+                                        if (ApplicationHook.config.errNotify.value) {
+                                            Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常次数超过阈值[" + ApplicationHook.config.setMaxErrorCount.value + "]", response)
                                         }
                                     }
-//                                if (BaseModel.errNotify.value) {
+//                                if (ApplicationHook.config.errNotify.value) {
 //                                    Notify.sendNewNotification(TimeUtil.getTimeStr() + " | 网络异常: " + methodName, response)
 //                                }//做得多错的多，不做就不会错
-                                    if (BaseModel.timeoutRestart.value) {
+                                    if (ApplicationHook.config.timeoutRestart.value) {
                                         Log.record(TAG, "尝试重新登录")
                                         ApplicationHook.reLoginByBroadcast()
                                     }

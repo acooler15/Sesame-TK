@@ -21,7 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import fansirsqi.xposed.sesame.data.RuntimeInfo
 import fansirsqi.xposed.sesame.hook.Toast
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import kotlin.concurrent.Volatile
 
 @SuppressLint("StaticFieldLeak")
@@ -92,7 +92,7 @@ object Notify {
                     .setSubText("芝麻粒")
                     .setAutoCancel(false)
                     .setContentIntent(pi)
-                if (BaseModel.enableOnGoing.value) {
+                if (ApplicationHook.config.enableOnGoing.value) {
                     builder!!.setOngoing(true)
                 }
                 NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder!!.build())

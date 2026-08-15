@@ -11,7 +11,7 @@ import fansirsqi.xposed.sesame.hook.rpc.intervallimit.FixedOrRangeIntervalLimit
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.IntervalLimit
 import fansirsqi.xposed.sesame.task.antForest.ForestUtil.hasBombCard
 import fansirsqi.xposed.sesame.task.antForest.ForestUtil.hasShield
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.core.notify.Notify.updateLastExecText
 import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
 import fansirsqi.xposed.sesame.core.log.Log
@@ -110,7 +110,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
             return
         }
         try {
-            val energyTimeStr = BaseModel.energyTime.value.toString()
+            val energyTimeStr = ApplicationHook.config.energyTime.value.toString()
             Log.record(TAG, "⏸ 当前为只收能量时间【$energyTimeStr】，开始循环收取自己、好友和PK好友的能量")
             runBlocking {
                 try {
@@ -1316,9 +1316,9 @@ internal class ForestEnergyCollector(private val task: AntForest) {
                         "error"
                     ) as String?
                     if ("1004" == errorCode) {
-                        if (BaseModel.waitWhenException.value > 0) {
+                        if (ApplicationHook.config.waitWhenException.value > 0) {
                             val waitTime =
-                                System.currentTimeMillis() + BaseModel.waitWhenException.value
+                                System.currentTimeMillis() + ApplicationHook.config.waitWhenException.value
                             RuntimeInfo.getInstance()
                                 .put(RuntimeInfo.RuntimeInfoKey.ForestPauseTime, waitTime)
                             updateStatusText("异常")

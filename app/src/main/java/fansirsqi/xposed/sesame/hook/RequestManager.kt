@@ -4,7 +4,6 @@ import android.Manifest
 import androidx.annotation.RequiresPermission
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.app.NetworkUtils
@@ -71,8 +70,8 @@ object RequestManager {
      */
     private fun handleFailure(method: String, reason: String) {
         val currentCount = errorCount.incrementAndGet()
-        // 假设 BaseModel 有个方法获取这个配置，或者直接用常量
-        val maxCount = BaseModel.setMaxErrorCount.value
+        // 从全局配置读取异常次数阈值
+        val maxCount = ApplicationHook.config.setMaxErrorCount.value
 
         Log.error(TAG, "RPC 失败 ($currentCount/$maxCount) | Method: $method | Reason: $reason")
 
@@ -82,7 +81,7 @@ object RequestManager {
             // 1. 设置离线状态，停止后续任务
             ApplicationHook.offline = true
             // 2. 发送通知 (根据用户配置)
-            if (BaseModel.errNotify.value) {
+            if (ApplicationHook.config.errNotify.value) {
                 val msg = "${TimeUtil.getTimeStr()} | 网络异常次数超过阈值[$maxCount]"
                 Notify.sendNewNotification(msg, "RPC 连续失败，脚本已暂停")
             }

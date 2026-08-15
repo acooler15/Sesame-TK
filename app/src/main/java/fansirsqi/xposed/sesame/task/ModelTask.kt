@@ -3,7 +3,6 @@ package fansirsqi.xposed.sesame.task
 import android.annotation.SuppressLint
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelType
@@ -108,7 +107,7 @@ abstract class ModelTask : Model() {
             val antForest = Model.getModel(AntForest::class.java)
             if (antForest != null && antForest.isEnable) {
                 if (TaskCommon.IS_ENERGY_TIME) {
-                    Log.record(getName() ?: "Task", "⏸ 当前为只收能量时间【${BaseModel.energyTime.value}】，停止执行${getName()}任务！")
+                    Log.record(getName() ?: "Task", "⏸ 当前为只收能量时间【${ApplicationHook.config.energyTime.value}】，停止执行${getName()}任务！")
                     return false
                 }
             }
@@ -116,7 +115,7 @@ abstract class ModelTask : Model() {
 
         // 模块休眠检查
         if (TaskCommon.IS_MODULE_SLEEP_TIME) {
-            Log.record(getName() ?: "Task", "💤 模块休眠时间【${BaseModel.modelSleepTime.value}】停止执行${getName()}任务！")
+            Log.record(getName() ?: "Task", "💤 模块休眠时间【${ApplicationHook.config.modelSleepTime.value}】停止执行${getName()}任务！")
             return false
         }
         return true

@@ -3,7 +3,6 @@ package fansirsqi.xposed.sesame.task
 import android.annotation.SuppressLint
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.CustomSettings
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.customTasks.ManualTask
@@ -32,14 +31,19 @@ class CoroutineTaskRunner(allModels: List<Model>) {
 
     companion object {
         private const val TAG = "CoroutineTaskRunner"
-        private const val DEFAULT_TASK_TIMEOUT = 10 * 60 * 1000L // 10分钟
 
-        // 最大并发数，防止请求过于频繁触发风控
-        // 可以做成配置项，目前硬编码为 3
-        private const val MAX_CONCURRENCY = 3
-
-        private val TIMEOUT_WHITELIST = setOf("森林", "庄园", "运动")
+        // 超时白名单：在此名单中的任务"启动即视为完成"，不受超时限制。
+        // 适用场景：某些任务（如蚂蚁森林、庄园、运动）是长期运行的守护型任务，
+        // 不应被超时机制中断。加入白名单后，任务启动后立即标记为完成，
+        // 实际执行由任务内部的自调度逻辑控制。
+        private val timeoutWhitelist get() = ApplicationHook.config.taskTimeoutWhitelist.value
     }
+
+    // 最大并发数，防止请求过于频繁触发风控
+    private val maxConcurrency get() = ApplicationHook.config.taskMaxConcurrency.value
+
+    // 默认任务超时时间（毫秒）
+    private val defaultTimeout get() = ApplicationHook.config.taskDefaultTimeout.value.toLong()
 
     private val taskList: List<ModelTask> = allModels.filterIsInstance<ModelTask>()
 
@@ -55,7 +59,7 @@ class CoroutineTaskRunner(allModels: List<Model>) {
      */
     suspend fun run(
         isFirst: Boolean = true,
-        rounds: Int = BaseModel.taskExecutionRounds.value
+        rounds: Int = ApplicationHook.config.taskExecutionRounds.value
     ) = coroutineScope { // 使用 coroutineScope 创建子作用域
         val startTime = System.currentTimeMillis()
 
@@ -71,7 +75,7 @@ class CoroutineTaskRunner(allModels: List<Model>) {
         }
 
         try {
-            Log.record(TAG, "🚀 开始执行任务流程 (并发数: $MAX_CONCURRENCY)")
+            Log.record(TAG, "🚀 开始执行任务流程 (并发数: $maxConcurrency)")
 
             CustomSettings.loadForTaskRunner()
             val status = CustomSettings.getOnceDailyStatus(enableLog = true)
@@ -121,7 +125,7 @@ class CoroutineTaskRunner(allModels: List<Model>) {
 
         // 2. 并发执行
         // 使用 Semaphore 限制并发数量
-        val semaphore = Semaphore(MAX_CONCURRENCY)
+        val semaphore = Semaphore(maxConcurrency)
 
         // 创建所有任务的 Deferred 对象
         val deferreds = tasksToRun.map { task ->
@@ -152,11 +156,11 @@ class CoroutineTaskRunner(allModels: List<Model>) {
         val taskId = "$taskName-R$round"
         val startTime = System.currentTimeMillis()
 
-        val isWhitelist = TIMEOUT_WHITELIST.contains(taskName)
+        val isWhitelist = timeoutWhitelist.contains(taskName)
 
         // 如果是白名单任务（如森林），它们往往是“启动后即视为完成”，或者是长运行任务
         // 我们可以给一个较短的“启动超时时间”，而不是等待整个任务结束
-        val timeout = if (isWhitelist) 30_000L else DEFAULT_TASK_TIMEOUT
+        val timeout = if (isWhitelist) 30_000L else defaultTimeout
 
         try {
             Log.record(TAG, "▶️ 启动: $taskId")

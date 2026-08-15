@@ -35,14 +35,9 @@ import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
 import fansirsqi.xposed.sesame.hook.server.ModuleHttpServerManager.startIfNeeded
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.addHandler
 import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.enableWindowMonitoring
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.batteryPerm
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.debugMode
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.destroyData
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.newRpc
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookData
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookDataUrl
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.webViewDebug
 import fansirsqi.xposed.sesame.model.Model
+import fansirsqi.xposed.sesame.model.SesameConfig
 import fansirsqi.xposed.sesame.task.MainTask.Companion.newInstance
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
 import fansirsqi.xposed.sesame.core.app.AssetUtil
@@ -139,7 +134,7 @@ class ApplicationHook {
         }
 
         // 5. WebView Hook
-        if (webViewDebug.value) {
+        if (config.webViewDebug.value) {
             try {
                 WebViewHook.installHook(classLoader!!)
             } catch (t: Throwable) {
@@ -379,6 +374,12 @@ class ApplicationHook {
         var finalProcessName: String? = ""
 
         /**
+         * 全局配置对象，运行时统一读取配置（方案13重构）。
+         */
+        lateinit var config: SesameConfig
+            private set
+
+        /**
          * 全局应用协程作用域
          * 替代 GlobalScope，统一管理应用内长生命周期协程的生命周期。
          * 在 destroyHandler 中统一取消，切换账号时由 shutdownAndRestart 取消并重建。
@@ -442,6 +443,7 @@ class ApplicationHook {
         private val deoptimizeMethod: Method?
 
         init {
+            config = SesameConfig()
             var m: Method? = null
             try {
                 m = XposedBridge::class.java.getDeclaredMethod("deoptimizeMethod", Member::class.java)
@@ -535,12 +537,12 @@ class ApplicationHook {
                 TaskScheduler.setWakenAtTimeAlarm()
 
                 synchronized(rpcBridgeLock) {
-                    rpcBridge = if (newRpc.value) NewRpcBridge() else OldRpcBridge()
+                    rpcBridge = if (config.newRpc.value) NewRpcBridge() else OldRpcBridge()
                     rpcBridge!!.load()
                 }
 
-                if (newRpc.value && debugMode.value) {
-                    HookUtil.hookRpcBridgeExtension(classLoader!!, sendHookData.value, sendHookDataUrl.value)
+                if (config.newRpc.value && config.debugMode.value) {
+                    HookUtil.hookRpcBridgeExtension(classLoader!!, config.sendHookData.value, config.sendHookDataUrl.value)
                     HookUtil.hookDefaultBridgeCallback(classLoader!!)
                 }
 
@@ -566,7 +568,7 @@ class ApplicationHook {
         }
 
         private fun checkBatteryPermission() {
-            if (!batteryPerm.value || batteryPermissionChecked) return
+            if (!config.batteryPerm.value || batteryPermissionChecked) return
 
             val hasPermission = checkBatteryPermissions(appContext)
             batteryPermissionChecked = true

@@ -2,7 +2,7 @@ package fansirsqi.xposed.sesame.core.util
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
-import fansirsqi.xposed.sesame.model.BaseModel
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import java.util.Locale
 
 /** 语言工具类，用于设置应用程序的语言环境。 */
@@ -16,7 +16,7 @@ object LanguageUtil {
     @JvmStatic
     fun setLocale(context: Context) {
         // 检查是否设置了简体中文
-        if (BaseModel.languageSimplifiedChinese.value) {
+        if (ApplicationHook.config.languageSimplifiedChinese.value) {
             // 创建简体中文的Locale对象
             val locale = Locale.Builder().setLanguage("zh").setRegion("CN").build()
             // 设置默认的Locale

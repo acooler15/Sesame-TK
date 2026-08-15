@@ -11,7 +11,6 @@ import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.task.ModelTask.ChildModelTask
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONArray
@@ -549,7 +548,7 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                     openTreasureBox(boxNo, userId)
                     return
                 }
-                if (delay < BaseModel.checkInterval.value) {
+                if (delay < ApplicationHook.config.checkInterval.value) {
                     val taskId = "BX|$boxNo"
                     if (sports.hasChildTask(taskId)) return
                     Log.record(AntSports.TAG, "还有 $delay ms 开运动宝箱")

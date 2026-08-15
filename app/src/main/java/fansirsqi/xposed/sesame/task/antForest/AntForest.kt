@@ -22,7 +22,6 @@ import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.addIn
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.task.antForest.EnergyPvpChallengePolicy
 import fansirsqi.xposed.sesame.task.antForest.EnergyPvpDecision
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField

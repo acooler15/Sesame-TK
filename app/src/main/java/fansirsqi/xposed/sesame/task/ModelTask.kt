@@ -314,7 +314,6 @@ abstract class ModelTask : Model() {
      * 停止任务（协程版本）
      * 注意：此方法是非阻塞的，会异步取消任务
      */
-    @OptIn(DelicateCoroutinesApi::class)
     open fun stopTask() {
         // 立即标记为非运行状态
         isRunning = false

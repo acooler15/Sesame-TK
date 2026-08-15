@@ -1219,6 +1219,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             val energyId = getEnergyId(waterEnergy)
 
             var waterCount = 1
+            var retryCount = 0 // 3000 系统错误连续重试次数
             label@ while (waterCount <= count) {
                 // 调用RPC进行浇水，并传入是否通知好友
                 val rpcResponse =
@@ -1239,10 +1240,14 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                     isContinue = false
                     break
                 } else if ("3000" == errorCode) { // 系统错误
+                    retryCount++
+                    if (retryCount > 3) {
+                        Log.record(TAG, "好友浇水🚿连续系统错误，停止重试: " + UserMap.getMaskName(userId))
+                        isContinue = false
+                        break
+                    }
                     Log.record(TAG, "好友浇水🚿系统错误，稍后重试: " + UserMap.getMaskName(userId))
                     delay(500)
-                    waterCount-- // 重试当前次数
-                    waterCount++
                     continue
                 }
 
@@ -1261,6 +1266,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                         ) ?: "未知"
                         Log.forest("好友浇水🚿[${UserMap.getMaskName(userId)}]#$waterEnergy g，当前能量状态 [$currentEnergy/$totalEnergy g]")
                         wateredTimes++
+                        retryCount = 0 // 成功后重置重试计数
                         GlobalThreadPools.sleepCompat(1200L)
                     }
 

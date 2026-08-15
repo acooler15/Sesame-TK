@@ -37,22 +37,20 @@ class TaskRunnerAdapter {
      * 执行任务 - 简化版本
      */
     fun run() {
-        // Mode参数现在已废弃，新版Runner内部自动处理并发
-        run(true, null)
+        run(true)
     }
 
     /**
      * 执行任务 - 兼容旧接口
-     * @param mode 该参数已被忽略，新版Runner使用内部并发控制
      */
-    fun run(isFirst: Boolean, mode: ModelTask.TaskExecutionMode?) {
-        run(isFirst, mode, ApplicationHook.config.taskExecutionRounds.value)
+    fun run(isFirst: Boolean) {
+        run(isFirst, ApplicationHook.config.taskExecutionRounds.value)
     }
 
     /**
      * 执行任务 - 包含轮数参数（主方法）
      */
-    fun run(isFirst: Boolean, mode: ModelTask.TaskExecutionMode?, rounds: Int) {
+    fun run(isFirst: Boolean, rounds: Int) {
         // 如果有旧任务在运行，先取消
         stop()
 
@@ -78,15 +76,7 @@ class TaskRunnerAdapter {
          */
         @JvmStatic
         fun runAllTasks() {
-            runAllTasks(null)
-        }
-
-        /**
-         * 静态方法：使用指定模式执行所有任务
-         */
-        @JvmStatic
-        fun runAllTasks(mode: ModelTask.TaskExecutionMode?) {
-            TaskRunnerAdapter().run(true, mode)
+            TaskRunnerAdapter().run(true)
         }
     }
 }

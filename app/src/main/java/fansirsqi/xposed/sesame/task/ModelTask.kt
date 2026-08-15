@@ -273,7 +273,7 @@ abstract class ModelTask : Model() {
             if (getName() != "MAIN_TASK") {
                 Log.record(TAG, "开始执行第${round}轮任务: ${getName()}")
             }
-            // 无论什么模式，都使用顺序执行
+            // 顺序执行本轮任务
             executeSequential(round, stats)
             
             // 轮次间延迟
@@ -337,13 +337,6 @@ abstract class ModelTask : Model() {
                 Log.printStackTrace("stopTask err", e)
             }
         }
-    }
-
-    /**
-     * 任务执行模式（仅支持顺序执行）
-     */
-    enum class TaskExecutionMode {
-        SEQUENTIAL  // 顺序执行（唯一支持的模式）
     }
 
     /**

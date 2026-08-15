@@ -72,21 +72,6 @@ class ModelConfig() : Serializable {
         return fields[fieldCode]
     }
 
-    /*
-     * 以下方法暂时被注释掉，若需要可以在未来进行实现。
-     */
-    /*
-    fun removeModelField(fieldCode: String) {
-        fields.remove(fieldCode)
-    }
-    */
-    /*
-    fun addModelField(modelField: ModelField<*>): Boolean {
-        fields[modelField.code] = modelField
-        return true
-    }
-    */
-
     /**
      * 获取指定字段代码的模型字段扩展类型
      *

@@ -30,10 +30,10 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
             get() {
                 val list: MutableList<VitalityStore> = ArrayList()
                 val instance = IdMapManager.getInstance(VitalityRewardsMap::class.java)
-                val entries = instance?.map?.entries ?: emptySet()
+                val entries = instance.map.entries
 
                 for (entry in entries) {
-                    list.add(VitalityStore(entry.key!!, entry.value!!))
+                    list.add(VitalityStore(entry.key, entry.value))
                 }
                 return list
             }

@@ -28,7 +28,6 @@ import fansirsqi.xposed.sesame.task.TaskStatus
 import fansirsqi.xposed.sesame.task.antFarm.AntFarmFamily.familyClaimRewardList
 import fansirsqi.xposed.sesame.task.antFarm.AntFarmFamily.familySign
 import fansirsqi.xposed.sesame.task.antForest.TaskTimeChecker
-import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.task.GameTask
 import fansirsqi.xposed.sesame.core.json.JsonUtil
@@ -1341,7 +1340,7 @@ class AntFarm : ModelTask() {
             if (!cacheHit) {
                 Log.record(TAG, "缓存未命中，尝试使用AI答题：$title")
                 answer = AnswerAI.getAnswer(title, JsonUtil.jsonArrayToList(labels), "farm")
-                if (answer == null || answer.isEmpty()) {
+                if (answer.isEmpty()) {
                     answer = labels.getString(0) // 默认选择第一个选项
                 }
             }
@@ -2233,7 +2232,7 @@ class AntFarm : ModelTask() {
                         counts[i]--
                         totalUsed++
                         usedInThisRound = true
-                        CoroutineUtils.sleepCompat(RandomUtil.nextInt(800, 1100).toLong())
+                        delay(RandomUtil.nextInt(800, 1100).toLong())
                     } else {
                         counts[i] = 0
                     }

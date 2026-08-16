@@ -95,7 +95,7 @@ class ListDialog {
             show(c, title, selectModelField.expandValue, selectModelField, true, listType)
         }
 
-        fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean) {
+        fun show(c: Context, title: CharSequence, bl: List<MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean) {
             show(c, title, bl, selectModelFieldFunc, hasCount, ListType.CHECK)
         }
 
@@ -104,7 +104,7 @@ class ListDialog {
          *
          * @param onDismiss 对话框关闭（任意方式）时回调
          */
-        fun show(c: Context, title: CharSequence, bl: List<out MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean, listType: ListType, onDismiss: (() -> Unit)? = null) {
+        fun show(c: Context, title: CharSequence, bl: List<MapperEntity>?, selectModelFieldFunc: SelectModelFieldFunc, hasCount: Boolean, listType: ListType, onDismiss: (() -> Unit)? = null) {
             // 通过 ComposeView 桥接：需要 Activity 获取根视图承载 Compose 内容
             val activity = c as? Activity ?: return
             val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -131,7 +131,7 @@ class ListDialog {
         @Composable
         private fun ListDialogContent(
             title: CharSequence,
-            bl: List<out MapperEntity>?,
+            bl: List<MapperEntity>?,
             selectModelFieldFunc: SelectModelFieldFunc,
             hasCount: Boolean,
             listType: ListType,

@@ -7,13 +7,11 @@ import android.content.Context
 import android.content.pm.PackageInfo
 import android.os.Handler
 import android.os.Looper
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import fansirsqi.xposed.sesame.BuildConfig
-import fansirsqi.xposed.sesame.SesameApplication
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import fansirsqi.xposed.sesame.data.Config
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.data.Status
@@ -21,7 +19,6 @@ import fansirsqi.xposed.sesame.data.Status.Companion.load
 import fansirsqi.xposed.sesame.entity.AlipayVersion
 import fansirsqi.xposed.sesame.hook.Toast.show
 import fansirsqi.xposed.sesame.hook.TokenHooker.start
-import fansirsqi.xposed.sesame.hook.XposedEnv.processName
 import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.LocationHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
@@ -61,13 +58,9 @@ import fansirsqi.xposed.sesame.core.permission.PermissionUtil.checkBatteryPermis
 import fansirsqi.xposed.sesame.core.app.StatusManager.updateStatus
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.UserMap.currentUid
-import io.github.libxposed.api.XposedInterface
-import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import org.luckypray.dexkit.DexKitBridge
 import java.io.File
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Member
-import java.lang.reflect.Method
 import java.util.Calendar
 import kotlin.concurrent.Volatile
 import kotlinx.coroutines.CoroutineName
@@ -78,7 +71,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 
 class ApplicationHook {
-    var xposedInterface: XposedInterface? = null
 
     private object AlipayClasses {
         const val APPLICATION: String = "com.alipay.mobile.framework.AlipayApplication"
@@ -88,52 +80,38 @@ class ApplicationHook {
         const val LOADED_APK: String = "android.app.LoadedApk"
     }
 
-    // --- 入口方法 ---
-    fun loadPackage(lpparam: PackageLoadedParam) {
-        if (General.PACKAGE_NAME != lpparam.packageName) return
-        handleHookLogic(
-            lpparam.defaultClassLoader,
-            lpparam.packageName,
-            lpparam.applicationInfo.sourceDir,
-            lpparam
-        )
-    }
-
-    fun loadPackageCompat(lpparam: LoadPackageParam) {
-        if (General.PACKAGE_NAME != lpparam.packageName) return
-        val apkPath: String = (if (lpparam.appInfo != null) lpparam.appInfo.sourceDir else null)!!
-        handleHookLogic(lpparam.classLoader, lpparam.packageName, apkPath, lpparam)
+    // --- 入口方法（双入口统一调用，参数仅框架无关类型） ---
+    fun loadPackage(loader: ClassLoader?, packageName: String, apkPath: String) {
+        if (General.PACKAGE_NAME != packageName) return
+        handleHookLogic(loader, packageName, apkPath)
     }
 
     @SuppressLint("PrivateApi")
-    private fun handleHookLogic(loader: ClassLoader?, packageName: String, apkPath: String, rawParam: Any?) {
+    private fun handleHookLogic(loader: ClassLoader?, packageName: String, apkPath: String) {
         classLoader = loader
-        // 1. 初始化配置读取
-        val prefs = XSharedPreferences(General.MODULE_PACKAGE_NAME, SesameApplication.PREFERENCES_KEY)
-        prefs.makeWorldReadable()
 
-        // 2. 进程检查
-        resolveProcessName(rawParam)
+        // 1. 进程检查（processName 由双入口写入 XposedEnv）
+        finalProcessName = XposedEnv.processName
         if (!shouldHookProcess()) return
 
         init(Files.CONFIG_DIR)
         if (isHooked) return
         isHooked = true
 
-        // 3. 基础环境 Hook
-        ModuleStatus.detectFramework(classLoader!!)
-        updateStatus(ModuleStatus.detectFramework(classLoader!!), packageName)
+        // 2. 基础环境 Hook
+        ModuleStatus.detectFramework()
+        updateStatus(ModuleStatus.detectFramework(), packageName)
         VersionHook.installHook(classLoader)
         initReflection(classLoader!!)
 
-        // 4. 功能模块 Hook
+        // 3. 功能模块 Hook
         try {
             CaptchaHook.setupHook(classLoader!!)
         } catch (t: Throwable) {
             printStackTrace(TAG, "验证码Hook初始化失败", t)
         }
 
-        // 5. WebView Hook
+        // 4. WebView Hook
         if (config.webViewDebug.value) {
             try {
                 WebViewHook.installHook(classLoader!!)
@@ -142,20 +120,12 @@ class ApplicationHook {
             }
         }
 
-        // 6. 核心生命周期 Hook
+        // 5. 核心生命周期 Hook
         hookApplicationAttach(packageName)
         hookLauncherResume()
         hookServiceLifecycle(apkPath)
 
         HookUtil.hookOtherService(classLoader!!)
-    }
-
-    private fun resolveProcessName(rawParam: Any?) {
-        if (rawParam is LoadPackageParam) {
-            finalProcessName = rawParam.processName
-        } else if (rawParam is PackageLoadedParam) {
-            finalProcessName = processName
-        }
     }
 
     private fun shouldHookProcess(): Boolean {
@@ -166,8 +136,8 @@ class ApplicationHook {
 
     private fun initReflection(loader: ClassLoader) {
         try {
-            XposedHelpers.findClass(AlipayClasses.APPLICATION, loader)
-            XposedHelpers.findClass(AlipayClasses.SOCIAL_SDK, loader)
+            Class.forName(AlipayClasses.APPLICATION, false, loader)
+            Class.forName(AlipayClasses.SOCIAL_SDK, false, loader)
         } catch (_: Throwable) {
             // ignore
         }
@@ -182,14 +152,16 @@ class ApplicationHook {
 
     private fun hookApplicationAttach(packageName: String?) {
         try {
-            XposedHelpers.findAndHookMethod(
-                Application::class.java,
-                "attach",
-                Context::class.java,
-                object : XC_MethodHook() {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Application::class.java,
+                    "attach",
+                    Context::class.java
+                ),
+                object : HookCallback {
                     @Throws(Throwable::class)
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        appContext = param.args[0] as Context?
+                    override fun after(p: HookParam) {
+                        appContext = p.args[0] as Context?
                         mainHandler = Handler(Looper.getMainLooper())
                         Log.init(appContext!!)
                         TaskScheduler.ensureScheduler()
@@ -237,12 +209,13 @@ class ApplicationHook {
 
     private fun hookLauncherResume() {
         try {
-            XposedHelpers.findAndHookMethod(
-                AlipayClasses.LAUNCHER_ACTIVITY,
-                classLoader,
-                "onResume",
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam?) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.LAUNCHER_ACTIVITY, false, classLoader),
+                    "onResume"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
                         val targetUid = HookUtil.getUserId(classLoader!!)
                         if (targetUid == null) {
                             show("用户未登录")
@@ -271,38 +244,48 @@ class ApplicationHook {
 
     private fun hookServiceLifecycle(apkPath: String) {
         try {
-            XposedHelpers.findAndHookMethod(AlipayClasses.SERVICE, classLoader, "onCreate", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val appService = param.thisObject as Service
-                    if (General.CURRENT_USING_SERVICE != appService.javaClass.getCanonicalName()) {
-                        return
-                    }
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.SERVICE, false, classLoader),
+                    "onCreate"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val appService = p.thisObject as Service
+                        if (General.CURRENT_USING_SERVICE != appService.javaClass.getCanonicalName()) {
+                            return
+                        }
 
-                    service = appService
-                    appContext = appService.applicationContext
-                    TaskScheduler.ensureScheduler()
+                        service = appService
+                        appContext = appService.applicationContext
+                        TaskScheduler.ensureScheduler()
 
-                    DexKitBridge.create(apkPath).use { _ ->
-                        record(TAG, "Hook DexKit successfully")
+                        DexKitBridge.create(apkPath).use { _ ->
+                            record(TAG, "Hook DexKit successfully")
+                        }
+                        TaskScheduler.mainTask = newInstance("主任务") { TaskScheduler.runMainTaskLogic() }
+                        TaskScheduler.dayCalendar = Calendar.getInstance()
+                        if (initHandler()) {
+                            init = true
+                        }
                     }
-                    TaskScheduler.mainTask = newInstance("主任务") { TaskScheduler.runMainTaskLogic() }
-                    TaskScheduler.dayCalendar = Calendar.getInstance()
-                    if (initHandler()) {
-                        init = true
-                    }
-                }
-            })
+                })
 
-            XposedHelpers.findAndHookMethod(AlipayClasses.SERVICE, classLoader, "onDestroy", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val s = param.thisObject as Service
-                    if (General.CURRENT_USING_SERVICE == s.javaClass.getCanonicalName()) {
-                        updateStatusText("目标应用前台服务被销毁")
-                        destroyHandler()
-                        BroadcastReceiverManager.restartByBroadcast()
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.SERVICE, false, classLoader),
+                    "onDestroy"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val s = p.thisObject as Service
+                        if (General.CURRENT_USING_SERVICE == s.javaClass.getCanonicalName()) {
+                            updateStatusText("目标应用前台服务被销毁")
+                            destroyHandler()
+                            BroadcastReceiverManager.restartByBroadcast()
+                        }
                     }
-                }
-            })
+                })
         } catch (t: Throwable) {
             printStackTrace(TAG, "Hook Service failed", t)
         }
@@ -378,7 +361,7 @@ class ApplicationHook {
         /**
          * 全局配置对象，运行时统一读取配置（方案13重构）。
          */
-        lateinit var config: SesameConfig
+        var config: SesameConfig
             private set
 
         /**
@@ -441,17 +424,8 @@ class ApplicationHook {
         var rpcBridge: RpcBridge? = null
         private val rpcBridgeLock = Any()
 
-        // Deoptimize 方法缓存
-        private val deoptimizeMethod: Method?
-
         init {
             config = SesameConfig()
-            var m: Method? = null
-            try {
-                m = XposedBridge::class.java.getDeclaredMethod("deoptimizeMethod", Member::class.java)
-            } catch (_: Throwable) {
-            }
-            deoptimizeMethod = m
         }
 
         // --- 委托方法（保持对外 API 兼容，实现见 TaskScheduler/BroadcastReceiverManager） ---
@@ -489,10 +463,10 @@ class ApplicationHook {
 
         @Throws(InvocationTargetException::class, IllegalAccessException::class)
         fun deoptimizeClass(c: Class<*>) {
-            if (deoptimizeMethod == null) return
+            if (!Hooker.get().isDeoptimizationSupported) return
             for (m in c.getDeclaredMethods()) {
                 if (m.name == "makeApplicationInner") {
-                    deoptimizeMethod.invoke(null, m)
+                    Hooker.get().deoptimize(m)
                 }
             }
         }
@@ -513,7 +487,7 @@ class ApplicationHook {
                 // 调试模式初始化
                 if (BuildConfig.DEBUG) {
                     try {
-                        startIfNeeded(8080, "ET3vB^#td87sQqKaY*eMUJXP", processName, General.PACKAGE_NAME)
+                        startIfNeeded(8080, "ET3vB^#td87sQqKaY*eMUJXP", XposedEnv.processName, General.PACKAGE_NAME)
                         BroadcastReceiverManager.registerBroadcastReceiver(appContext!!)
                     } catch (_: Throwable) { /* ignore */
                     }

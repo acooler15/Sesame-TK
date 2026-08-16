@@ -317,21 +317,19 @@ class SliderTFLite(val context: Context) {
             }
         }
 
-        if (targetBox != null && sliderBox != null) {
-            val sliderCenterX = (sliderBox.x1 + sliderBox.x2) / 2f
-            val sliderCenterY = (sliderBox.y1 + sliderBox.y2) / 2f
-            val targetCenterX = (targetBox.x1 + targetBox.x2) / 2f
-            val targetCenterY = (targetBox.y1 + targetBox.y2) / 2f
-            Log.record(TAG, "滑块中心: (${sliderCenterX.toInt()},${sliderCenterY.toInt()}), 目标中心: (${targetCenterX.toInt()},${targetCenterY.toInt()}), 距离: ${(targetCenterX-sliderCenterX).toInt()}")
-            return SlideRecognitionResult(
-                sliderX = sliderCenterX,
-                sliderY = sliderCenterY,
-                targetX = targetCenterX,
-                targetY = targetCenterY,
-                confidence = targetBox.score,
-                candidateCount = results.size
-            )
-        }
+        val sliderCenterX = (sliderBox.x1 + sliderBox.x2) / 2f
+        val sliderCenterY = (sliderBox.y1 + sliderBox.y2) / 2f
+        val targetCenterX = (targetBox.x1 + targetBox.x2) / 2f
+        val targetCenterY = (targetBox.y1 + targetBox.y2) / 2f
+        Log.record(TAG, "滑块中心: (${sliderCenterX.toInt()},${sliderCenterY.toInt()}), 目标中心: (${targetCenterX.toInt()},${targetCenterY.toInt()}), 距离: ${(targetCenterX-sliderCenterX).toInt()}")
+        return SlideRecognitionResult(
+            sliderX = sliderCenterX,
+            sliderY = sliderCenterY,
+            targetX = targetCenterX,
+            targetY = targetCenterY,
+            confidence = targetBox.score,
+            candidateCount = results.size
+        )
 
         return null
     }

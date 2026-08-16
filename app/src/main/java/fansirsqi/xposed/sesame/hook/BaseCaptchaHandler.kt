@@ -169,7 +169,6 @@ abstract class BaseCaptchaHandler {
             val anchorText = textAnchor
                 ?.getText()
                 ?.take(24)
-                ?.toString()
                 ?.takeIf { it.isNotBlank() }
             val hasTextAnchor = !anchorText.isNullOrBlank()
 

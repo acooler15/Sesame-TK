@@ -165,6 +165,6 @@ object GlobalThreadPools {
      */
     @JvmStatic
     fun sleepCompat(millis: Long) {
-        CoroutineUtils.sleepCompat(millis)
+        Thread.sleep(millis)
     }
 }

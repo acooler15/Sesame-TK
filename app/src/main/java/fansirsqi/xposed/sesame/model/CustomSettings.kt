@@ -120,7 +120,7 @@ object CustomSettings {
             data[autoHandleOnceDaily.code] = autoHandleOnceDaily.value
             data[autoHandleOnceDailyTimes.code] = autoHandleOnceDailyTimes.value
             val json = JsonUtil.formatJson(data)
-            if (json != null) Files.write2File(json, file!!)
+            Files.write2File(json, file!!)
         } catch (e: Throwable) {
             Log.printStackTrace(TAG, "Failed to save custom settings", e)
         }

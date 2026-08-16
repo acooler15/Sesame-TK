@@ -59,7 +59,7 @@ class CustomService(apiKey: String?, baseUrl: String?) : AnswerAIInterface {
                 .build()
 
         client.newCall(request).execute().use { response ->
-            val responseBody = response.body ?: return ""
+            val responseBody = response.body
             val json = responseBody.string()
             if (!response.isSuccessful) {
                 Log.other("CustomService请求失败")

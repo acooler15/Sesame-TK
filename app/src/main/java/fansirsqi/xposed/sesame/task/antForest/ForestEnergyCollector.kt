@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antForest
 
 import android.annotation.SuppressLint
-import de.robv.android.xposed.XposedHelpers
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.data.RuntimeInfo
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.CollectEnergyEntity
@@ -1310,7 +1310,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
                 }
 
                 if (rpcEntity.hasError) {
-                    val errorCode = XposedHelpers.callMethod(
+                    val errorCode = ReflectUtil.callMethod(
                         rpcEntity.responseObject,
                         "getString",
                         "error"

@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook
 
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 
 /**
  * 验证码触发工具类
@@ -79,7 +79,7 @@ object CaptchaHook {
      */
     private fun triggerCaptchaDialog(classLoader: ClassLoader): Boolean {
         return try {
-            val captchaDialogClass = XposedHelpers.findClass(CLASS_CAPTCHA_DIALOG, classLoader)
+            val captchaDialogClass = Class.forName(CLASS_CAPTCHA_DIALOG, false, classLoader)
             Log.record(TAG, "找到CaptchaDialog类: ${captchaDialogClass.name}")
 
             // 尝试获取Activity Context
@@ -134,7 +134,7 @@ object CaptchaHook {
      */
     private fun triggerCaptchaSwipeActivity(classLoader: ClassLoader): Boolean {
         return try {
-            val activityClass = XposedHelpers.findClass(CLASS_CAPTCHA_SWIPE_ACTIVITY, classLoader)
+            val activityClass = Class.forName(CLASS_CAPTCHA_SWIPE_ACTIVITY, false, classLoader)
             Log.record(TAG, "找到CaptchaSwipeActivity类: ${activityClass.name}")
 
             val context = getAlipayContext()
@@ -164,8 +164,9 @@ object CaptchaHook {
     private fun getAlipayContext(): android.content.Context? {
         return try {
             // 方式1: 通过SimplePageManager获取
-            val simplePageManagerClass = XposedHelpers.findClass(
+            Class.forName(
                 "com.alipay.mobile.nebula.webview.SesameTKWrapper", 
+                false,
                 savedClassLoader!!
             )
             // 如果SimplePageManager有getContext方法
@@ -173,8 +174,12 @@ object CaptchaHook {
             if (ctx != null) return ctx
 
             // 方式2: 通过ActivityThread获取当前Application
-            val activityThread = XposedHelpers.findClass("android.app.ActivityThread", null)
-            val currentApp = XposedHelpers.callStaticMethod(activityThread, "currentApplication")
+            val activityThread = Class.forName(
+                "android.app.ActivityThread",
+                false,
+                CaptchaHook::class.java.classLoader
+            )
+            val currentApp = ReflectUtil.callStaticMethod(activityThread, "currentApplication")
             currentApp as? android.content.Context
         } catch (e: Throwable) {
             Log.record(TAG, "获取Context失败: ${e.message}")

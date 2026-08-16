@@ -45,9 +45,7 @@ class ModelConfig() : Serializable {
         if (modelFields != null) {
             for (entry in modelFields.entries) {
                 val modelField = entry.value
-                if (modelField != null) {
-                    fields[modelField.code] = modelField
-                }
+                fields[modelField.code] = modelField
             }
         }
     }

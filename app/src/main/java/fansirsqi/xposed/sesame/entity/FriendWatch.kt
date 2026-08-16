@@ -70,7 +70,7 @@ class FriendWatch(id: String, name: String) : MapperEntity() {
                 }
                 val notformat = joFriendWatch!!.toString()
                 val formattedJson = JsonUtil.formatJson(joFriendWatch!!)
-                if (formattedJson != null && formattedJson.trim().isNotEmpty()) {
+                if (formattedJson.trim().isNotEmpty()) {
                     Files.write2File(formattedJson, Files.getFriendWatchFile(userId)!!)
                 } else {
                     Files.write2File(notformat, Files.getFriendWatchFile(userId)!!)

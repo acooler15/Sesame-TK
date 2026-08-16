@@ -67,7 +67,7 @@ object PortUtil {
                     }
                 }
                 val intent = (context as Activity).intent
-                (context as Activity).finish()
+                context.finish()
                 context.startActivity(intent)
             } else {
                 ToastUtil.makeText("导入失败！", Toast.LENGTH_SHORT).show()

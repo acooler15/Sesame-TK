@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook.internal
 
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import java.util.HashMap
 
 /**
@@ -38,22 +38,22 @@ object AuthCodeHelper {
                 Log.error(TAG, "Oauth2AuthCodeHelper 未初始化，请先调用 init 方法")
                 return null
             }
-            val oauth2AuthCodeServiceImplClass = XposedHelpers.findClass("com.alibaba.ariver.rpc.biz.proxy.Oauth2AuthCodeServiceImpl", classLoader)
-            val oauth2AuthCodeServiceImpl = XposedHelpers.newInstance(oauth2AuthCodeServiceImplClass)
-            val authSkipRequestModelClass = XposedHelpers.findClass("com.alibaba.ariver.permission.openauth.model.request.AuthSkipRequestModel", classLoader)
-            val authSkipRequestModel = XposedHelpers.newInstance(authSkipRequestModelClass)
-            XposedHelpers.callMethod(authSkipRequestModel, "setAppId", appId)
-            XposedHelpers.callMethod(authSkipRequestModel, "setCurrentPageUrl", "https://${appId}.hybrid.alipay-eco.com/index.html")
-            XposedHelpers.callMethod(authSkipRequestModel, "setFromSystem", "mobilegw_android")
-            XposedHelpers.callMethod(authSkipRequestModel, "setScopeNicks", listOf("auth_base"))
-            XposedHelpers.callMethod(authSkipRequestModel, "setState", "QnJpbmcgc21hbGwgYW5kIGJlYXV0aWZ1bCBjaGFuZ2VzIHRvIHRoZSB3b3JsZA==")
-            XposedHelpers.callMethod(authSkipRequestModel, "setIsvAppId", "")
-            XposedHelpers.callMethod(authSkipRequestModel, "setExtInfo", HashMap<String, String>())
+            val oauth2AuthCodeServiceImplClass = Class.forName("com.alibaba.ariver.rpc.biz.proxy.Oauth2AuthCodeServiceImpl", false, classLoader)
+            val oauth2AuthCodeServiceImpl = ReflectUtil.newInstance(oauth2AuthCodeServiceImplClass)
+            val authSkipRequestModelClass = Class.forName("com.alibaba.ariver.permission.openauth.model.request.AuthSkipRequestModel", false, classLoader)
+            val authSkipRequestModel = ReflectUtil.newInstance(authSkipRequestModelClass)
+            ReflectUtil.callMethod(authSkipRequestModel, "setAppId", appId)
+            ReflectUtil.callMethod(authSkipRequestModel, "setCurrentPageUrl", "https://${appId}.hybrid.alipay-eco.com/index.html")
+            ReflectUtil.callMethod(authSkipRequestModel, "setFromSystem", "mobilegw_android")
+            ReflectUtil.callMethod(authSkipRequestModel, "setScopeNicks", listOf("auth_base"))
+            ReflectUtil.callMethod(authSkipRequestModel, "setState", "QnJpbmcgc21hbGwgYW5kIGJlYXV0aWZ1bCBjaGFuZ2VzIHRvIHRoZSB3b3JsZA==")
+            ReflectUtil.callMethod(authSkipRequestModel, "setIsvAppId", "")
+            ReflectUtil.callMethod(authSkipRequestModel, "setExtInfo", HashMap<String, String>())
             val appExtInfo = HashMap<String, String>()
             appExtInfo["channel"] = "tinyapp"
             appExtInfo["clientAppId"] = appId
-            XposedHelpers.callMethod(authSkipRequestModel, "setAppExtInfo", appExtInfo)
-            val authSkipResult = XposedHelpers.callMethod(
+            ReflectUtil.callMethod(authSkipRequestModel, "setAppExtInfo", appExtInfo)
+            val authSkipResult = ReflectUtil.callMethod(
                 oauth2AuthCodeServiceImpl,
                 "getAuthSkipResult",
                 "AP",
@@ -63,9 +63,9 @@ object AuthCodeHelper {
 
             if (authSkipResult != null) {
                 // 直接从返回的 AuthSkipResultModel 获取 authExecuteResult
-                val authExecuteResult = XposedHelpers.callMethod(authSkipResult, "getAuthExecuteResult")
+                val authExecuteResult = ReflectUtil.callMethod(authSkipResult, "getAuthExecuteResult")
                 if (authExecuteResult != null) {
-                    val authCode = XposedHelpers.callMethod(authExecuteResult, "getAuthCode") as? String
+                    val authCode = ReflectUtil.callMethod(authExecuteResult, "getAuthCode") as? String
                     return authCode
                 }
             }

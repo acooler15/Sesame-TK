@@ -1,7 +1,6 @@
 package fansirsqi.xposed.sesame.task.antForest
 
 import android.annotation.SuppressLint
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.RuntimeInfo
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.AlipayUser

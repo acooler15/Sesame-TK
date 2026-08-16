@@ -59,7 +59,7 @@ class AntFishPond : ModelTask() {
                 taskEnabled = taskEnabled,
                 autoFishEnabled = autoFishEnabled,
                 todayFishCount = todayCount,
-                dailyLimit = fishDailyLimit.value ?: 30,
+                dailyLimit = fishDailyLimit.value,
                 riskToken = riskToken,
                 onFishConfirmed = { currentCount ->
                     Status.setIntFlagToday(

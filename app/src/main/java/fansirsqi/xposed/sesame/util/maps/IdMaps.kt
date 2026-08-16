@@ -86,7 +86,7 @@ abstract class IdMaps private constructor() {
         idMap.clear()
         try {
             val file = Files.getTargetFileofDir(Files.MAIN_DIR, thisFileName())
-            val body = file?.let { Files.readFromFile(it) }.orEmpty()
+            val body = file.let { Files.readFromFile(it) }.orEmpty()
             if (body.isNotBlank()) {
                 val newMap = ObjectMapper().readValue(body, object : TypeReference<Map<Any, Any>>() {})
                 idMap.putAll(newMap)

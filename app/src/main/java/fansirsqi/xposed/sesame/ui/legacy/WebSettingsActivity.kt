@@ -333,15 +333,13 @@ class WebSettingsActivity : ComponentActivity() {
                     )
                     if (map != null) {
                         for ((key, newModelField) in map) {
-                            if (newModelField != null) {
-                                val modelField = modelFields[key]
-                                if (modelField != null) {
-                                    val configValue = newModelField.configValue
-                                    if (configValue == null || configValue.trim { it <= ' ' }.isEmpty()) {
-                                        continue
-                                    }
-                                    modelField.setConfigValue(configValue)
+                            val modelField = modelFields[key]
+                            if (modelField != null) {
+                                val configValue = newModelField.configValue
+                                if (configValue == null || configValue.trim { it <= ' ' }.isEmpty()) {
+                                    continue
                                 }
+                                modelField.setConfigValue(configValue)
                             }
                         }
                         return "SUCCESS"

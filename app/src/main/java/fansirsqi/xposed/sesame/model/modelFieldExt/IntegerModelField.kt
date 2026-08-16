@@ -79,11 +79,11 @@ open class IntegerModelField : ModelField<Int> {
         }
         // 根据最小值限制调整新值
         if (minLimit != null) {
-            newValue = Math.max(minLimit, newValue!!)
+            newValue = Math.max(minLimit, newValue)
         }
         // 根据最大值限制调整新值
         if (maxLimit != null) {
-            newValue = Math.min(maxLimit, newValue!!)
+            newValue = Math.min(maxLimit, newValue)
         }
         // 设置字段值
         value = castValue(newValue)

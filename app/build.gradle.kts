@@ -22,6 +22,10 @@ android {
         jniLibs {
             useLegacyPackaging = true
         }
+        resources {
+            // 双入口共存：合并依赖携带的 META-INF/xposed 声明，避免冲突（照 libxposed/example）
+            merges += "META-INF/xposed/*"
+        }
         splits {
             abi {
                 isEnable = true
@@ -136,7 +140,7 @@ androidComponents {
             val abiName = output.filters
                 .firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }
                 ?.identifier ?: "universal"
-            outputImpl.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}.apk")
+            outputImpl.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}-${variant.name}.apk")
         }
     }
 }
@@ -176,8 +180,8 @@ dependencies {
     implementation(libs.logback.android)            // Logback Android 日志实现
 
     // 仅编译时依赖 - Xposed 相关
-    compileOnly(files("libs/api-82.jar"))          // Xposed API 82（legacy）
-    compileOnly(libs.libxposed.api)                // libxposed API 101（框架运行时提供）
+    compileOnly(files("libs/api-82.jar"))          // Xposed API 82（legacy 后端编译需要，运行时由旧框架提供）
+    compileOnly(libs.libxposed.api)                // libxposed API 102（框架运行时提供）
     implementation(libs.libxposed.`interface`)    // Binder 接口 https://github.com/libxposed/service
     implementation(libs.libxposed.service)         // 服务客户端实现 https://github.com/libxposed/service
 

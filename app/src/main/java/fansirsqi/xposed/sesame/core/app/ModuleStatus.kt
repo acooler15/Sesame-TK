@@ -1,4 +1,6 @@
 package fansirsqi.xposed.sesame.core.app
+
+import fansirsqi.xposed.sesame.hook.XposedEnv
 import java.io.InputStream
 
 /**
@@ -6,7 +8,7 @@ import java.io.InputStream
  *
  * 职责：
  * 1. 提供 UI 层调用的接口 getActivatedStatus()，默认返回 "Not Activated"。
- * 2. 提供 Hook 层调用的检测逻辑 detectFramework(ClassLoader)，用于识别具体框架。
+ * 2. 提供 Hook 层调用的检测逻辑 detectFramework()，基于双入口注入的 [XposedEnv] 框架信息识别框架。
  */
 object ModuleStatus {
 
@@ -24,19 +26,20 @@ object ModuleStatus {
     /**
      * 执行实际的框架检测 (Hook 层调用)
      *
-     * @param classLoader 目标进程的 ClassLoader (通常是模块自身被注入后的 ClassLoader)
+     * 双入口启动时已把框架信息写入 [XposedEnv]（82 后端 → "Xposed"；102 后端 → "LSPosed" 等），
+     * 这里优先读取注入的 frameworkName，避免业务代码直接探测框架类。
+     * LSPatch / NPatch 因通过修改 APK 实现、特征较特殊，保留 ClassLoader 独立探测。
+     *
      * @return 框架名称字符串
      */
-    fun detectFramework(classLoader: ClassLoader): String {
+    fun detectFramework(): String {
         return when {
             // 1. 优先检测 LSPatch / NPatch (因为它们通过修改 APK 实现，特征较特殊)
-            isLSPatch(classLoader) -> "LSPatch"
-            isNPatch(classLoader) -> "NPatch"
+            isLSPatch(XposedEnv.classLoader) -> "LSPatch"
+            isNPatch(XposedEnv.classLoader) -> "NPatch"
 
-            // 2. 检测标准框架
-            checkClass(classLoader, "de.robv.android.xposed.XposedInit") -> "LSPosed"
-            checkClass(classLoader, "org.meowcat.edxposed.manager") -> "EdXposed"
-            checkClass(classLoader, "de.robv.android.xposed.XposedBridge") -> "Xposed"
+            // 2. 读取双入口注入的框架名称 (82 后端 → Xposed；102 后端 → LSPosed/LSPatch 等)
+            XposedEnv.frameworkName.isNotEmpty() -> XposedEnv.frameworkName
 
             // 3. 兜底：虽然被 Hook 了但无法识别框架
             else -> "Unknown Activated"

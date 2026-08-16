@@ -254,7 +254,7 @@ class AntCooperate : ModelTask() {
             }
 
             // 6. 执行浇水
-            val waterAmount = loveCooperateWaterNum.value ?: 0 // 防止空指针
+            val waterAmount = loveCooperateWaterNum.value // 防止空指针
             if (waterAmount <= 0) {
                 Log.error(TAG, "配置的浇水数值无效: $waterAmount")
                 return
@@ -280,7 +280,7 @@ class AntCooperate : ModelTask() {
         try {
             // --- 1. 基础配置与本地校验 ---
             // 用户设置的“每日目标浇水量”
-            val userDailyTarget = (teamCooperateWaterNum.value ?: 10).coerceIn(10, 5000)
+            val userDailyTarget = (teamCooperateWaterNum.value).coerceIn(10, 5000)
 
             // 获取今日已浇水量
             val todayUsed = Status.getIntFlagToday(StatusFlags.FLAG_TEAM_WATER_DAILY_COUNT) ?: 0

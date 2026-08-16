@@ -2,7 +2,6 @@
 
 package fansirsqi.xposed.sesame.core.app
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
-import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.log.Log
 
 import android.annotation.SuppressLint
@@ -470,7 +469,7 @@ object Files {
             }
             retryCount--
             Log.record(TAG, "删除失败，重试中: ${file.absolutePath}")
-            CoroutineUtils.sleepCompat(500)
+            Thread.sleep(500)
         }
         Log.error(TAG, "删除失败: ${file.absolutePath}")
         return false

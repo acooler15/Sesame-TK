@@ -12,7 +12,7 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.ChoiceModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.task.ModelTask
-import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
+import kotlinx.coroutines.delay
 import fansirsqi.xposed.sesame.task.GameTask
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.RandomUtil
@@ -171,7 +171,7 @@ class AntOrchard : ModelTask() {
             // 施肥逻辑
             // {{ 修改：调用新的施肥分发逻辑 }}
             if (orchardSpreadManureCountMain.value > 0 || orchardSpreadManureCountYeb.value > 0) {
-                CoroutineUtils.sleepCompat(200)
+                delay(200)
                 orchardSpreadManure()
             }
 
@@ -237,7 +237,7 @@ class AntOrchard : ModelTask() {
         // 切换场景
         try {
             AntOrchardRpcCall.switchPlantScene(targetScene)
-            CoroutineUtils.sleepCompat(500)
+            delay(500)
         } catch (ignore: Throwable) {}
 
         val sourceList = listOf(
@@ -353,12 +353,12 @@ class AntOrchard : ModelTask() {
                     Log.farm("施肥💩[$sceneName] 成功|累计:$totalWatered")
                 }
 
-                CoroutineUtils.sleepCompat(500)
+                delay(500)
                 // 检查施肥后礼盒
                 checkFertilizerBox(targetScene)
 
             } finally {
-                CoroutineUtils.sleepCompat(executeIntervalInt.toLong())
+                delay(executeIntervalInt.toLong())
             }
         } while (totalWatered < targetLimit)
 
@@ -566,7 +566,7 @@ class AntOrchard : ModelTask() {
                             }
                             break
                         }
-                        CoroutineUtils.sleepCompat(executeIntervalInt.toLong())
+                        delay(executeIntervalInt.toLong())
                     }
                     continue
                 }
@@ -871,7 +871,7 @@ class AntOrchard : ModelTask() {
                 )
                 val str = AntOrchardRpcCall.achieveBeShareP2P(shareId)
                 val jsonObject = JSONObject(str)
-                CoroutineUtils.sleepCompat(800)
+                delay(800)
                 val name = UserMap.getMaskName(uid)
 
                 if (!ResChecker.checkRes(TAG, str)) {

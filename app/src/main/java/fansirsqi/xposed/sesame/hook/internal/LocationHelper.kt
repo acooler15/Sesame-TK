@@ -1,8 +1,8 @@
 package fansirsqi.xposed.sesame.hook.internal
 
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -48,9 +48,9 @@ object LocationHelper {
             }
 
             // 执行反射调用 (耗时操作)
-            val lnsctrUtilsClass = XposedHelpers.findClass("com.alipay.mobile.common.lnsctr.LnsctrUtils", classLoader)
-            val latitude = XposedHelpers.callStaticMethod(lnsctrUtilsClass, "getLatitude") as? Double
-            val longitude = XposedHelpers.callStaticMethod(lnsctrUtilsClass, "getLongitude") as? Double
+            val lnsctrUtilsClass = Class.forName("com.alipay.mobile.common.lnsctr.LnsctrUtils", false, classLoader)
+            val latitude = ReflectUtil.callStaticMethod(lnsctrUtilsClass, "getLatitude") as? Double
+            val longitude = ReflectUtil.callStaticMethod(lnsctrUtilsClass, "getLongitude") as? Double
 
             if (latitude != null && longitude != null) {
                 val locationMap = mapOf(

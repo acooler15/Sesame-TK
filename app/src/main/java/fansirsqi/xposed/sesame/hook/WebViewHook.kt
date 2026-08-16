@@ -1,10 +1,11 @@
 package fansirsqi.xposed.sesame.hook
 
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.log.Log.record
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -82,15 +83,16 @@ object WebViewHook {
     // ============================================================
     private fun hookLoadUrl(className: String, classLoader: ClassLoader, label: String) {
         try {
-            XposedHelpers.findAndHookMethod(
-                className,
-                classLoader,
-                "loadUrl",
-                String::class.java,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(className, false, classLoader),
+                    "loadUrl",
+                    String::class.java
+                ),
+                object : HookCallback {
+                    override fun before(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
+                            val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             record(TAG, "$label loadUrl: $url")
                         } catch (t: Throwable) {
@@ -98,12 +100,12 @@ object WebViewHook {
                         }
                     }
 
-                    override fun afterHookedMethod(param: MethodHookParam) {
+                    override fun after(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
+                            val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             // 从 WebView 实例获取已设置的 WebViewClient 并动态 hook
-                            tryHookWebViewClientFromWebView(param.thisObject, label)
+                            tryHookWebViewClientFromWebView(p.thisObject, label)
                         } catch (t: Throwable) {
                             Log.printStackTrace(TAG, "$label loadUrl afterHook 异常", t)
                         }
@@ -121,18 +123,19 @@ object WebViewHook {
     // ============================================================
     private fun hookLoadUrlWithHeaders(className: String, classLoader: ClassLoader, label: String) {
         try {
-            XposedHelpers.findAndHookMethod(
-                className,
-                classLoader,
-                "loadUrl",
-                String::class.java,
-                Map::class.java,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(className, false, classLoader),
+                    "loadUrl",
+                    String::class.java,
+                    Map::class.java
+                ),
+                object : HookCallback {
+                    override fun before(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
+                            val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
-                            val headers = param.args[1] as? Map<*, *>
+                            val headers = p.args[1] as? Map<*, *>
                             val headerStr = headers?.entries?.joinToString(", ") { "${it.key}=${it.value}" } ?: "null"
                             record(TAG, "$label loadUrl(Header): $url | headers={$headerStr}")
                         } catch (t: Throwable) {
@@ -140,11 +143,11 @@ object WebViewHook {
                         }
                     }
 
-                    override fun afterHookedMethod(param: MethodHookParam) {
+                    override fun after(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
+                            val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
-                            tryHookWebViewClientFromWebView(param.thisObject, label)
+                            tryHookWebViewClientFromWebView(p.thisObject, label)
                         } catch (t: Throwable) {
                             Log.printStackTrace(TAG, "$label loadUrl(Header) afterHook 异常", t)
                         }
@@ -166,9 +169,9 @@ object WebViewHook {
      * 而 loadUrl 一定在 WebViewClient 设置之后才调用，此时通过 getWebViewClient()
      * 能可靠地拿到实际子类实例。
      */
-    private fun tryHookWebViewClientFromWebView(webViewObj: Any, label: String) {
+    private fun tryHookWebViewClientFromWebView(webViewObj: Any?, label: String) {
         try {
-            val wvClient = XposedHelpers.callMethod(webViewObj, "getWebViewClient") ?: return
+            val wvClient = ReflectUtil.callMethod(webViewObj, "getWebViewClient") ?: return
             val clientClass = wvClient.javaClass
             if (clientClass.name == "android.webkit.WebViewClient") {
                 // 直接用的基类，不需要动态 hook（前面已 hook 基类）
@@ -194,14 +197,16 @@ object WebViewHook {
             return
         }
         try {
-            XposedHelpers.findAndHookMethod(
-                android.webkit.WebViewClient::class.java,
-                "onPageFinished",
-                android.webkit.WebView::class.java,
-                String::class.java,
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        onPageFinishedCallback(param)
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    android.webkit.WebViewClient::class.java,
+                    "onPageFinished",
+                    android.webkit.WebView::class.java,
+                    String::class.java
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        onPageFinishedCallback(p)
                     }
                 }
             )
@@ -232,9 +237,9 @@ object WebViewHook {
             if (methods.isNotEmpty()) {
                 for (m in methods) {
                     try {
-                        XposedBridge.hookMethod(m, object : XC_MethodHook() {
-                            override fun afterHookedMethod(param: MethodHookParam) {
-                                onPageFinishedCallback(param)
+                        Hooker.get().hookMethod(m, object : HookCallback {
+                            override fun after(p: HookParam) {
+                                onPageFinishedCallback(p)
                             }
                         })
                     } catch (t: Throwable) {
@@ -256,10 +261,10 @@ object WebViewHook {
      * 参数可能为 android.webkit.WebView 或 com.alipay.mywebview.sdk.WebView，
      * 不能强制转换，通过反射调用 evaluateJavascript。
      */
-    private fun onPageFinishedCallback(param: XC_MethodHook.MethodHookParam) {
+    private fun onPageFinishedCallback(p: HookParam) {
         try {
-            val webViewObj = param.args[0] ?: return
-            val url = param.args[1] as? String ?: return
+            val webViewObj = p.args[0] ?: return
+            val url = p.args[1] as? String ?: return
             record(TAG, "onPageFinished: $url")
             extractHtml(webViewObj, url)
         } catch (t: Throwable) {
@@ -335,16 +340,17 @@ object WebViewHook {
     // ============================================================
     private fun hookEvaluateJavascript(classLoader: ClassLoader) {
         try {
-            XposedHelpers.findAndHookMethod(
-                SYSTEM_WEBVIEW,
-                classLoader,
-                "evaluateJavascript",
-                String::class.java,
-                "android.webkit.ValueCallback",
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(SYSTEM_WEBVIEW, false, classLoader),
+                    "evaluateJavascript",
+                    String::class.java,
+                    Class.forName("android.webkit.ValueCallback", false, classLoader)
+                ),
+                object : HookCallback {
+                    override fun before(p: HookParam) {
                         try {
-                            val script = param.args[0] as? String ?: return
+                            val script = p.args[0] as? String ?: return
                             record(TAG, "[SysWV] evaluateJavascript: $script")
                         } catch (t: Throwable) {
                             // ignore
@@ -364,17 +370,18 @@ object WebViewHook {
     private fun hookCookieManager(classLoader: ClassLoader) {
         try {
             // Hook CookieManager.setCookie(String url, String value)
-            XposedHelpers.findAndHookMethod(
-                "android.webkit.CookieManager",
-                classLoader,
-                "setCookie",
-                String::class.java,
-                String::class.java,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName("android.webkit.CookieManager", false, classLoader),
+                    "setCookie",
+                    String::class.java,
+                    String::class.java
+                ),
+                object : HookCallback {
+                    override fun before(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
-                            val cookieStr = param.args[1] as? String ?: return
+                            val url = p.args[0] as? String ?: return
+                            val cookieStr = p.args[1] as? String ?: return
                             val mozillaLine = formatCookieToMozilla(url, cookieStr)
                             if (mozillaLine != null) {
                                 record(TAG, "Cookie[Set]\n$mozillaLine")
@@ -388,24 +395,25 @@ object WebViewHook {
             record(TAG, "CookieManager.setCookie Hook 安装成功")
 
             // Hook CookieManager.getCookie(String url) — 记录读取行为
-            XposedHelpers.findAndHookMethod(
-                "android.webkit.CookieManager",
-                classLoader,
-                "getCookie",
-                String::class.java,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName("android.webkit.CookieManager", false, classLoader),
+                    "getCookie",
+                    String::class.java
+                ),
+                object : HookCallback {
+                    override fun before(p: HookParam) {
                         try {
-                            val url = param.args[0] as? String ?: return
+                            val url = p.args[0] as? String ?: return
                             record(TAG, "Cookie[Get] URL: $url")
                         } catch (t: Throwable) {
                             // ignore
                         }
                     }
 
-                    override fun afterHookedMethod(param: MethodHookParam) {
+                    override fun after(p: HookParam) {
                         try {
-                            val result = param.result as? String
+                            val result = p.result as? String
                             if (!result.isNullOrEmpty() && result.length < 3000) {
                                 record(TAG, "Cookie[Get] Result:\n$result")
                             } else if (!result.isNullOrEmpty()) {
@@ -489,8 +497,8 @@ object WebViewHook {
 
             // 5. 构建 Mozilla/Netscape 格式行
             val flag = if (hasLeadingDot) "TRUE" else "FALSE"
-            val domainStr = domain ?: "unknown"
-            val pathStr = path ?: "/"
+            val domainStr = domain
+            val pathStr = path
             val secureStr = if (isSecure) "TRUE" else "FALSE"
 
             return "$domainStr\t$flag\t$pathStr\t$secureStr\t$expiryTimestamp\t$name\t$value"

@@ -62,10 +62,6 @@ class Reserve : ModelTask() {
         try {
             Log.record(TAG, "开始执行-" + getName())
             var s = ReserveRpcCall.queryTreeItemsForExchange()
-            if (s == null) {
-                GlobalThreadPools.sleepCompat(RandomUtil.delay().toLong())
-                s = ReserveRpcCall.queryTreeItemsForExchange()
-            }
             var jo = JSONObject(s)
             if (ResChecker.checkRes(TAG, jo)) {
                 val ja = jo.getJSONArray("treeItems")

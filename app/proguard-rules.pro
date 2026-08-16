@@ -18,7 +18,6 @@
 -keep class com.niki.** { *; }
 -dontwarn com.niki.**
 
-
 # ---------- 日志 ----------
 -keep class ch.qos.logback.** { *; }
 -keep class org.slf4j.** { *; }
@@ -26,10 +25,17 @@
 
 # ---------- 本工程 ----------
 
-# Hook 入口（Xposed 框架按 assets/xposed_init 声明反射加载）
--keep class fansirsqi.xposed.sesame.hook.xp82.HookEntry { *; }
+# Hook 入口（legacy 框架按 assets/xposed_init 声明反射加载）
+-keep class fansirsqi.xposed.sesame.hook.entry.legacy.** { *; }
 # libxposed service 入口（保守保留）
--keep class fansirsqi.xposed.sesame.hook.lsp100.HookEntry { *; }
+-keep class fansirsqi.xposed.sesame.hook.entry.modern.** { *; }
+
+# ---------- libxposed 现代路径（照官方 example 规则） ----------
+-dontwarn io.github.libxposed.annotation.**
+-adaptresourcefilecontents META-INF/xposed/java_init.list
+-keep,allowoptimization,allowobfuscation public class * extends io.github.libxposed.api.XposedModule {
+    public <init>();
+}
 
 # 配置体系（混淆将导致用户配置丢失，最高风险）
 # 1) 配置文件以模型类简单名为键（ModelConfig.code = javaClass.simpleName）

@@ -331,7 +331,7 @@ class AntDodo : ModelTask() {
             var isBookFull = (totalCount > 0 && currentCount >= totalCount)
 
             // 获取 UI 配置 (用户勾选了哪些类型的道具自动使用)
-            val selectedConfigs: Set<String?> = usepropGroup.value ?: return
+            val selectedConfigs: Set<String?> = usepropGroup.value
 
             for (i in 0..<propList.length()) {
                 val prop = propList.getJSONObject(i)

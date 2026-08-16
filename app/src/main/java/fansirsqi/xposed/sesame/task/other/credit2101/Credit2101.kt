@@ -233,7 +233,7 @@ object Credit2101 {
             Log.record(TAG, "执行开始 信用2101")
             this.mCreditTaskOptions = credittaskoptions
             this.mCreditEventOptions = creditoptions
-            val selectedTasks = credittaskoptions.value ?: emptyList<String>()
+            val selectedTasks = credittaskoptions.value
 
             var account = queryAccountAsset() ?: run {
                 Log.error(TAG, "信用2101❌[账户查询失败] 返回为空或非 SUCCESS")

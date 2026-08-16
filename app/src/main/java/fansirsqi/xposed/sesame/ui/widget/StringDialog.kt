@@ -70,7 +70,7 @@ object StringDialog {
         onDismiss: () -> Unit
     ) {
         // 初始值绑定当前配置值（与原 EditText.setText 一致）
-        var text by remember { mutableStateOf(modelField.configValue.toString()) }
+        var text by remember { mutableStateOf(modelField.configValue) }
 
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -156,7 +156,7 @@ object StringDialog {
                     }
                     // 灰色弱化展示，等价原 edt.setTextColor(Color.GRAY)
                     Text(
-                        text = modelField.configValue.toString(),
+                        text = modelField.configValue,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

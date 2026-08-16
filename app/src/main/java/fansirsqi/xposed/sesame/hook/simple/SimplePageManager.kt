@@ -8,9 +8,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedHelpers
-import fansirsqi.xposed.sesame.hook.simple.xpcompat.CompatHelpers
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import fansirsqi.xposed.sesame.core.log.Log as SesameLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +59,36 @@ object SimplePageManager {
     fun getContext(): Context? = mContextRef?.get()
 
     fun getClassLoader(): ClassLoader? = mClassLoader
+
+    /**
+     * 参数类型解析：把 hookDialogConstructor 的松散参数（Class / 类名字符串）解析为具体类型。
+     * 兼容基本类型名（如 "boolean"）与含 $ 的内联类名（如 "X$Y"）。
+     */
+    private fun resolveParamClass(param: Any, classLoader: ClassLoader?): Class<*> = when (param) {
+        is Class<*> -> param
+        is String -> when (param) {
+            "boolean" -> java.lang.Boolean.TYPE
+            "byte" -> java.lang.Byte.TYPE
+            "char" -> java.lang.Character.TYPE
+            "short" -> java.lang.Short.TYPE
+            "int" -> java.lang.Integer.TYPE
+            "long" -> java.lang.Long.TYPE
+            "float" -> java.lang.Float.TYPE
+            "double" -> java.lang.Double.TYPE
+            "void" -> java.lang.Void.TYPE
+            else -> {
+                if (param.contains("$")) {
+                    val parts = param.split("$")
+                    val outerClass = Class.forName(parts[0], false, classLoader)
+                    outerClass.declaredClasses.find { it.simpleName == parts[1] }
+                        ?: throw ClassNotFoundException("Inner class ${parts[1]} not found in ${parts[0]}")
+                } else {
+                    Class.forName(param, false, classLoader)
+                }
+            }
+        }
+        else -> param.javaClass
+    }
 
     fun getTopActivity(): Activity? = topActivity
 
@@ -147,13 +177,11 @@ object SimplePageManager {
      */
     private fun enablePageMonitor() {
         try {
-            CompatHelpers.findAndHookMethod(
-                Application::class.java,
-                "dispatchActivityResumed",
-                Activity::class.java,
-                object : XC_MethodHook() {
-                    override fun beforeHookedMethod(param: MethodHookParam) {
-                        topActivity = param.args[0] as Activity
+            Hooker.get().hookMethod(
+                Application::class.java.getDeclaredMethod("dispatchActivityResumed", Activity::class.java).apply { isAccessible = true },
+                object : HookCallback {
+                    override fun before(p: HookParam) {
+                        topActivity = p.args[0] as Activity
                         SesameLog.record(TAG, "Activity resumed: ${topActivity?.javaClass?.name}")
                         if (mContextRef?.get() == null) {
                             mContextRef = WeakReference(topActivity?.applicationContext)
@@ -189,13 +217,13 @@ object SimplePageManager {
             if (it is Class<*>) it.simpleName else it.toString()
         }
         try {
-            CompatHelpers.findAndHookConstructor(
-                "android.app.Dialog",
-                getClassLoader(),
-                *parameterTypes,
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        val dialog = param.thisObject as android.app.Dialog
+            val paramClasses = parameterTypes.map { resolveParamClass(it, getClassLoader()) }.toTypedArray()
+            val constructor = android.app.Dialog::class.java.getDeclaredConstructor(*paramClasses).apply { isAccessible = true }
+            Hooker.get().hookMethod(
+                constructor,
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val dialog = p.thisObject as android.app.Dialog
                         addDialogIfNotExists(dialog, "构造函数($parameterTypesString)")
                     }
                 }
@@ -220,16 +248,16 @@ object SimplePageManager {
         )
 
         try {
-            val captchaDialogClass = XposedHelpers.findClass(
+            val captchaDialogClass = Class.forName(
                 "com.alipay.rdssecuritysdk.v3.captcha.view.CaptchaDialog",
+                false,
                 getClassLoader()
             )
-            CompatHelpers.findAndHookMethod(
-                captchaDialogClass,
-                "show",
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        val dialog = param.thisObject as android.app.Dialog
+            Hooker.get().hookMethod(
+                captchaDialogClass.getDeclaredMethod("show").apply { isAccessible = true },
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val dialog = p.thisObject as android.app.Dialog
                         addDialogIfNotExists(dialog, "CaptchaDialog.show()")
                     }
                 }

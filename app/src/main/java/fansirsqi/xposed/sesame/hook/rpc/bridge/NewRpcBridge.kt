@@ -1,6 +1,5 @@
 package fansirsqi.xposed.sesame.hook.rpc.bridge
 
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
@@ -8,6 +7,7 @@ import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.Notify
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.app.SwipeUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
@@ -70,13 +70,13 @@ class NewRpcBridge : RpcBridge {
     override fun load() {
         loader = ApplicationHook.classLoader
         try {
-            val service = XposedHelpers.callStaticMethod(XposedHelpers.findClass("com.alipay.mobile.nebulacore.Nebula", loader), "getService")
-            val extensionManager = XposedHelpers.callMethod(service, "getExtensionManager")
+            val service = ReflectUtil.callStaticMethod(Class.forName("com.alipay.mobile.nebulacore.Nebula", false, loader), "getService")
+            val extensionManager = ReflectUtil.callMethod(service, "getExtensionManager")
             val getExtensionByName = extensionManager!!.javaClass.getDeclaredMethod("createExtensionInstance", Class::class.java)
             getExtensionByName.isAccessible = true
             newRpcInstance = getExtensionByName.invoke(null, loader!!.loadClass("com.alibaba.ariver.commonability.network.rpc.RpcBridgeExtension"))
             if (newRpcInstance == null) {
-                val nodeExtensionMap = XposedHelpers.callMethod(extensionManager, "getNodeExtensionMap")
+                val nodeExtensionMap = ReflectUtil.callMethod(extensionManager, "getNodeExtensionMap")
                 if (nodeExtensionMap != null) {
                     @Suppress("UNCHECKED_CAST")
                     val map = nodeExtensionMap as Map<Any?, Map<String, Any?>>
@@ -233,12 +233,12 @@ class NewRpcBridge : RpcBridge {
                                                         // 获取 JSON 字符串，失败时重试一次
                                                         var jsonString: String? = null
                                                         try {
-                                                            jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
+                                                            jsonString = ReflectUtil.callMethod(obj, "toJSONString") as String?
                                                         } catch (e: Exception) {
                                                             // 第一次失败，尝试重试
                                                             try {
                                                                 Thread.sleep(100L)
-                                                                jsonString = XposedHelpers.callMethod(obj, "toJSONString") as String?
+                                                                jsonString = ReflectUtil.callMethod(obj, "toJSONString") as String?
                                                             } catch (retryException: Exception) {
                                                                 // 重试后仍失败，记录日志并标记错误，触发外层RPC重试
                                                                 Log.record(TAG, "toJSONString 重试后仍然失败，将触发整个 RPC 请求重试: " + retryException.message)
@@ -249,8 +249,8 @@ class NewRpcBridge : RpcBridge {
                                                         }
 
                                                         rpcEntity.setResponseObject(obj, jsonString)
-                                                        if (!(XposedHelpers.callMethod(obj, "containsKey", "success") as Boolean)
-                                                                && !(XposedHelpers.callMethod(obj, "containsKey", "isSuccess") as Boolean)) {
+                                                        if (!(ReflectUtil.callMethod(obj, "containsKey", "success") as Boolean)
+                                                                && !(ReflectUtil.callMethod(obj, "containsKey", "isSuccess") as Boolean)) {
                                                             rpcEntity.setError()
                                                             if (shouldShowErrorLog(rpcEntity.requestMethod)) {
                                                                 Log.error(TAG, "new rpc response1 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + "\n " +
@@ -275,8 +275,8 @@ class NewRpcBridge : RpcBridge {
                             return rpcEntity
                         }
                         try {
-                            val errorCode = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "error") as String?
-                            val errorMessage = XposedHelpers.callMethod(rpcEntity.responseObject, "getString", "errorMessage") as String?
+                            val errorCode = ReflectUtil.callMethod(rpcEntity.responseObject, "getString", "error") as String?
+                            val errorMessage = ReflectUtil.callMethod(rpcEntity.responseObject, "getString", "errorMessage") as String?
                             val response = rpcEntity.responseString
                             val methodName = rpcEntity.requestMethod
 

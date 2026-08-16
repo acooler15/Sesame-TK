@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.hook.internal
 
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 
 /**
  * 支付宝小程序游戏获取alipayminimark
@@ -28,8 +28,8 @@ object AlipayMiniMarkHelper {
      */
     fun getAlipayMiniMark(str: String, str2: String): String {
         try {
-            val h5HttpUtilsClass = XposedHelpers.findClass("com.alipay.mobile.nebula.util.H5HttpUtils", classLoader)
-            val result = XposedHelpers.callStaticMethod(h5HttpUtilsClass, "getAlipayMiniMark", str, str2) as? String
+            val h5HttpUtilsClass = Class.forName("com.alipay.mobile.nebula.util.H5HttpUtils", false, classLoader)
+            val result = ReflectUtil.callStaticMethod(h5HttpUtilsClass, "getAlipayMiniMark", str, str2) as? String
             return result ?: ""
         } catch (e: Throwable) {
             Log.printStackTrace(TAG, "获取alipayminimark失败: ${e.message}", e)

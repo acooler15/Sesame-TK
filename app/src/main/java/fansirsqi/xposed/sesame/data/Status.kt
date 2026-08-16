@@ -382,7 +382,7 @@ class Status {
                         JsonUtil.copyMapper().readerForUpdating(INSTANCE).readValue<Status>(json)
                         // 格式化检查
                         val formatted = JsonUtil.formatJson(INSTANCE)
-                        if (formatted != null && formatted != json) {
+                        if (formatted != json) {
                             Log.record(TAG, "重新格式化 status.json")
                             Files.write2File(formatted, statusFile)
                         }

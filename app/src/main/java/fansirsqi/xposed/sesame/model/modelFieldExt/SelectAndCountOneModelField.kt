@@ -9,9 +9,9 @@ import fansirsqi.xposed.sesame.entity.MapperEntity
 
 class SelectAndCountOneModelField : ModelField<KVMap<String?, Int?>>, SelectModelFieldFunc {
     private var selectListFunc: SelectListFunc? = null
-    private var expandList: List<out MapperEntity>? = null
+    private var expandList: List<MapperEntity>? = null
 
-    constructor(code: String?, name: String?, value: KVMap<String?, Int?>, expandValue: List<out MapperEntity>?) : super(code, name, value) {
+    constructor(code: String?, name: String?, value: KVMap<String?, Int?>, expandValue: List<MapperEntity>?) : super(code, name, value) {
         this.expandList = expandValue
     }
 
@@ -22,7 +22,7 @@ class SelectAndCountOneModelField : ModelField<KVMap<String?, Int?>>, SelectMode
     override val type: String
         get() = "SELECT_AND_COUNT_ONE"
 
-    override val expandValue: List<out MapperEntity>?
+    override val expandValue: List<MapperEntity>?
         get() = castList(selectListFunc?.getList() ?: expandList)
 
     @get:JsonIgnore
@@ -64,4 +64,4 @@ class SelectAndCountOneModelField : ModelField<KVMap<String?, Int?>>, SelectMode
 
 // 保持与 Java 版本一致：List<?> 到 List<? extends MapperEntity> 的泛型擦除转换，无运行时检查
 @Suppress("UNCHECKED_CAST")
-private fun castList(value: Any?): List<out MapperEntity>? = value as List<out MapperEntity>?
+private fun castList(value: Any?): List<MapperEntity>? = value as List<MapperEntity>?

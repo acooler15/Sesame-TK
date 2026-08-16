@@ -110,23 +110,21 @@ object TaskScheduler {
             checkInactiveTime()
             val checkInterval = ApplicationHook.config.checkInterval.value
             val execAtTimeList = ApplicationHook.config.execAtTimeList.value
-            if (execAtTimeList != null && execAtTimeList.contains("-1")) {
+            if (execAtTimeList.contains("-1")) {
                 record(TAG, "定时执行未开启")
                 return
             }
             var delayMillis = checkInterval.toLong()
             var targetTime: Long = 0
-            if (execAtTimeList != null) {
-                val lastCal = TimeUtil.getCalendarByTimeMillis(lastTime)
-                val nextCal = TimeUtil.getCalendarByTimeMillis(lastTime + checkInterval)
-                for (timeStr in execAtTimeList) {
-                    val execCal = TimeUtil.getTodayCalendarByTimeStr(timeStr)
-                    if (execCal != null && lastCal < execCal && nextCal > execCal) {
-                        record(TAG, "设置定时执行:$timeStr")
-                        targetTime = execCal.getTimeInMillis()
-                        delayMillis = targetTime - lastTime
-                        break
-                    }
+            val lastCal = TimeUtil.getCalendarByTimeMillis(lastTime)
+            val nextCal = TimeUtil.getCalendarByTimeMillis(lastTime + checkInterval)
+            for (timeStr in execAtTimeList) {
+                val execCal = TimeUtil.getTodayCalendarByTimeStr(timeStr)
+                if (execCal != null && lastCal < execCal && nextCal > execCal) {
+                    record(TAG, "设置定时执行:$timeStr")
+                    targetTime = execCal.getTimeInMillis()
+                    delayMillis = targetTime - lastTime
+                    break
                 }
             }
             nextExecutionTime = if (targetTime > 0) targetTime else (lastTime + delayMillis)
@@ -203,7 +201,7 @@ object TaskScheduler {
         ensureScheduler()
 
         val wakenAtTimeList = ApplicationHook.config.wakenAtTimeList.value
-        if (wakenAtTimeList != null && wakenAtTimeList.contains("-1")) return
+        if (wakenAtTimeList.contains("-1")) return
 
         // 1. 每日0点
         val calendar = Calendar.getInstance()
@@ -221,20 +219,18 @@ object TaskScheduler {
         }
 
         // 2. 自定义时间
-        if (wakenAtTimeList != null) {
-            val now = Calendar.getInstance()
-            for (timeStr in wakenAtTimeList) {
-                try {
-                    val target = TimeUtil.getTodayCalendarByTimeStr(timeStr)
-                    if (target != null && target > now) {
-                        val delay = target.getTimeInMillis() - System.currentTimeMillis()
-                        schedule(delay, "自定义: $timeStr") {
-                            record(TAG, "⏰ 自定义触发: $timeStr")
-                            execHandler()
-                        }
+        val now = Calendar.getInstance()
+        for (timeStr in wakenAtTimeList) {
+            try {
+                val target = TimeUtil.getTodayCalendarByTimeStr(timeStr)
+                if (target != null && target > now) {
+                    val delay = target.getTimeInMillis() - System.currentTimeMillis()
+                    schedule(delay, "自定义: $timeStr") {
+                        record(TAG, "⏰ 自定义触发: $timeStr")
+                        execHandler()
                     }
-                } catch (_: Exception) { /* ignore */
                 }
+            } catch (_: Exception) { /* ignore */
             }
         }
     }

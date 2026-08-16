@@ -16,9 +16,9 @@ logback-android = "3.0.0"
 okhttp = "5.4.0"
 jackson = "2.21.5"
 jackson-annotations = "2.21"
-# libxposed 线上坐标从 101 起发布（100 仅有本地 aar）；101 为最接近 100 的保守版本
-libxposed = "101.0.0"
-libxposedApi = "101.0.1"
+# libxposed 102：拦截器链模型（OkHttp 风格）、Invoker 系统、detach、热重载、HookHandle.replaceHook
+libxposed = "102.0.0"
+libxposedApi = "102.0.0"
 
 core-ktx = "1.19.0"
 dexkit = "2.2.0"

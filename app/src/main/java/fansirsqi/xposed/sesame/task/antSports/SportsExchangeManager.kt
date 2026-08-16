@@ -1,8 +1,8 @@
 package fansirsqi.xposed.sesame.task.antSports
 
 import android.annotation.SuppressLint
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.util.RandomUtil
@@ -64,12 +64,12 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                             return@Runnable
                         }
 
-                        val rpcManager = XposedHelpers.callStaticMethod(
+                        val rpcManager = ReflectUtil.callStaticMethod(
                             loader.loadClass("com.alibaba.health.pedometer.intergation.rpc.RpcManager"),
                             "a"
                         )
 
-                        val success = XposedHelpers.callMethod(
+                        val success = ReflectUtil.callMethod(
                             rpcManager,
                             "a",
                             step,

@@ -1,7 +1,6 @@
 package fansirsqi.xposed.sesame.core.util
 
 import fansirsqi.xposed.sesame.core.log.Log
-import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 
 import android.annotation.SuppressLint
 import java.text.DateFormat
@@ -252,7 +251,7 @@ object TimeUtil {
      */
     @JvmStatic
     fun sleepCompat(millis: Long) {
-        CoroutineUtils.sleepCompat(millis)
+        Thread.sleep(millis)
     }
 
     /**

@@ -1,12 +1,14 @@
 package fansirsqi.xposed.sesame.task.antSports
 
 import android.annotation.SuppressLint
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.entity.AlipayUser
 import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
@@ -249,17 +251,22 @@ class AntSports : ModelTask() {
      */
     override fun boot(classLoader: ClassLoader?) {
         try {
-            XposedHelpers.findAndHookMethod(
-                "com.alibaba.health.pedometer.core.datasource.PedometerAgent",
-                classLoader,
-                "readDailyStep",
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        val originStep = param.result as Int
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(
+                        "com.alibaba.health.pedometer.core.datasource.PedometerAgent",
+                        false,
+                        classLoader
+                    ),
+                    "readDailyStep"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val originStep = p.result as Int
                         val step = exchangeManager.tmpStepCount()
                         // 早于 8 点或步数小于自定义步数时进行 hook
                         if (TaskCommon.IS_AFTER_8AM && originStep < step) {
-                            param.result = step
+                            p.result = step
                         }
                     }
                 }

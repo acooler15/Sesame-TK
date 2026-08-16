@@ -187,7 +187,7 @@ class Config private constructor() {
             } else {
                 configV2File = Files.getConfigV2File(userId!!)
                 val userEntity = UserMap.get(userId)
-                userName = userEntity?.showName ?: userId!!
+                userName = userEntity?.showName ?: userId
             }
             Log.record(TAG, "加载配置: $userName")
 

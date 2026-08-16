@@ -364,8 +364,10 @@ class ApplicationHook {
             } else {
                 System.loadLibrary(soFile.getName().replace(".so", "").replace("lib", ""))
             }
-        } catch (e: Exception) {
-            Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), e)
+        } catch (t: Throwable) {
+            // 必须捕获 Throwable：System.load 抛 UnsatisfiedLinkError（Error），
+            // 若逃逸会击穿 attach 回调导致 initSimplePageManager 等后续初始化全部跳过
+            Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), t)
         }
     }
 
@@ -402,7 +404,7 @@ class ApplicationHook {
 
         /**
          * 检查目标应用版本是否需要启用SimplePageManager功能
-         * @return true表示版本低于等于10.6.58.99999，需要启用；false表示不需要
+         * @return true表示版本低于等于12.99.99.99999，需要启用；false表示不需要
          */
         fun shouldEnableSimplePageManager(): Boolean {
             if (!VersionHook.hasVersion() || alipayVersion.toString().isEmpty()) {
@@ -410,7 +412,7 @@ class ApplicationHook {
                 return false
             }
 
-            val maxSupported = AlipayVersion("10.9.99.99999")
+            val maxSupported = AlipayVersion("12.99.99.99999")
             if (alipayVersion > maxSupported) {
                 // 只有在不支持时才打印警告
                 record(TAG, "目标应用版本 $alipayVersion 高于 $maxSupported，不支持自动过滑块验证")
@@ -542,7 +544,7 @@ class ApplicationHook {
                 }
 
                 if (config.newRpc.value && config.debugMode.value) {
-                    HookUtil.hookRpcBridgeExtension(classLoader!!, config.sendHookData.value, config.sendHookDataUrl.value)
+                    HookUtil.hookRpcBridgeExtension(classLoader!!)
                     HookUtil.hookDefaultBridgeCallback(classLoader!!)
                 }
 

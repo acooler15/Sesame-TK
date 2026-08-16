@@ -23,8 +23,11 @@ object HookUtil {
 
     /**
      * Hook RpcBridgeExtension.rpc 方法，记录请求信息
+     *
+     * debugMode/sendHookData 在回调内运行时读取，保证关闭开关后立即生效，
+     * 不依赖 RESTART 广播触发的重新初始化（广播可能未送达导致配置陈旧）。
      */
-    fun hookRpcBridgeExtension(classLoader: ClassLoader, isdebug: Boolean, debugUrl: String) {
+    fun hookRpcBridgeExtension(classLoader: ClassLoader) {
         try {
             val className = "com.alibaba.ariver.commonability.network.rpc.RpcBridgeExtension"
             val jsonClassName = General.JSON_OBJECT_NAME // 替换为你项目中的实际 JSON 类名
@@ -74,12 +77,15 @@ object HookUtil {
                             }
 
                             val callback = args[15]
-                            val recordArray = arrayOfNulls<Any>(4).apply {
-                                this[0] = System.currentTimeMillis()
-                                this[1] = args[0] ?: "null" // method name
-                                this[2] = args[4] ?: "null" // params
+                            // 抓包开关关闭时不记录请求数据（响应回调也据此跳过）
+                            if (ApplicationHook.config.debugMode.value) {
+                                val recordArray = arrayOfNulls<Any>(4).apply {
+                                    this[0] = System.currentTimeMillis()
+                                    this[1] = args[0] ?: "null" // method name
+                                    this[2] = args[4] ?: "null" // params
+                                }
+                                rpcHookMap[callback] = recordArray
                             }
-                            rpcHookMap[callback] = recordArray
                         }
                     }
 
@@ -114,8 +120,9 @@ object HookUtil {
 }
 """.trimIndent()
 
-                                        if (isdebug) {
-                                            HookSender.sendHookData(res, debugUrl)
+                                        // 运行时读取开关，配置重载后立即按新值发送
+                                        if (ApplicationHook.config.sendHookData.value) {
+                                            HookSender.sendHookData(res, ApplicationHook.config.sendHookDataUrl.value)
                                         }
                                         Log.capture(prettyRecord)
                                     }

@@ -148,7 +148,7 @@ class MainActivity : ComponentActivity() {
             }
 
             MainUiEvent.OpenCaptureLog -> openLogFile(Files.getCaptureLogFile())
-            MainUiEvent.OpenExtend -> startActivity(Intent(this, _root_ide_package_.fansirsqi.xposed.sesame.ui.ExtendActivity::class.java))
+            MainUiEvent.OpenExtend -> startActivity(Intent(this, fansirsqi.xposed.sesame.ui.ExtendActivity::class.java))
             MainUiEvent.ClearConfig -> {
                 // 🔥 这里只负责执行逻辑，不再负责弹窗
                 if (Files.delFile(Files.CONFIG_DIR)) {

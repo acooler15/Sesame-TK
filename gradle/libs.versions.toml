@@ -1,58 +1,47 @@
 [versions]
-activity-compose = "1.12.1"
+activity-compose = "1.13.0"
 
-android-plugin = "8.12.3"
+android-plugin = "9.3.1"
+compose-bom = "2026.08.00"
+composeCompiler = "2.4.10"
+kotlinxCoroutinesCore = "1.11.0"
+
+lifecycleLivedataKtx = "2.11.0"
+
 cmdAndroid = "0.8.2"
-hiddenapibypass = "6.1"
-kotlin = "2.3.0"
-kotlinxCoroutinesCore = "1.10.2"
-lifecycleLivedataKtx = "2.10.0"
 nanohttpd = "2.3.1"
 shizukuVersion = "13.1.5"
-hiddenapi = "4.4.0"
-slf4j = "2.1.0-alpha1"
+slf4j = "2.0.18"
 logback-android = "3.0.0"
-okhttp = "5.3.2"
-jackson = "2.20.1"
-jackson-annotations = "2.20"
-xposed-api = "100"
-xposed-service = "100-1.0.0"
+okhttp = "5.4.0"
+jackson = "2.21.5"
+jackson-annotations = "2.21"
+# libxposed 线上坐标从 101 起发布（100 仅有本地 aar）；101 为最接近 100 的保守版本
+libxposed = "101.0.0"
+libxposedApi = "101.0.1"
 
-#noinspection GradleDependency
-jackson-compatible = "2.13.5"
-webkit = "1.14.0"
-core-ktx = "1.17.0"
-dexkit = "2.0.7"
-fragment = "1.8.9"
-uiTextGoogleFonts = "1.10.0"
+core-ktx = "1.19.0"
+dexkit = "2.2.0"
 
-tensorflowLite = "2.17.0"
-tensorflowLiteSupport = "0.5.0"
+litert = "1.0.1"
 
 [libraries]
 
-androidx-lifecycle-livedata-ktx = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycleLivedataKtx" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleLivedataKtx" }
-androidx-runtime-livedata = { module = "androidx.compose.runtime:runtime-livedata" }
-androidx-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
-androidx-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 cmd-android = { module = "com.github.niki914:cmd-android", version.ref = "cmdAndroid" }
-hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 rikka-shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizukuVersion" }
 rikka-shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizukuVersion" }
-rikka-refine = { module = "dev.rikka.tools.refine:runtime", version.ref = "hiddenapi" }
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback-android = { module = "com.github.tony19:logback-android", version.ref = "logback-android" }
-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
@@ -60,24 +49,29 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson-annotations" }
 
 dexkit = { module = "org.luckypray:dexkit", version.ref = "dexkit" }
-androidx-fragment = { group = "androidx.fragment", name = "fragment", version.ref = "fragment" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
+androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts" }
 
-tensorflow-lite = { group = "org.tensorflow", name = "tensorflow-lite", version.ref = "tensorflowLite" }
-# 支持库
-tensorflow-lite-support = { group = "org.tensorflow", name = "tensorflow-lite-support", version.ref = "tensorflowLiteSupport" }
+# libxposed 新版 API（compileOnly，框架运行时提供）
+libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposedApi" }
+# Binder 接口（service 的 POM 仅以 runtime scope 引用它，编译期需要须显式声明）
+libxposed-interface = { module = "io.github.libxposed:interface", version.ref = "libxposed" }
+# 服务客户端实现（XposedService/XposedServiceHelper/RemotePreferences）
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposed" }
+
+# TFLite 旧坐标（org.tensorflow）已被 Google 全线 relocation 至 LiteRT，直接声明新坐标
+litert = { group = "com.google.ai.edge.litert", name = "litert", version.ref = "litert" }
+# 支持库（TensorBuffer/Model/TensorImage 等；不用 litert-support 壳——它与本库 namespace 相同会导致 AGP 9 manifest 合并冲突）
+litert-support-api = { group = "com.google.ai.edge.litert", name = "litert-support-api", version.ref = "litert" }
 # GPU 加速
-tensorflow-lite-gpu = { group = "org.tensorflow", name = "tensorflow-lite-gpu", version.ref = "tensorflowLite" }
+litert-gpu = { group = "com.google.ai.edge.litert", name = "litert-gpu", version.ref = "litert" }
 # 元数据处理
-tensorflow-lite-metadata = { group = "org.tensorflow", name = "tensorflow-lite-metadata", version.ref = "tensorflowLiteSupport" }
+litert-metadata = { group = "com.google.ai.edge.litert", name = "litert-metadata", version.ref = "litert" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-plugin" }
 android-library = { id = "com.android.library", version.ref = "android-plugin" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-rikka-tools-refine = { id = "dev.rikka.tools.refine", version.ref = "hiddenapi" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "composeCompiler" }
 
 [bundles]
-tensorflow = ["tensorflow-lite", "tensorflow-lite-support", "tensorflow-lite-gpu", "tensorflow-lite-metadata"]
+litert = ["litert", "litert-support-api", "litert-gpu", "litert-metadata"]
 

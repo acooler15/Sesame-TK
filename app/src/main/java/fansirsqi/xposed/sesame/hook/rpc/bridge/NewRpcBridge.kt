@@ -283,7 +283,7 @@ class NewRpcBridge : RpcBridge {
                             // 检测安全验证错误，自动启动目标应用（带防抖和版本检查）
 
                             if (errorMessage != null && errorMessage.contains("为了保障您的操作安全，请进行验证后继续")) {
-                                // 检查版本号，只有版本低于等于10.6.58.99999才自动启动目标应用
+                                // 版本门槛与 SimplePageManager 一致（详见 shouldEnableSimplePageManager）
                                 if (!ApplicationHook.shouldEnableSimplePageManager()) {
                                   //  Log.record(TAG, "目标应用版本不支持自动启动目标应用进行滑块验证，跳过")
                                     return null

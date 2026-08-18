@@ -1,5 +1,7 @@
 package fansirsqi.xposed.sesame.hook
 
+import fansirsqi.xposed.sesame.hook.captcha.CaptchaHook
+import fansirsqi.xposed.sesame.hook.schedule.TaskScheduler
 import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Service
@@ -18,7 +20,7 @@ import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.Status.Companion.load
 import fansirsqi.xposed.sesame.entity.AlipayVersion
 import fansirsqi.xposed.sesame.hook.Toast.show
-import fansirsqi.xposed.sesame.hook.TokenHooker.start
+import fansirsqi.xposed.sesame.hook.rpc.TokenHooker.start
 import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.LocationHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
@@ -28,10 +30,8 @@ import fansirsqi.xposed.sesame.hook.rpc.bridge.NewRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.OldRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.clearIntervalLimit
-import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
+import fansirsqi.xposed.sesame.hook.view.SliderTFLite
 import fansirsqi.xposed.sesame.hook.server.ModuleHttpServerManager.startIfNeeded
-import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.addHandler
-import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.enableWindowMonitoring
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.destroyData
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.SesameConfig
@@ -190,9 +190,9 @@ class ApplicationHook {
                         }
 
                         try {
-                            initSimplePageManager()
+                            CaptchaHook.registerHandlers()
                         } catch (t: Throwable) {
-                            printStackTrace(TAG, "initSimplePageManager 失败", t)
+                            printStackTrace(TAG, "registerCaptchaHandlers 失败", t)
                         }
 
                         try {
@@ -323,21 +323,6 @@ class ApplicationHook {
         }
     }
 
-    // 滑块验证hook注册
-    private fun initSimplePageManager() {
-        record(TAG, "准备初始化 SimplePageManager，当前版本: $alipayVersion")
-        if (shouldEnableSimplePageManager()) {
-            record(TAG, "SimplePageManager 已启用，开始注册验证码页面处理器")
-            enableWindowMonitoring(classLoader)
-            addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverActivity", Captcha1Handler())
-            addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverTransActivity\$Main", Captcha2Handler())
-            addHandler("com.alipay.mobile.nebulax.integration.mpaas.activity.NebulaTransActivity\$Main", Captcha2Handler())
-            record(TAG, "验证码页面处理器注册完成")
-        } else {
-            record(TAG, "SimplePageManager 未启用，跳过验证码页面处理器注册")
-        }
-    }
-
     @SuppressLint("UnsafeDynamicallyLoadedCode")
     private fun loadNativeLibs(context: Context, soFile: File) {
         try {
@@ -349,7 +334,7 @@ class ApplicationHook {
             }
         } catch (t: Throwable) {
             // 必须捕获 Throwable：System.load 抛 UnsatisfiedLinkError（Error），
-            // 若逃逸会击穿 attach 回调导致 initSimplePageManager 等后续初始化全部跳过
+            // 若逃逸会击穿 attach 回调导致 registerCaptchaHandlers 等后续初始化全部跳过
             Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), t)
         }
     }
@@ -384,27 +369,6 @@ class ApplicationHook {
         @Volatile
         var isHooked: Boolean = false
             private set
-
-        /**
-         * 检查目标应用版本是否需要启用SimplePageManager功能
-         * @return true表示版本低于等于12.99.99.99999，需要启用；false表示不需要
-         */
-        fun shouldEnableSimplePageManager(): Boolean {
-            if (!VersionHook.hasVersion() || alipayVersion.toString().isEmpty()) {
-                record(TAG, "SimplePageManager 版本判断失败：未捕获到目标应用版本")
-                return false
-            }
-
-            val maxSupported = AlipayVersion("12.99.99.99999")
-            if (alipayVersion > maxSupported) {
-                // 只有在不支持时才打印警告
-                record(TAG, "目标应用版本 $alipayVersion 高于 $maxSupported，不支持自动过滑块验证")
-                return false
-            }
-
-            record(TAG, "SimplePageManager 版本判断通过: $alipayVersion <= $maxSupported")
-            return true
-        }
 
         @Volatile
         internal var init = false
@@ -517,7 +481,7 @@ class ApplicationHook {
                     rpcBridge!!.load()
                 }
 
-                if (config.newRpc.value && config.debugMode.value) {
+                if (config.newRpc.value) {
                     HookUtil.hookRpcBridgeExtension(classLoader!!)
                     HookUtil.hookDefaultBridgeCallback(classLoader!!)
                 }

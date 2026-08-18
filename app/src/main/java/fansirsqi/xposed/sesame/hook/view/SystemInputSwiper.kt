@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import fansirsqi.xposed.sesame.core.app.CommandUtil
 import fansirsqi.xposed.sesame.core.log.Log
@@ -29,7 +29,7 @@ object SystemInputSwiper {
         endY: Float,
         durationMs: Long
     ): Boolean {
-        val context = SimplePageManager.getContext()
+        val context = PageMonitor.getContext()
         if (context == null) {
             Log.record(TAG, "[系统级输入] 无法获取 Context，跳过")
             return false

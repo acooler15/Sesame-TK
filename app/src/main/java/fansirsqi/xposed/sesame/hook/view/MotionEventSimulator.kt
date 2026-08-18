@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import android.os.SystemClock
 import android.util.Log

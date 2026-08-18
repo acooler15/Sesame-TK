@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import android.util.Log
 import android.view.View
@@ -46,10 +46,10 @@ object ViewHierarchyAnalyzer {
     /**
      * 通过从锚点文本视图遍历，查找实际的滑块按钮视图。
      * 它在第一次尝试时记录层次结构以供调试。
-     * @param slideTextView "滑动验证"文本视图的 SimpleViewImage 包装器。
+     * @param slideTextView "滑动验证"文本视图的 ViewImage 包装器。
      * @return 找到的滑块视图，如果未找到则返回 null。
      */
-    fun findActualSliderView(slideTextView: SimpleViewImage): View? {
+    fun findActualSliderView(slideTextView: ViewImage): View? {
         val parentView = slideTextView.originView.parent as? ViewGroup ?: return null
 
         Log.d(TAG, "========= 分析滑块父视图层次结构 =========")

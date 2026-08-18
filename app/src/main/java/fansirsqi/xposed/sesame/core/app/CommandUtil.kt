@@ -5,12 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
 import fansirsqi.xposed.sesame.ICallback
 import fansirsqi.xposed.sesame.ICommandService
 import fansirsqi.xposed.sesame.IStatusListener
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -223,6 +225,84 @@ object CommandUtil {
         } catch (e: Exception) {
             Log.e(TAG, "Cmd Exception", e)
             null
+        }
+    }
+
+    /**
+     * 请求内置解锁。返回 Pair<成功?, 原因码>；null = 通信失败。
+     * 长操作超时 = unlockTimeoutSeconds * unlockRetryCount + 10s（不适用 EXEC_TIMEOUT_MS=15s）。
+     */
+    suspend fun requestUnlock(context: Context): Pair<Boolean, String>? {
+        if (!ensureServiceBound(context)) return null
+        val deferred = CompletableDeferred<Pair<Boolean, String>>()
+        val callback = object : ICallback.Stub() {
+            override fun onSuccess(output: String?) {
+                deferred.complete(true to (output ?: "OK"))
+            }
+
+            override fun onError(error: String?) {
+                deferred.complete(false to (error ?: "unknown"))
+            }
+        }
+        return try {
+            commandService?.requestUnlock(Bundle(), callback)
+                ?: return null
+            val t = (ApplicationHook.config.unlockTimeoutSeconds.value
+                * ApplicationHook.config.unlockRetryCount.value + 10) * 1000L
+            withTimeoutOrNull(t) { deferred.await() }
+        } catch (e: RemoteException) {
+            handleServiceLost()
+            null
+        } catch (e: Exception) {
+            Log.e(TAG, "RequestUnlock Exception", e)
+            null
+        }
+    }
+
+    /** findNodeByText 结果：found=true 时 text/rect 有效；reason 携带失败原因（bind_fail/service_off/no_window/not_found/timeout 等） */
+    data class NodeSearchResult(
+        val found: Boolean,
+        val text: String? = null,
+        val rect: android.graphics.Rect? = null,
+        val reason: String = ""
+    )
+
+    /**
+     * 借道模块无障碍服务检索指定应用窗口内的文本节点（sealed 官方通道，可下钻 WebView H5 虚拟树）。
+     *
+     * @return 结构化结果（含失败原因），供调用方诊断与记录。
+     */
+    suspend fun findNodeByText(context: Context, packageName: String, keyword: String): NodeSearchResult {
+        if (!ensureServiceBound(context)) return NodeSearchResult(false, reason = "bind_fail")
+        val service = commandService ?: return NodeSearchResult(false, reason = "no_service_ref")
+        return try {
+            val json = withTimeoutOrNull(EXEC_TIMEOUT_MS) {
+                withContext(Dispatchers.IO) { service.findNodeByText(packageName, keyword) }
+            } ?: return NodeSearchResult(false, reason = "timeout")
+            parseFindNodeResult(json)
+        } catch (e: RemoteException) {
+            handleServiceLost()
+            NodeSearchResult(false, reason = "remote_error:${e.message}")
+        } catch (e: Exception) {
+            Log.e(TAG, "findNodeByText Exception", e)
+            NodeSearchResult(false, reason = "error:${e.message}")
+        }
+    }
+
+    private fun parseFindNodeResult(json: String): NodeSearchResult {
+        return try {
+            val obj = org.json.JSONObject(json)
+            if (!obj.optBoolean("found")) {
+                return NodeSearchResult(false, reason = obj.optString("reason", "unknown"))
+            }
+            val text = obj.optString("text", "")
+            val rect = android.graphics.Rect(
+                obj.optInt("left"), obj.optInt("top"), obj.optInt("right"), obj.optInt("bottom")
+            )
+            NodeSearchResult(true, text, rect, "hit")
+        } catch (e: Exception) {
+            Log.e(TAG, "findNodeByText 响应解析失败: $json")
+            NodeSearchResult(false, reason = "parse_error")
         }
     }
 

@@ -3,6 +3,7 @@ package fansirsqi.xposed.sesame.hook.rpc.bridge
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.hook.captcha.CaptchaHook
 import fansirsqi.xposed.sesame.hook.Toast
 import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter
 import fansirsqi.xposed.sesame.core.log.Log
@@ -210,8 +211,10 @@ class NewRpcBridge : RpcBridge {
                 count++
                 try {
                     val finalLocalBridgeCallbackClazzArray = localBridgeCallbackClazzArray
-                    // 获取限流许可（并发数限制 + per-method 间隔，挂起不阻塞线程）
-                    GlobalRpcRateLimiter.acquire(rpcEntity.requestMethod).use { _ ->
+                    // 获取限流许可（验证码暂停闸门 + 并发数限制 + per-method 间隔，挂起不阻塞线程）
+                    // 返回 null 表示请求被验证码暂停闸门取消（超时），应丢弃本次请求
+                    val permit = GlobalRpcRateLimiter.acquire(rpcEntity.requestMethod) ?: return null
+                    permit.use { _ ->
                         // 反射调用本身是同步阻塞的，用 withContext(IO) 隔离，不占用调度线程
                         withContext(Dispatchers.IO) {
                             localNewRpcCallMethod.invoke(
@@ -283,8 +286,8 @@ class NewRpcBridge : RpcBridge {
                             // 检测安全验证错误，自动启动目标应用（带防抖和版本检查）
 
                             if (errorMessage != null && errorMessage.contains("为了保障您的操作安全，请进行验证后继续")) {
-                                // 版本门槛与 SimplePageManager 一致（详见 shouldEnableSimplePageManager）
-                                if (!ApplicationHook.shouldEnableSimplePageManager()) {
+                                // 版本门槛与验证码处理器注册一致（详见 CaptchaHook.shouldEnableCaptchaHandling）
+                                if (!CaptchaHook.shouldEnableCaptchaHandling(ApplicationHook.alipayVersion)) {
                                   //  Log.record(TAG, "目标应用版本不支持自动启动目标应用进行滑块验证，跳过")
                                     return null
                                 }

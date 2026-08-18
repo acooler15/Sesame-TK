@@ -1,73 +1,36 @@
 package fansirsqi.xposed.sesame.core.app
-import fansirsqi.xposed.sesame.core.log.Log
 
-import android.app.KeyguardManager
+import fansirsqi.xposed.sesame.hook.captcha.BaseCaptchaHandler
 import android.content.Context
-import android.os.PowerManager
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import kotlinx.coroutines.delay
 
 /**
- * 外部解锁工具。
- * 通过 Shell 命令触发屏幕解锁（也可通过 am start 启动外部应用如 AutoJS）。
- * 命令由用户配置，空字符串表示关闭。
+ * 内置解锁触发工具（宿主侧）。
+ * 宿主进程只做两件事：检测是否需要解锁 + 通过 AIDL 发起一次无参 requestUnlock；
+ * 实际编排（亮屏/唤出密码页/输入密码）全部在模块 App 进程执行，密码不出宿主。
  */
 object UnlockUtil {
 
     private const val TAG = "UnlockUtil"
 
     /**
-     * 检查设备是否需要解锁：
-     * - 屏幕已熄灭 或 锁屏界面正在展示 → 需要解锁
-     * - 屏幕已亮且已解锁 → 不需要
-     */
-    private fun needsUnlock(context: Context): Boolean {
-        val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
-        val km = context.getSystemService(Context.KEYGUARD_SERVICE) as? KeyguardManager ?: return true
-        val screenOn = pm.isInteractive
-        val locked = km.isKeyguardLocked
-        Log.record(TAG, "[屏幕状态] screenOn=$screenOn, keyguardLocked=$locked")
-        return !screenOn || locked
-    }
-
-    /**
-     * 执行用户配置的解锁 Shell 命令，并等待足够时间让外部脚本完成解锁。
-     *
-     * @return true 表示命令已发送且等待完成，false 表示未配置、无需解锁或发送失败
+     * 触发内置解锁。返回 true=已解锁/解锁成功；false=功能关闭/无需解锁/解锁失败（原因码已记录日志）。
+     * BaseCaptchaHandler 调用点签名不变。
      */
     suspend fun triggerUnlock(context: Context): Boolean {
-        val command = ApplicationHook.config.unlockShellCommand.value
-        if (command.isNullOrBlank()) {
+        // 功能开关（宿主进程读宿主侧 config 实例）
+        if (!ApplicationHook.config.enableBuiltinUnlock.value) return false
+        // 已亮屏已解锁 → 无需解锁
+        if (DeviceStateChecker.isUnlockedAndAwake(context)) return false
+        // 发起 AIDL 触发（模块进程编排，密码不出宿主）
+        val result = CommandUtil.requestUnlock(context)
+        if (result == null) {
+            Log.record(TAG, "解锁请求通信失败（CommandService 不可达）")
             return false
         }
-
-        // 只有屏幕熄灭或锁屏时才需要触发解锁
-        if (!needsUnlock(context)) {
-            Log.record(TAG, "[外部解锁] 屏幕已亮且已解锁，跳过")
-            return false
-        }
-
-        return try {
-            Log.record(TAG, "[外部解锁] 执行: $command")
-            val result = CommandUtil.executeCommand(context, command)
-            val ok = result != null
-            if (ok) {
-                Log.record(TAG, "[外部解锁] 返回: ${result.trim()}")
-            } else {
-                Log.record(TAG, "[外部解锁] 返回 null（服务未就绪或执行失败）")
-                return false
-            }
-
-            // 等待外部脚本完成解锁操作
-            val waitSec = ApplicationHook.config.unlockWaitSeconds.value.toLong()
-            if (waitSec > 0) {
-                Log.record(TAG, "[外部解锁] 等待 ${waitSec}s 让外部脚本完成解锁...")
-                delay(waitSec * 1000L)
-            }
-            true
-        } catch (e: Exception) {
-            Log.record(TAG, "[外部解锁] 异常: ${e.message}")
-            false
-        }
+        val (ok, reason) = result
+        Log.record(TAG, if (ok) "解锁成功: $reason" else "解锁失败: $reason") // reason 为原因码，无敏感信息
+        return ok
     }
 }

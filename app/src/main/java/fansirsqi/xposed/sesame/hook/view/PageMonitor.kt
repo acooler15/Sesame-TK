@@ -1,16 +1,15 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import fansirsqi.xposed.sesame.hook.compat.HookCallback
 import fansirsqi.xposed.sesame.hook.compat.HookParam
 import fansirsqi.xposed.sesame.hook.compat.Hooker
+import fansirsqi.xposed.sesame.hook.captcha.RpcPauseGate
 import fansirsqi.xposed.sesame.core.log.Log as SesameLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +19,13 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * A simplified PageManager - only keeps Activity monitoring and Dialog tracking.
+ * 页面监视器：监控顶层 Activity 恢复与 Dialog 创建事件，
+ * 并将页面分发给已注册的 [ActivityFocusHandler]（验证码处理器）处理。
  */
 @SuppressLint("StaticFieldLeak")
-object SimplePageManager {
+object PageMonitor {
 
-    private const val TAG = "SimplePageManager"
+    private const val TAG = "PageMonitor"
 
     private var mContextRef: WeakReference<Context>? = null
     private var mClassLoader: ClassLoader? = null
@@ -33,11 +33,10 @@ object SimplePageManager {
 
     private val activityFocusHandlerMap = ConcurrentHashMap<String, ActivityFocusHandler>()
 
-    val handler = Handler(Looper.getMainLooper())
+    /** 处理器触发延迟（毫秒），等待页面布局稳定 */
+    private const val TRIGGER_DELAY_MS = 100L
 
-    private var taskDuration = 100  // 减少延迟时间，提高响应速度
     private var hasPendingActivityTask = false
-    private var disable = false
 
     private val dialogs = ArrayList<WeakReference<android.app.Dialog>>()
     private var windowMonitorEnabled = false
@@ -49,7 +48,7 @@ object SimplePageManager {
     }
 
     interface ActivityFocusHandler {
-        suspend fun handleActivity(activity: Activity, root: SimpleViewImage): ActivityHandleResult
+        suspend fun handleActivity(activity: Activity, root: ViewImage): ActivityHandleResult
     }
 
     init {
@@ -58,7 +57,7 @@ object SimplePageManager {
 
     fun getContext(): Context? = mContextRef?.get()
 
-    fun getClassLoader(): ClassLoader? = mClassLoader
+    private fun getClassLoader(): ClassLoader? = mClassLoader
 
     /**
      * 参数类型解析：把 hookDialogConstructor 的松散参数（Class / 类名字符串）解析为具体类型。
@@ -90,25 +89,9 @@ object SimplePageManager {
         else -> param.javaClass
     }
 
-    fun getTopActivity(): Activity? = topActivity
-
-    fun setTaskDuration(duration: Int) {
-        taskDuration = duration
-    }
-
-    fun setDisable(disabled: Boolean) {
-        disable = disabled
-    }
-
     fun addHandler(activityClassName: String, handler: ActivityFocusHandler) {
         activityFocusHandlerMap[activityClassName] = handler
     }
-
-    fun removeHandler(activityClassName: String) {
-        activityFocusHandlerMap.remove(activityClassName)
-    }
-
-    fun getDialogs(): ArrayList<WeakReference<android.app.Dialog>> = dialogs
 
     fun enableWindowMonitoring(classLoader: ClassLoader? = null) {
         if (classLoader != null) {
@@ -130,7 +113,7 @@ object SimplePageManager {
      * 尝试在对话框中查找视图
      */
     @SuppressLint("UseKtx")
-    fun tryGetTopView(xpath: String): SimpleViewImage? {
+    fun tryGetTopView(xpath: String): ViewImage? {
         Log.d(TAG, "tryGetTopView 搜索 xpath: $xpath, 对话框数量: ${dialogs.size}")
         dialogs.removeIf { it.get() == null }
         for (dialogWeakReference in dialogs) {
@@ -141,8 +124,8 @@ object SimplePageManager {
             val decorView = dialog.window?.decorView ?: continue
             Log.d(TAG, "  - 对话框: ${dialog.javaClass.name}, 正在显示: ${dialog.isShowing}")
             debugPrintAllTextViews(decorView, 0)
-            val viewImage = SimpleViewImage(decorView)
-            val results = SimpleXpathParser.evaluate(viewImage, xpath)
+            val viewImage = ViewImage(decorView)
+            val results = XpathParser.evaluate(viewImage, xpath)
             if (results.isNotEmpty()) {
                 return results[0]
             }
@@ -302,8 +285,8 @@ object SimplePageManager {
             return
         }
         hasPendingActivityTask = true
-        Log.i(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${taskDuration}ms")
-        SesameLog.record(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${taskDuration}ms")
+        Log.i(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${TRIGGER_DELAY_MS}ms")
+        SesameLog.record(TAG, "从 $source 触发 ${activity.javaClass.name} 的处理器，延迟: ${TRIGGER_DELAY_MS}ms")
         triggerActivityActive(activity, handler, 0)
     }
 
@@ -315,33 +298,33 @@ object SimplePageManager {
         activityFocusHandler: ActivityFocusHandler,
         triggerCount: Int
     ) {
-        if (disable) {
-            Log.i(TAG, "页面触发管理器已禁用")
-            return
-        }
         CoroutineScope(Dispatchers.Main).launch {
-            delay(taskDuration.toLong())
+            delay(TRIGGER_DELAY_MS)
             try {
                 hasPendingActivityTask = false
                 val startTime = System.currentTimeMillis()
                 Log.d(TAG, "开始执行验证码处理器，第${triggerCount + 1}次尝试")
                 SesameLog.record(TAG, "开始执行验证码处理器，第${triggerCount + 1}次尝试")
-                val result = activityFocusHandler.handleActivity(activity, SimpleViewImage(activity.window.decorView))
+                val result = activityFocusHandler.handleActivity(activity, ViewImage(activity.window.decorView))
                 val endTime = System.currentTimeMillis()
                 Log.d(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
                 SesameLog.record(TAG, "验证码处理器执行完成，耗时: ${endTime - startTime}ms, 结果: $result")
                 when (result) {
                     ActivityHandleResult.HANDLED -> {
+                        // 验证码处理成功，放行暂停闸门，恢复后续 RPC 请求
+                        RpcPauseGate.onCaptchaHandled("handler 处理成功(${activity.javaClass.simpleName})")
                         return@launch
                     }
 
                     ActivityHandleResult.SKIP_NON_RETRYABLE -> {
                         SesameLog.record(TAG, "precheck-skip-non-retryable: ${activity.javaClass.name}, stop retry loop")
+                        // 判定非验证码页（闸门误激活），放行避免 RPC 死等超时
+                        RpcPauseGate.onCaptchaHandled("handler 判定非验证码页(${activity.javaClass.simpleName})")
                         return@launch
                     }
 
                     ActivityHandleResult.FAILED_RETRYABLE -> {
-                        SesameLog.record(TAG, "captcha-processing-failed-retryable: ${activity.javaClass.name}, retryCount=${triggerCount + 1}")
+                        SesameLog.record(TAG, "[处理失败·可重试] ${activity.javaClass.name}，重试次数=${triggerCount + 1}")
                     }
                 }
             } catch (throwable: Throwable) {

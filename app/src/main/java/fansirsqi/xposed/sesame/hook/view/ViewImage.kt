@@ -1,17 +1,15 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 
 /**
- * 精简版 ViewImage - 仅保留坐标获取和 XPath 查找功能
+ * View 树节点包装：缓存父子关系，供 [XpathParser] 执行 XPath 查找
  */
-class SimpleViewImage(val originView: View) {
+class ViewImage(val originView: View) {
 
-    private var parent: SimpleViewImage? = null
-    private var indexOfParent: Int = -1
-    private var children: Array<SimpleViewImage?>? = null
+    private var children: Array<ViewImage?>? = null
 
     companion object {
         const val TEXT = "text"
@@ -30,25 +28,6 @@ class SimpleViewImage(val originView: View) {
     }
 
     /**
-     * 获取屏幕坐标
-     */
-    fun locationOnScreen(): IntArray {
-        val location = IntArray(2)
-        originView.getLocationOnScreen(location)
-        return location
-    }
-
-    /**
-     * 获取X坐标
-     */
-    fun X(): Int = locationOnScreen()[0]
-
-    /**
-     * 获取Y坐标
-     */
-    fun Y(): Int = locationOnScreen()[1]
-
-    /**
      * 获取子节点数量
      */
     fun childCount(): Int {
@@ -61,7 +40,7 @@ class SimpleViewImage(val originView: View) {
     /**
      * 获取指定索引的子节点
      */
-    fun childAt(index: Int): SimpleViewImage {
+    fun childAt(index: Int): ViewImage {
         if (childCount() < 0) {
             throw IllegalStateException("can not parse child node for none ViewGroup object!!")
         }
@@ -73,51 +52,23 @@ class SimpleViewImage(val originView: View) {
             return viewImage
         }
         val viewGroup = originView as ViewGroup
-        viewImage = SimpleViewImage(viewGroup.getChildAt(index))
-        viewImage.parent = this
-        viewImage.indexOfParent = index
+        viewImage = ViewImage(viewGroup.getChildAt(index))
         children!![index] = viewImage
         return viewImage
     }
 
     /**
-     * 获取父节点
-     */
-    fun parentNode(): SimpleViewImage? = parent
-
-    /**
-     * 获取指定层级的父节点
-     */
-    fun parentNode(n: Int): SimpleViewImage? {
-        if (n == 1) {
-            return parentNode()
-        }
-        return parentNode()?.parentNode(n - 1)
-    }
-
-    /**
      * 获取所有子节点
      */
-    fun children(): List<SimpleViewImage> {
+    fun children(): List<ViewImage> {
         if (childCount() <= 0) {
             return emptyList()
         }
-        val ret = ArrayList<SimpleViewImage>(childCount())
+        val ret = ArrayList<ViewImage>(childCount())
         for (i in 0 until childCount()) {
             ret.add(childAt(i))
         }
         return ret
-    }
-
-    /**
-     * 根据XPath查找单个元素
-     */
-    fun xpath2One(xpath: String): SimpleViewImage? {
-        val results = SimpleXpathParser.evaluate(this, xpath)
-        if (results.isNotEmpty()) {
-            return results[0]
-        }
-        return SimplePageManager.tryGetTopView(xpath)
     }
 
     /**

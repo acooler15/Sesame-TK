@@ -59,8 +59,11 @@ class BaseModel : Model() {
         modelFields.addField(config.languageSimplifiedChinese) //是否只显示中文并设置时区
         modelFields.addField(config.toastOffsetY) //气泡提示的纵向偏移量
         modelFields.addField(config.toastPerfix)//气泡提示的前缀
-        modelFields.addField(config.unlockShellCommand) //解锁 Shell 命令（空=关闭）
-        modelFields.addField(config.unlockWaitSeconds) //解锁等待时间（秒）
+        modelFields.addField(config.enableBuiltinUnlock) // 启用内置解锁
+        modelFields.addField(config.unlockType) // 锁屏类型
+        modelFields.addField(config.unlockCredential) // 锁屏密码（H2：相关 UI/日志脱敏）
+        modelFields.addField(config.unlockTimeoutSeconds) // 解锁超时(秒)
+        modelFields.addField(config.unlockRetryCount) // 解锁重试次数
         modelFields.addField(config.taskMaxConcurrency) //任务最大并发数
         modelFields.addField(config.taskDefaultTimeout) //任务默认超时(毫秒)
         modelFields.addField(config.taskTimeoutWhitelist) //任务超时白名单

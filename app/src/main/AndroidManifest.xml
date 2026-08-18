@@ -117,6 +117,18 @@
             android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
+        <!-- 内置解锁无障碍服务：解锁期间执行上滑手势与点击锁屏数字键 -->
+        <service
+            android:name="fansirsqi.xposed.sesame.service.unlock.UnlockAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/unlock_accessibility_config" />
+        </service>
 
     </application>
 </manifest>

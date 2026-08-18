@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook
+package fansirsqi.xposed.sesame.hook.rpc
 
 import org.json.JSONArray
 import org.json.JSONObject

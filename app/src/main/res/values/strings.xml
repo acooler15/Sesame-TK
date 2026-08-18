@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="xposed_description">大鹏一日同风起，扶摇直上九万里。</string>
+    <string name="unlock_accessibility_desc">用于内置亮屏与锁屏解锁：在解锁期间执行上滑手势与点击锁屏数字键。不采集任何窗口内容。</string>
 </resources>

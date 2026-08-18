@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook
+package fansirsqi.xposed.sesame.hook.rpc
 
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
 import fansirsqi.xposed.sesame.core.log.Log

@@ -1,5 +1,8 @@
-package fansirsqi.xposed.sesame.hook
+package fansirsqi.xposed.sesame.hook.rpc
 
+import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.hook.HookUtil
+import fansirsqi.xposed.sesame.hook.captcha.CaptchaRpcSignal
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VipDataIdMap
@@ -16,6 +19,11 @@ object TokenHooker {
      * 注意：这里不需要改，Handler 仍然只接收 JSONObject，UserId 通过闭包在 start 中传入
      */
     private val rpcHandlerMap: MutableMap<String, (JSONObject) -> Unit> = mutableMapOf()
+
+    init {
+        // 验证码信号监听与用户无关，对象加载即注册，确保信号常驻可用
+        registerRpcHandler(CaptchaRpcSignal.VERIFY_RPC_METHOD) { CaptchaRpcSignal.onVerifyRpcHit() }
+    }
 
     /**
      * 初始化监听

@@ -1,15 +1,15 @@
-package fansirsqi.xposed.sesame.hook.simple
+package fansirsqi.xposed.sesame.hook.view
 
 import java.util.regex.Pattern
 
 /**
- * 精简版 XPath 解析器 - 仅支持基本查询
+ * XPath 解析器 - 仅支持基本查询
  * 支持的语法：
  * - //android.widget.TextView[contains(@text,'xxx')]
  * - //android.widget.TextView[@text='xxx']
  * - //android.widget.TextView[@contentDescription='xxx']
  */
-object SimpleXpathParser {
+object XpathParser {
     
     private val XPATH_PATTERN = Pattern.compile(
         "//([\\w.]+)\\[contains\\(@(\\w+),'([^']*)'\\)]",
@@ -29,8 +29,8 @@ object SimpleXpathParser {
     /**
      * 解析并执行 XPath 查询
      */
-    fun evaluate(root: SimpleViewImage, xpath: String): List<SimpleViewImage> {
-        val results = ArrayList<SimpleViewImage>()
+    fun evaluate(root: ViewImage, xpath: String): List<ViewImage> {
+        val results = ArrayList<ViewImage>()
         
         val matcher = XPATH_PATTERN.matcher(xpath)
         if (matcher.find()) {
@@ -61,13 +61,13 @@ object SimpleXpathParser {
      * 查找匹配指定类名和属性的元素
      */
     private fun findElements(
-        root: SimpleViewImage,
+        root: ViewImage,
         className: String,
         attrName: String,
         attrValue: String,
         contains: Boolean
-    ): List<SimpleViewImage> {
-        val results = ArrayList<SimpleViewImage>()
+    ): List<ViewImage> {
+        val results = ArrayList<ViewImage>()
         findElementsRecursive(root, className, attrName, attrValue, contains, results)
         return results
     }
@@ -76,12 +76,12 @@ object SimpleXpathParser {
      * 递归查找元素
      */
     private fun findElementsRecursive(
-        node: SimpleViewImage,
+        node: ViewImage,
         className: String,
         attrName: String,
         attrValue: String,
         contains: Boolean,
-        results: ArrayList<SimpleViewImage>
+        results: ArrayList<ViewImage>
     ) {
         val nodeType = node.getType()
         
@@ -107,8 +107,8 @@ object SimpleXpathParser {
     /**
      * 查找指定类名的元素
      */
-    private fun findElementsByTag(root: SimpleViewImage, className: String): List<SimpleViewImage> {
-        val results = ArrayList<SimpleViewImage>()
+    private fun findElementsByTag(root: ViewImage, className: String): List<ViewImage> {
+        val results = ArrayList<ViewImage>()
         findElementsByTagRecursive(root, className, results)
         return results
     }
@@ -117,9 +117,9 @@ object SimpleXpathParser {
      * 递归查找指定类名的元素
      */
     private fun findElementsByTagRecursive(
-        node: SimpleViewImage,
+        node: ViewImage,
         className: String,
-        results: ArrayList<SimpleViewImage>
+        results: ArrayList<ViewImage>
     ) {
         if (node.getType() == className || className == "*") {
             results.add(node)

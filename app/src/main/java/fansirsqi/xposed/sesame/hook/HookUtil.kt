@@ -1,5 +1,7 @@
 package fansirsqi.xposed.sesame.hook
 
+import fansirsqi.xposed.sesame.hook.rpc.TokenHooker
+import fansirsqi.xposed.sesame.hook.rpc.HookSender
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.UserEntity
 import fansirsqi.xposed.sesame.core.app.AssetUtil

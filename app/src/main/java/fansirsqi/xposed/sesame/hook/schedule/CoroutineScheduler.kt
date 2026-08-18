@@ -1,4 +1,4 @@
-package fansirsqi.xposed.sesame.hook
+package fansirsqi.xposed.sesame.hook.schedule
 
 import android.app.AlarmManager
 import android.app.PendingIntent

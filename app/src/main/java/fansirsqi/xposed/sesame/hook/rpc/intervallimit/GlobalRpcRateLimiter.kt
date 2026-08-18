@@ -1,6 +1,7 @@
 package fansirsqi.xposed.sesame.hook.rpc.intervallimit
 
 import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.hook.captcha.RpcPauseGate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
@@ -32,15 +33,25 @@ object GlobalRpcRateLimiter {
     private val methodIntervalMap = ConcurrentHashMap<String, IntervalLimit>()
 
     /**
-     * 获取发送许可（挂起，直到满足并发数 + per-method 间隔要求）。
+     * 获取发送许可（挂起，直到满足验证码暂停闸门 + 并发数 + per-method 间隔要求）。
      *
      * 流程：
-     * 1. 若该 method 有间隔配置，获取 method 互斥锁并等待间隔（保证同一 method 两次发送间隔）
-     * 2. 获取全局并发许可（限制同时在途请求数）
+     * 1. 检查验证码暂停闸门：若处于验证码处理暂停状态，挂起等待放行
+     *    （放行返回 true；超时被取消则返回 false，调用方应丢弃本次请求）
+     * 2. 若该 method 有间隔配置，获取 method 互斥锁并等待间隔（保证同一 method 两次发送间隔）
+     * 3. 获取全局并发许可（限制同时在途请求数）
      *
-     * 调用方在 acquire 后执行 RPC，执行完毕调用 Permit.close()（推荐 use {} 模式）。
+     * 调用方在 acquire 返回非空后执行 RPC，执行完毕调用 Permit.close()（推荐 use {} 模式）。
+     *
+     * @return 非空表示可发送；null 表示请求被暂停闸门取消（验证码超时），应丢弃本次请求。
      */
-    suspend fun acquire(method: String?): Permit {
+    suspend fun acquire(method: String?): Permit? {
+        // 0. 验证码暂停闸门：验证码处理期间暂停后续 RPC 请求
+        if (!RpcPauseGate.awaitSendable()) {
+            Log.record(TAG, "请求被验证码暂停闸门取消，丢弃: $method")
+            return null
+        }
+
         // 1. per-method 间隔控制（发送间隔，不持有到 RPC 完成）
         val methodInterval = method?.let { methodIntervalMap[it] }
         if (methodInterval != null) {

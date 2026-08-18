@@ -172,24 +172,37 @@ class SesameConfig {
     val webViewDebug: BooleanModelField = BooleanModelField("webViewDebug", "启用 WebView Hook", false)
 
     /**
-     * 外部解锁 Shell 命令，空字符串表示关闭。
-     * 支持任意 shell 命令，例如：
-     * - 屏幕操作: input keyevent KEYCODE_WAKEUP;wm dismiss-keyguard
-     * - 启动 AutoJS: am start -a org.autojs.autojs.action.start_script
-     * - 组合命令: input keyevent KEYCODE_WAKEUP;sleep 0.5;wm dismiss-keyguard
+     * 是否启用内置解锁（关闭=不解锁，滑块只处理已解锁场景）
      */
     @JvmField
-    val unlockShellCommand: StringModelField = StringModelField(
-        "unlockShellCommand", "解锁 Shell 命令(空=关闭)", ""
+    val enableBuiltinUnlock: BooleanModelField = BooleanModelField("enableBuiltinUnlock", "启用内置解锁", false)
+
+    /**
+     * 锁屏类型：0=自动检测（默认），1=PIN，2=混合密码；仅 OEM 检测失败时手动覆盖
+     */
+    @JvmField
+    val unlockType: ChoiceModelField = ChoiceModelField(
+        "unlockType", "锁屏类型(默认自动)",
+        UnlockType.AUTO, UnlockType.nickNames
     )
 
     /**
-     * 解锁命令执行后的等待时间（秒），用于等待外部脚本完成解锁操作。
+     * 锁屏密码（PIN/混合密码共用）。日志输出必须脱敏（H2）
      */
     @JvmField
-    val unlockWaitSeconds: IntegerModelField = IntegerModelField(
-        "unlockWaitSeconds", "解锁等待时间(秒)", 3, 0, 30
-    )
+    val unlockCredential: StringModelField = StringModelField("unlockCredential", "锁屏密码", "")
+
+    /**
+     * 解锁验证超时（秒）：单轮轮询总时长
+     */
+    @JvmField
+    val unlockTimeoutSeconds: IntegerModelField = IntegerModelField("unlockTimeoutSeconds", "解锁超时(秒)", 15, 3, 60)
+
+    /**
+     * 解锁整轮重试次数
+     */
+    @JvmField
+    val unlockRetryCount: IntegerModelField = IntegerModelField("unlockRetryCount", "解锁重试次数", 3, 1, 5)
 
     /**
      * 任务最大并发数，防止请求过于频繁触发风控。
@@ -214,4 +227,14 @@ class SesameConfig {
     val taskTimeoutWhitelist: ListModelField = ListModelField(
         "taskTimeoutWhitelist", "任务超时白名单", listOf("森林", "庄园", "运动")
     )
+}
+
+/** 锁屏类型选择项（配合 unlockType 字段使用） */
+interface UnlockType {
+    companion object {
+        const val AUTO: Int = 0
+        const val PIN: Int = 1
+        const val PASSWORD: Int = 2
+        val nickNames: Array<String?> = arrayOf("🤖自动检测", "🔢数字密码", "🔤混合密码")
+    }
 }

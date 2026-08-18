@@ -94,8 +94,10 @@ class OldRpcBridge : RpcBridge {
         for (count in 0 until tryCount) {
             try {
                 val method = requestMethod!! // 非空请求方法
-                // 获取限流许可（并发数限制 + per-method 间隔，挂起不阻塞线程）
-                GlobalRpcRateLimiter.acquire(requestMethod).use { _ ->
+                // 获取限流许可（验证码暂停闸门 + 并发数限制 + per-method 间隔，挂起不阻塞线程）
+                // 返回 null 表示请求被验证码暂停闸门取消（超时），应丢弃本次请求
+                val permit = GlobalRpcRateLimiter.acquire(requestMethod) ?: return null
+                permit.use { _ ->
                     // 反射调用本身是同步阻塞的，用 withContext(IO) 隔离，不占用调度线程
                     val response = withContext(Dispatchers.IO) {
                         invokeRpcCall(method, args) // 调用 RPC 方法

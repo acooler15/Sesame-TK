@@ -1,0 +1,21 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+
+# 浏览器配置文件（含隐私数据，如 Cookie、历史记录）
+collect/.chrome-profile/
+
+# 数据集与训练产物（可由脚本重新生成）
+data/raw/
+data/datasets/
+data/runs/
+
+# 模型权重（可从 YOLO 官方下载）
+weights/*.pt
+weights/*.onnx
+weights/*.tflite
+
+# 日志
+*.log
+logs/

@@ -44,11 +44,12 @@ class BaseModel : Model() {
         modelFields.addField(config.setMaxErrorCount) //异常次数阈值
         modelFields.addField(config.newRpc) //是否启用新接口
 
+        modelFields.addField(config.webViewDebug) //是否启用WebView Hook
+
         if (BuildConfig.DEBUG) {
             modelFields.addField(config.debugMode) //是否开启抓包调试模式
             modelFields.addField(config.sendHookData) //启用Hook数据转发
             modelFields.addField(config.sendHookDataUrl) //Hook数据转发地址
-            modelFields.addField(config.webViewDebug) //是否启用WebView Hook
         }
 
         modelFields.addField(config.batteryPerm) //是否申请目标应用的后台运行权限

@@ -38,6 +38,12 @@ object WebViewHook {
 
     private var isInitialized = false
 
+    /**
+     * 运行时开关：配置在 initHandler 阶段（服务启动后）才经 Config.load 加载，
+     * loadPackage 安装时读取恒为默认值 false，因此必须在回调内运行时判断。
+     */
+    private fun enabled(): Boolean = ApplicationHook.config.webViewDebug.value
+
     /** 已 Hook 的 WebViewClient 子类集合，避免重复 Hook */
     private val hookedClientClasses = ConcurrentHashMap.newKeySet<Class<*>>()
 
@@ -92,6 +98,7 @@ object WebViewHook {
                 object : HookCallback {
                     override fun before(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             record(TAG, "$label loadUrl: $url")
@@ -102,6 +109,7 @@ object WebViewHook {
 
                     override fun after(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             // 从 WebView 实例获取已设置的 WebViewClient 并动态 hook
@@ -133,6 +141,7 @@ object WebViewHook {
                 object : HookCallback {
                     override fun before(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             val headers = p.args[1] as? Map<*, *>
@@ -145,6 +154,7 @@ object WebViewHook {
 
                     override fun after(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             if (url.startsWith("javascript:")) return
                             tryHookWebViewClientFromWebView(p.thisObject, label)
@@ -263,6 +273,7 @@ object WebViewHook {
      */
     private fun onPageFinishedCallback(p: HookParam) {
         try {
+            if (!enabled()) return
             val webViewObj = p.args[0] ?: return
             val url = p.args[1] as? String ?: return
             record(TAG, "onPageFinished: $url")
@@ -350,6 +361,7 @@ object WebViewHook {
                 object : HookCallback {
                     override fun before(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val script = p.args[0] as? String ?: return
                             record(TAG, "[SysWV] evaluateJavascript: $script")
                         } catch (t: Throwable) {
@@ -380,6 +392,7 @@ object WebViewHook {
                 object : HookCallback {
                     override fun before(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             val cookieStr = p.args[1] as? String ?: return
                             val mozillaLine = formatCookieToMozilla(url, cookieStr)
@@ -404,6 +417,7 @@ object WebViewHook {
                 object : HookCallback {
                     override fun before(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val url = p.args[0] as? String ?: return
                             record(TAG, "Cookie[Get] URL: $url")
                         } catch (t: Throwable) {
@@ -413,6 +427,7 @@ object WebViewHook {
 
                     override fun after(p: HookParam) {
                         try {
+                            if (!enabled()) return
                             val result = p.result as? String
                             if (!result.isNullOrEmpty() && result.length < 3000) {
                                 record(TAG, "Cookie[Get] Result:\n$result")

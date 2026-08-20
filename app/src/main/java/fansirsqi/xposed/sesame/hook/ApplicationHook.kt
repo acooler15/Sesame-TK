@@ -111,13 +111,11 @@ class ApplicationHook {
             printStackTrace(TAG, "验证码Hook初始化失败", t)
         }
 
-        // 4. WebView Hook
-        if (config.webViewDebug.value) {
-            try {
-                WebViewHook.installHook(classLoader!!)
-            } catch (t: Throwable) {
-                printStackTrace(TAG, "WebView Hook初始化失败", t)
-            }
+        // 4. WebView Hook（无条件安装，回调内运行时检查 webViewDebug 开关）
+        try {
+            WebViewHook.installHook(classLoader!!)
+        } catch (t: Throwable) {
+            printStackTrace(TAG, "WebView Hook初始化失败", t)
         }
 
         // 5. 核心生命周期 Hook

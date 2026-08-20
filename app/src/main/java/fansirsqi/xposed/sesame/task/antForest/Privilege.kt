@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antForest
 
 import fansirsqi.xposed.sesame.data.Status
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -32,7 +32,7 @@ object Privilege {
         YouthTask("DXS_JSQ", "JIASUQI_20230808", "加速器")
     )
 
-    fun youthPrivilege(): Boolean {
+    suspend fun youthPrivilege(): Boolean {
         if (Status.hasFlagToday(FLAG_RECEIVED)) return false
 
         val results = mutableListOf<String>()
@@ -45,12 +45,12 @@ object Privilege {
         return allSuccess
     }
 
-    private fun processYouthTask(task: YouthTask): List<String> {
+    private suspend fun processYouthTask(task: YouthTask): List<String> {
         val forestTasksNew = getForestTasks(task.queryParam)
         return handleForestTasks(forestTasksNew, task.receiveParam, task.name)
     }
 
-    private fun getForestTasks(queryParam: String): JSONArray? {
+    private suspend fun getForestTasks(queryParam: String): JSONArray? {
         val response = AntForestRpcCall.queryTaskListV2(queryParam)
         return try {
             JSONObject(response).getJSONArray("forestTasksNew")
@@ -60,7 +60,7 @@ object Privilege {
         }
     }
 
-    private fun handleForestTasks(forestTasks: JSONArray?, taskType: String, taskName: String): List<String> {
+    private suspend fun handleForestTasks(forestTasks: JSONArray?, taskType: String, taskName: String): List<String> {
         val results = mutableListOf<String>()
 
         try {
@@ -87,7 +87,7 @@ object Privilege {
         return results
     }
 
-    private fun processSingleYouthTask(baseInfo: JSONObject, taskType: String, taskName: String, results: MutableList<String>) {
+    private suspend fun processSingleYouthTask(baseInfo: JSONObject, taskType: String, taskName: String, results: MutableList<String>) {
         val status = baseInfo.optString("taskStatus")
 
         when (status) {
@@ -96,7 +96,7 @@ object Privilege {
         }
     }
 
-    private fun handleYouthTaskAward(taskType: String, taskName: String, results: MutableList<String>) {
+    private suspend fun handleYouthTaskAward(taskType: String, taskName: String, results: MutableList<String>) {
         try {
             val response = JSONObject(AntForestRpcCall.receiveTaskAwardV2(taskType))
             val resultDesc = response.optString("desc")
@@ -110,7 +110,7 @@ object Privilege {
         }
     }
 
-    fun studentSignInRedEnvelope() {
+    suspend fun studentSignInRedEnvelope() {
         if (!isSignInTimeValid()) {
             Log.record("$PREFIX_SIGN 5点前不执行签到")
             return
@@ -133,7 +133,7 @@ object Privilege {
         return hour >= SIGN_START_HOUR
     }
 
-    private fun processStudentSignIn() {
+    private suspend fun processStudentSignIn() {
         val response = AntForestRpcCall.studentQqueryCheckInModel()
         val result = try {
             JSONObject(response)
@@ -156,7 +156,7 @@ object Privilege {
         executeStudentSignIn()
     }
 
-    private fun executeStudentSignIn() {
+    private suspend fun executeStudentSignIn() {
         try {
             val tag = if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) < SIGN_END_HOUR) "double" else "single"
             val response = AntForestRpcCall.studentCheckin()

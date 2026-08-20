@@ -11,7 +11,7 @@ object HaoJiaRpcCall {
     /**
      * 通用请求构建器
      */
-    private fun request(componentId: String, content: JSONObject = JSONObject()): String {
+    private suspend fun request(componentId: String, content: JSONObject = JSONObject()): String {
         // 构造 components 结构
         val componentPayload = JSONObject()
         if (CHANNEL.isNotEmpty()) {
@@ -45,7 +45,7 @@ object HaoJiaRpcCall {
     /**
      * 查询签到信息 (Recall)
      */
-    fun querySignIn(): String {
+    suspend fun querySignIn(): String {
         return request("independent_component_sign_in_00966139_independent_component_sign_in_recall")
     }
 
@@ -53,7 +53,7 @@ object HaoJiaRpcCall {
      * 执行签到
      * @param code 签到周期编码，如 SIG2025122904098128
      */
-    fun doSignIn(code: String): String {
+    suspend fun doSignIn(code: String): String {
         val content = JSONObject()
         content.put("code", code)
         return request("independent_component_sign_in_00966139_independent_component_sign_in", content)
@@ -62,7 +62,7 @@ object HaoJiaRpcCall {
     /**
      * 查询任务列表
      */
-    fun queryTaskList(): String {
+    suspend fun queryTaskList(): String {
         return request("independent_component_task_reward_00793835_independent_component_task_reward_query")
     }
 
@@ -70,7 +70,7 @@ object HaoJiaRpcCall {
      * 申请/领取/完成任务
      * @param taskCode 任务编码，如 TT2026012002107380
      */
-    fun applyTask(taskCode: String): String {
+    suspend fun applyTask(taskCode: String): String {
         val content = JSONObject()
         content.put("code", taskCode)
         return request("independent_component_task_reward_00793835_independent_component_task_reward_apply", content)

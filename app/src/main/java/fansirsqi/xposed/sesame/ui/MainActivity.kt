@@ -24,13 +24,12 @@ import fansirsqi.xposed.sesame.ui.screen.MainScreen
 import fansirsqi.xposed.sesame.ui.theme.AppTheme
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
-import fansirsqi.xposed.sesame.util.CommandUtil
-import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.IconManager
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.PermissionUtil
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.app.CommandUtil
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.app.IconManager
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.permission.PermissionUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import rikka.shizuku.Shizuku
@@ -67,7 +66,6 @@ class MainActivity : ComponentActivity() {
         hasPermissions = PermissionUtil.checkOrRequestFilePermissions(this)
         if (hasPermissions) {
             viewModel.initAppLogic()
-            initNativeDetector()
         }
 
         // 3. 初始化 Shizuku
@@ -111,17 +109,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 在 Activity 中执行 Native 检测
-    private fun initNativeDetector() {
-        try {
-            if (Detector.loadLibrary("checker")) {
-                Detector.initDetector(this)
-            }
-        } catch (e: Exception) {
-            Log.error("MainActivity", "Native detector init failed: ${e.message}")
-        }
-    }
-
     /**
      * 定义 UI 事件
      */
@@ -161,7 +148,7 @@ class MainActivity : ComponentActivity() {
             }
 
             MainUiEvent.OpenCaptureLog -> openLogFile(Files.getCaptureLogFile())
-            MainUiEvent.OpenExtend -> startActivity(Intent(this, _root_ide_package_.fansirsqi.xposed.sesame.ui.ExtendActivity::class.java))
+            MainUiEvent.OpenExtend -> startActivity(Intent(this, fansirsqi.xposed.sesame.ui.ExtendActivity::class.java))
             MainUiEvent.ClearConfig -> {
                 // 🔥 这里只负责执行逻辑，不再负责弹窗
                 if (Files.delFile(Files.CONFIG_DIR)) {

@@ -4,12 +4,12 @@ import android.Manifest
 import androidx.annotation.RequiresPermission
 import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
-import fansirsqi.xposed.sesame.model.BaseModel
-import fansirsqi.xposed.sesame.util.CoroutineUtils
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.NetworkUtils
-import fansirsqi.xposed.sesame.util.Notify
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
+import fansirsqi.xposed.sesame.core.app.NetworkUtils
+import fansirsqi.xposed.sesame.core.notify.Notify
+import fansirsqi.xposed.sesame.core.util.TimeUtil
+import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -26,7 +26,7 @@ object RequestManager {
      * 核心执行函数 (内联优化)
      * 流程：离线检查 -> 获取 Bridge -> 执行请求 -> 结果校验 -> 错误计数/重置
      */
-    private inline fun executeRpc(methodLog: String?, block: (RpcBridge) -> String?): String {
+    private suspend inline fun executeRpc(methodLog: String?, block: suspend (RpcBridge) -> String?): String {
         // 1. 【前置检查】如果已经离线，直接中断并尝试恢复
         if (ApplicationHook.offline) {
             Log.record(TAG, "当前处于离线状态，拦截请求: $methodLog")
@@ -70,8 +70,8 @@ object RequestManager {
      */
     private fun handleFailure(method: String, reason: String) {
         val currentCount = errorCount.incrementAndGet()
-        // 假设 BaseModel 有个方法获取这个配置，或者直接用常量
-        val maxCount = BaseModel.setMaxErrorCount.value
+        // 从全局配置读取异常次数阈值
+        val maxCount = ApplicationHook.config.setMaxErrorCount.value
 
         Log.error(TAG, "RPC 失败 ($currentCount/$maxCount) | Method: $method | Reason: $reason")
 
@@ -79,9 +79,9 @@ object RequestManager {
         if (currentCount >= maxCount) {
             Log.record(TAG, "🔴 连续失败次数达到阈值，触发熔断兜底机制！")
             // 1. 设置离线状态，停止后续任务
-            ApplicationHook.setOffline(true)
+            ApplicationHook.offline = true
             // 2. 发送通知 (根据用户配置)
-            if (BaseModel.errNotify.value) {
+            if (ApplicationHook.config.errNotify.value) {
                 val msg = "${TimeUtil.getTimeStr()} | 网络异常次数超过阈值[$maxCount]"
                 Notify.sendNewNotification(msg, "RPC 连续失败，脚本已暂停")
             }
@@ -109,10 +109,10 @@ object RequestManager {
      * 获取 RpcBridge 实例
      */
     @RequiresPermission(Manifest.permission.ACCESS_NETWORK_STATE)
-    private fun getRpcBridge(): RpcBridge? {
+    private suspend fun getRpcBridge(): RpcBridge? {
         if (!NetworkUtils.isNetworkAvailable()) {
             Log.record(TAG, "网络不可用，尝试等待 5秒...")
-            CoroutineUtils.sleepCompat(5000)
+            delay(5000)  // 替代 sleepCompat(5000)
             if (!NetworkUtils.isNetworkAvailable()) {
                 return null
             }
@@ -121,45 +121,45 @@ object RequestManager {
         var bridge = ApplicationHook.rpcBridge
         if (bridge == null) {
             Log.record(TAG, "RpcBridge 未初始化，尝试等待 5秒...")
-            CoroutineUtils.sleepCompat(5000)
+            delay(5000)  // 替代 sleepCompat(5000)
             bridge = ApplicationHook.rpcBridge
         }
 
         return bridge
     }
 
-    // ================== 公开 API (保持不变) ==================
+    // ================== 公开 API ==================
 
     @JvmStatic
-    fun requestString(rpcEntity: RpcEntity): String {
+    suspend fun requestString(rpcEntity: RpcEntity): String {
         return executeRpc(rpcEntity.methodName) { bridge ->
             bridge.requestString(rpcEntity, 3, 1200)
         }
     }
 
     @JvmStatic
-    fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String {
+    suspend fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String {
         return executeRpc(rpcEntity.methodName) { bridge ->
             bridge.requestString(rpcEntity, tryCount, retryInterval)
         }
     }
 
     @JvmStatic
-    fun requestString(method: String?, data: String?): String {
+    suspend fun requestString(method: String?, data: String?): String {
         return executeRpc(method) { bridge ->
             bridge.requestString(method, data)
         }
     }
 
     @JvmStatic
-    fun requestString(method: String?, data: String?, relation: String?): String {
+    suspend fun requestString(method: String?, data: String?, relation: String?): String {
         return executeRpc(method) { bridge ->
             bridge.requestString(method, data, relation)
         }
     }
 
     @JvmStatic
-    fun requestString(
+    suspend fun requestString(
         method: String?,
         data: String?,
         appName: String?,
@@ -172,14 +172,14 @@ object RequestManager {
     }
 
     @JvmStatic
-    fun requestString(method: String?, data: String?, tryCount: Int, retryInterval: Int): String {
+    suspend fun requestString(method: String?, data: String?, tryCount: Int, retryInterval: Int): String {
         return executeRpc(method) { bridge ->
             bridge.requestString(method, data, tryCount, retryInterval)
         }
     }
 
     @JvmStatic
-    fun requestString(
+    suspend fun requestString(
         method: String?,
         data: String?,
         relation: String?,
@@ -192,28 +192,38 @@ object RequestManager {
     }
 
     @JvmStatic
-    fun requestObject(rpcEntity: RpcEntity?, tryCount: Int, retryInterval: Int) {
-        if (rpcEntity == null) return
+    suspend fun requestObject(rpcEntity: RpcEntity?, tryCount: Int, retryInterval: Int): RpcEntity? {
+        if (rpcEntity == null) return null
         // requestObject 不涉及返回值判断，但同样需要离线检查
         if (ApplicationHook.offline) {
             handleOfflineRecovery()
-            return
+            return null
         }
 
         val bridge = getRpcBridge()
         if (bridge == null) {
             handleFailure("requestObject", "Bridge Unavailable")
-            return
+            return null
         }
 
-        try {
-            bridge.requestObject(rpcEntity, tryCount, retryInterval)
-            // requestObject 没有返回值，假设只要不抛异常就算成功？
-            // 或者保守一点，不重置 errorCount，也不增加 errorCount
+        return try {
+            val result = bridge.requestObject(rpcEntity, tryCount, retryInterval)
             errorCount.set(0)
+            result  // ← 修复：返回结果而非丢弃
         } catch (e: Throwable) {
             Log.printStackTrace(TAG, "requestObject 异常: ${rpcEntity.methodName}", e)
             handleFailure(rpcEntity.methodName ?: "Unknown", "Exception")
+            null
         }
     }
+
+    // ================== 兼容层（Java/UI 调用方） ==================
+
+    /**
+     * 同步兼容入口，仅供无法改造为非协程的 Java/UI 调用方使用
+     */
+    @JvmStatic
+    fun requestStringBlocking(rpcEntity: RpcEntity): String = CoroutineUtils.runBlockingSafe {
+        requestString(rpcEntity)
+    } ?: ""
 }

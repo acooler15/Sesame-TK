@@ -16,9 +16,9 @@ import fansirsqi.xposed.sesame.ui.screen.ManualTaskScreen
 import fansirsqi.xposed.sesame.ui.theme.AppTheme
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager
 import fansirsqi.xposed.sesame.ui.viewmodel.MainViewModel
-import fansirsqi.xposed.sesame.util.DataStore
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.store.DataStore
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 /**
  * 手动任务 Fragment (Compose 实现)

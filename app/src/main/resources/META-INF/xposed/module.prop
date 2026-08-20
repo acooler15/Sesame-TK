@@ -1,3 +1,5 @@
-minApiVersion=100
-targetApiVersion=100
+# 双兼容声明：minApiVersion=82 表明兼容 legacy 框架，targetApiVersion=102 表明现代路径
+minApiVersion=82
+targetApiVersion=102
 staticScope=true
+# autoHotReload 不开启：DexKit/TFLite native 库须在 onHotReloading 自行退役旧状态（风险后置）

@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import fansirsqi.xposed.sesame.util.HanziToPinyin
+import fansirsqi.xposed.sesame.core.util.HanziToPinyin
 
 abstract class MapperEntity : Comparable<MapperEntity> {
     @JvmField

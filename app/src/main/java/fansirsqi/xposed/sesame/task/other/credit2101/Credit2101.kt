@@ -6,12 +6,12 @@ import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.hook.internal.LocationHelper
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectAndCountModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
-import fansirsqi.xposed.sesame.util.DataStore
-import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist.autoAddToBlacklist
-import fansirsqi.xposed.sesame.util.TaskBlacklist.isTaskInBlacklist
+import fansirsqi.xposed.sesame.core.store.DataStore
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist.autoAddToBlacklist
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist.isTaskInBlacklist
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -20,6 +20,7 @@ import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util.Random
 import kotlin.math.cos
+import kotlinx.coroutines.delay
 
 /**
  * 信用2101
@@ -227,12 +228,12 @@ object Credit2101 {
 
     @SuppressLint("DefaultLocale")
     @JvmStatic
-    fun doCredit2101(credittaskoptions: SelectModelField ,creditoptions: SelectAndCountModelField) {
+    suspend fun doCredit2101(credittaskoptions: SelectModelField ,creditoptions: SelectAndCountModelField) {
         try {
             Log.record(TAG, "执行开始 信用2101")
             this.mCreditTaskOptions = credittaskoptions
             this.mCreditEventOptions = creditoptions
-            val selectedTasks = credittaskoptions.value ?: emptyList<String>()
+            val selectedTasks = credittaskoptions.value
 
             var account = queryAccountAsset() ?: run {
                 Log.error(TAG, "信用2101❌[账户查询失败] 返回为空或非 SUCCESS")
@@ -392,7 +393,7 @@ object Credit2101 {
     }
 
     /** 查询账户详情并解析为 AccountInfo */
-    private fun queryAccountAsset(): AccountInfo? {
+    private suspend fun queryAccountAsset(): AccountInfo? {
         val resp = Credit2101RpcCall.queryAccountAsset()
         if (!ResChecker.checkRes(TAG, resp)) return null
 
@@ -421,7 +422,7 @@ object Credit2101 {
     }
 
     /** 开宝箱并解析奖励（按数量多次尝试，遇到失败则停止） */
-    private fun openChest(lotteryNo: Int) {
+    private suspend fun openChest(lotteryNo: Int) {
         var successCount = 0
         try {
             for (i in 1..lotteryNo) {
@@ -491,7 +492,7 @@ object Credit2101 {
     /**
      * 查询签到数据并按 totalLoginDays 判断是否需要签到
      */
-    private fun handleSignIn() {
+    private suspend fun handleSignIn() {
         try {
             val jo = JSONObject(Credit2101RpcCall.querySignInData())
             if (!ResChecker.checkRes(TAG, jo)) {
@@ -554,7 +555,7 @@ object Credit2101 {
     /**
      * 每日任务：领取任务 + 领取任务奖励
      */
-    private fun handleUserTasks() {
+    private suspend fun handleUserTasks() {
         try {
             val resp = Credit2101RpcCall.queryUserTask()
             if (resp.isEmpty()) {
@@ -689,7 +690,7 @@ object Credit2101 {
     /**
      * 处理修复列表奖励领取 (黑色印记)
      */
-    private fun handleGuardMarkAward() {
+    private suspend fun handleGuardMarkAward() {
         try {
             // 1. 查询列表状态
             val resp = Credit2101RpcCall.queryGuardMarkList()
@@ -735,7 +736,7 @@ object Credit2101 {
         }
     }
 
-    private fun handleVisitRecover() {
+    private suspend fun handleVisitRecover() {
         try {
             val resp = Credit2101RpcCall.queryPopupView("1")
 
@@ -916,7 +917,7 @@ object Credit2101 {
         object Failed : EventResult()   // 失败(错误)
     }
 
-    private fun queryAndHandleEvents(
+    private suspend fun queryAndHandleEvents(
         cityCode: String,
         latitude: Double,
         longitude: Double,
@@ -1178,7 +1179,7 @@ object Credit2101 {
     }
 */
     /** 处理小游戏：消除类 */
-    private fun handleMiniGameEliminate(ev: JSONObject, batchNo: String, eventId: String) {
+    private suspend fun handleMiniGameEliminate(ev: JSONObject, batchNo: String, eventId: String) {
         try {
 
             val cfg = ev.optJSONObject("eventConfig")
@@ -1246,7 +1247,7 @@ object Credit2101 {
     }
 
     /** 处理小游戏：收集印记 YJ 类型 */
-    private fun handleMiniGameCollectYj(ev: JSONObject, batchNo: String, eventId: String) {
+    private suspend fun handleMiniGameCollectYj(ev: JSONObject, batchNo: String, eventId: String) {
         try {
             val cfg = ev.optJSONObject("eventConfig")
             if (cfg == null) {
@@ -1346,7 +1347,7 @@ object Credit2101 {
     /**
      * 处理小游戏：击杀类（MINI_GAME_MATCH3）
      */
-    private fun handleMiniGameMatch(ev: JSONObject, batchNo: String, eventId: String) {
+    private suspend fun handleMiniGameMatch(ev: JSONObject, batchNo: String, eventId: String) {
         try {
             // 1️⃣ eventConfig
             val cfg = ev.optJSONObject("eventConfig")
@@ -1460,7 +1461,7 @@ object Credit2101 {
     }
 
     /** 处理黄金印记事件 GOLD_MARK */
-    private fun handleGoldMark(
+    private suspend fun handleGoldMark(
         batchNo: String,
         eventId: String,
         cityCode: String,
@@ -1525,7 +1526,7 @@ object Credit2101 {
     /**
      * 处理故事事件（SPACE_TIME_GATE）- 批量提交版本
      */
-    private fun handleSpaceTimeGate(
+    private suspend fun handleSpaceTimeGate(
         batchNo: String,
         eventId: String,
         cityCode: String,
@@ -1593,7 +1594,7 @@ object Credit2101 {
                 }
                 // 添加适当延迟避免请求过于频繁
                 try {
-                    Thread.sleep(800) // 增加延迟到800ms
+                    delay(800) // 增加延迟到800ms
                 } catch (_: InterruptedException) {
                     Thread.currentThread().interrupt()
                     break
@@ -1660,7 +1661,7 @@ object Credit2101 {
      * 处理黑色印记事件
      * @return 实际消耗的能量值
      */
-    private fun handleBlackMark(ev: JSONObject, availableEnergy: Int): EventResult {
+    private suspend fun handleBlackMark(ev: JSONObject, availableEnergy: Int): EventResult {
         val eventId = ev.optString("eventId")
         if (eventId.isEmpty()) {
             Log.error(TAG, "信用2101⚫[黑色印记] 事件ID为空")
@@ -1770,7 +1771,7 @@ object Credit2101 {
         }
     }
     /** 探测一次事件 */
-    private fun exploreOnce(cityCode: String, latitude: Double, longitude: Double): Boolean {
+    private suspend fun exploreOnce(cityCode: String, latitude: Double, longitude: Double): Boolean {
         val resp = Credit2101RpcCall.exploreGridEvent(cityCode, latitude, longitude)
         if (!ResChecker.checkRes(TAG, resp)) {
             Log.error(TAG, "信用2101🔍[探测失败][城市代码:$cityCode| $latitude/ $longitude] $resp")
@@ -1803,7 +1804,7 @@ object Credit2101 {
     }
 
     /** 自动合成领取图鉴 */
-    private fun handleChapterTasks() {
+    private suspend fun handleChapterTasks() {
         try {
             // 1. 查询图鉴进度
             val resp = Credit2101RpcCall.queryChapterProgress()
@@ -1894,7 +1895,7 @@ object Credit2101 {
 
     /** 自动检查天赋并合成 **/
     /** 自动检查并升级天赋 **/
-    private fun handleAutoUpgradeTalent() {
+    private suspend fun handleAutoUpgradeTalent() {
         try {
             // 1. 获取当前状态
             val queryResp = Credit2101RpcCall.queryRelationTalent()
@@ -1964,7 +1965,7 @@ object Credit2101 {
                     }
 
                     // 升级间隔，防止并发过快
-                    Thread.sleep(1500)
+                    delay(1500)
                 } else {
                     val errorMsg = upgradeJo.optString("resultMsg", "未知错误")
                     Log.error(TAG, "信用2101🎮[天赋] $talentName 升级终止: $errorMsg")

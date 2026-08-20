@@ -2,9 +2,9 @@ package fansirsqi.xposed.sesame.util.maps
 
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.json.JsonUtil
+import fansirsqi.xposed.sesame.core.log.Log
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
@@ -86,7 +86,7 @@ abstract class IdMaps private constructor() {
         idMap.clear()
         try {
             val file = Files.getTargetFileofDir(Files.MAIN_DIR, thisFileName())
-            val body = file?.let { Files.readFromFile(it) }.orEmpty()
+            val body = file.let { Files.readFromFile(it) }.orEmpty()
             if (body.isNotBlank()) {
                 val newMap = ObjectMapper().readValue(body, object : TypeReference<Map<Any, Any>>() {})
                 idMap.putAll(newMap)

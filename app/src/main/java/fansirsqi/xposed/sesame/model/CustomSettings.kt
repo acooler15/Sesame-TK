@@ -1,23 +1,22 @@
 package fansirsqi.xposed.sesame.model
 
+import android.app.AlertDialog
 import android.content.Context
-import androidx.appcompat.app.AlertDialog
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.entity.MapperEntity
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.ListModelField.ListJoinCommaToStringModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.ui.widget.ListDialog
-import fansirsqi.xposed.sesame.util.FansirsqiUtil
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.JsonUtil
-import fansirsqi.xposed.sesame.util.ListUtil
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.TimeUtil
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.app.FansirsqiUtil
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.json.JsonUtil
+import fansirsqi.xposed.sesame.core.util.ListUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.core.util.TimeUtil
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
-import java.lang.reflect.Field
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,7 +40,7 @@ object CustomSettings {
     val onlyOnceDailyList = SelectModelField(
         "onlyOnceDailyList",
         "每日只运行一次 | 模块选择",
-        LinkedHashSet<String>().apply {
+        LinkedHashSet<String?>().apply {
             add("antOrchard")
             add("antCooperate")
             add("antSports")
@@ -98,7 +97,7 @@ object CustomSettings {
         onlyOnceDaily.setObjectValue(false)
         autoHandleOnceDaily.setObjectValue(false)
         autoHandleOnceDailyTimes.setObjectValue(ListUtil.newArrayList("0600", "2000"))
-        val defaultSet = LinkedHashSet<String>().apply {
+        val defaultSet = LinkedHashSet<String?>().apply {
             add("antOrchard")
             add("antCooperate")
             add("antSports")
@@ -121,7 +120,7 @@ object CustomSettings {
             data[autoHandleOnceDaily.code] = autoHandleOnceDaily.value
             data[autoHandleOnceDailyTimes.code] = autoHandleOnceDailyTimes.value
             val json = JsonUtil.formatJson(data)
-            if (json != null) Files.write2File(json, file!!)
+            Files.write2File(json, file!!)
         } catch (e: Throwable) {
             Log.printStackTrace(TAG, "Failed to save custom settings", e)
         }
@@ -203,7 +202,7 @@ object CustomSettings {
         }
 
         val now = System.currentTimeMillis()
-        val interval = BaseModel.checkInterval.value.toLong()
+        val interval = ApplicationHook.config.checkInterval.value.toLong()
         val isSpecialTime = autoHandleOnceDailyTimes.value.any { timeStr ->
             val startCal = TimeUtil.getTodayCalendarByTimeStr(timeStr)
             if (startCal != null) {
@@ -258,7 +257,7 @@ object CustomSettings {
                 load(selectedUid)
                 showAccountOps(context, selectedUid, selectedShowName, onRefresh)
             }
-            .setNegativeButton(R.string.cancel, null)
+            .setNegativeButton("取消", null)
             .show()
     }
 
@@ -294,14 +293,7 @@ object CustomSettings {
                     onRefresh()
                     showAccountOps(context, uid, showName, onRefresh)
                 } else if (which == 1) {
-                    ListDialog.show(context, "黑名单 | $showName", onlyOnceDailyList)
-                    try {
-                        val dialogField: Field = ListDialog::class.java.getDeclaredField("listDialog")
-                        dialogField.isAccessible = true
-                        val dialog = dialogField.get(null) as? androidx.appcompat.app.AlertDialog
-                        dialog?.setOnDismissListener { save(uid) }
-                    } catch (e: Exception) {
-                    }
+                    ListDialog.show(context, "黑名单 | $showName", onlyOnceDailyList, onDismiss = { save(uid) })
                 } else if (which == 2) {
                     val edt = android.widget.EditText(context)
                     edt.setText(autoHandleOnceDailyTimes.configValue)
@@ -309,12 +301,12 @@ object CustomSettings {
                         .setTitle("设置 ${showName} 非单次运行时段")
                         .setMessage("输入开始时间点(如0600)，多个用逗号隔开。时段为该时间点加\"设置\"中的执行间隔时间")
                         .setView(edt)
-                        .setPositiveButton(R.string.ok) { _, _ ->
+                        .setPositiveButton("确认") { _, _ ->
                             autoHandleOnceDailyTimes.setConfigValue(edt.text.toString())
                             save(uid)
                             showAccountOps(context, uid, showName, onRefresh)
                         }
-                        .setNegativeButton(R.string.cancel, null)
+                        .setNegativeButton("取消", null)
                         .show()
                 }
             }

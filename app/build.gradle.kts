@@ -1,25 +1,30 @@
-import com.android.build.api.dsl.AaptOptions
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.android.build.api.variant.FilterConfiguration
+import com.android.build.api.variant.impl.VariantOutputImpl
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.rikka.tools.refine)
 }
 var isCIBuild: Boolean = System.getenv("CI").toBoolean()
 
 //isCIBuild = true // 没有c++源码时开启CI构建, push前关闭
 
+val appVersionName = "0.9.9"
+
 android {
     namespace = "fansirsqi.xposed.sesame"
-    compileSdk = 36
+    compileSdk = 37
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+        resources {
+            // 双入口共存：合并依赖携带的 META-INF/xposed 声明，避免冲突（照 libxposed/example）
+            merges += "META-INF/xposed/*"
         }
         splits {
             abi {
@@ -50,7 +55,7 @@ android {
         }.format(Date())
 
         versionCode = gitCommitCount
-        versionName = "0.9.9"
+        versionName = appVersionName
 
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
@@ -70,7 +75,7 @@ android {
 
 
     buildFeatures {
-        viewBinding = true
+        viewBinding = false
         buildConfig = true
         compose = true
         aidl = true
@@ -113,7 +118,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            jniLibs.srcDirs("src/main/jniLibs")
+            jniLibs.directories.add("src/main/jniLibs")
         }
     }
     val cmakeFile = file("src/main/cpp/CMakeLists.txt")
@@ -126,14 +131,16 @@ android {
             }
         }
     }
+}
 
-    applicationVariants.all {
-        val variant = this
-        variant.outputs.all {
-            val output = this
-            val abiName = output.filters.find { it.filterType == "ABI" }?.identifier ?: "universal"
-            val fileName = "Sesame-TK-${abiName}-${variant.versionName}.apk"
-            (output as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName = fileName
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val outputImpl = output as VariantOutputImpl
+            val abiName = output.filters
+                .firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }
+                ?.identifier ?: "universal"
+            outputImpl.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}-${variant.name}.apk")
         }
     }
 }
@@ -142,73 +149,46 @@ dependencies {
     // Shizuku 相关依赖 - 用于获取系统级权限
     implementation(libs.rikka.shizuku.api)        // Shizuku API
     implementation(libs.rikka.shizuku.provider)   // Shizuku 提供者
-    implementation(libs.rikka.refine)             // Rikka 反射工具
 //    implementation(libs.rikka.hidden.stub)
     // implementation(libs.ui.tooling.preview.android)
     implementation(libs.cmd.android)
-    implementation(libs.androidx.ui.text.google.fonts)
-    implementation(libs.material3) // 用于通过 Shizuku 执行命令
-    implementation(libs.bundles.tensorflow)
+    implementation(libs.bundles.litert)
 
     // Compose 相关依赖 - 现代化 UI 框架
-    val composeBom = platform("androidx.compose:compose-bom:2025.12.00")  // Compose BOM 版本管理
+    val composeBom = platform(libs.androidx.compose.bom)  // Compose BOM 版本管理
     implementation(composeBom)
-
-    testImplementation(composeBom)
-    androidTestImplementation(composeBom)
     implementation(libs.androidx.material3)                // Material 3 设计组件
-    implementation(libs.androidx.ui.tooling.preview)              // UI 工具预览
-    debugImplementation(libs.androidx.ui.tooling)                 // 调试时的 UI 工具
     implementation(libs.androidx.material.icons.extended)         // Material 3 图标
+    implementation(libs.androidx.ui.text.google.fonts)     // Google Fonts 支持（版本由 BOM 管理）
 
-    // 生命周期和数据绑定
+    // 生命周期
     implementation(libs.androidx.lifecycle.viewmodel.compose) // Compose ViewModel 支持
-
-    // JSON 序列化
-    implementation(libs.kotlinx.serialization.json) // Kotlin JSON 序列化库
 
     // Kotlin 协程依赖 - 异步编程（纯协程调度）
     implementation(libs.kotlinx.coroutines.core)     // 协程核心库
     implementation(libs.kotlinx.coroutines.android)  // Android 协程支持
 
-    // 数据观察和 HTTP 服务
-    implementation(libs.androidx.lifecycle.livedata.ktx)  // LiveData KTX 扩展
-    implementation(libs.androidx.runtime.livedata)        // Compose LiveData 运行时
+    // HTTP 服务
     implementation(libs.nanohttpd)                   // 轻量级 HTTP 服务器
 
     // UI 布局和组件
-    implementation(libs.androidx.constraintlayout)  // 约束布局
-
     implementation(libs.activity.compose)           // Compose Activity 支持
 
     // Android 核心库
     implementation(libs.core.ktx)                   // Android KTX 核心扩展
-    implementation(libs.kotlin.stdlib)              // Kotlin 标准库
     implementation(libs.slf4j.api)                  // SLF4J 日志 API
     implementation(libs.logback.android)            // Logback Android 日志实现
-    implementation(libs.appcompat)                  // AppCompat 兼容库
-    implementation(libs.recyclerview)               // RecyclerView 列表组件
-    implementation(libs.viewpager2)                 // ViewPager2 页面滑动
-    implementation(libs.material)                   // Material Design 组件
-    implementation(libs.webkit)                     // WebView 组件
 
     // 仅编译时依赖 - Xposed 相关
-    compileOnly(files("libs/api-82.jar"))          // Xposed API 82
-    compileOnly(files("libs/api-100.aar"))         // Xposed API 100 https://github.com/libxposed/api
-    implementation(files("libs/interface-100.aar")) // Xposed 模块接口 https://github.com/libxposed/api
-    implementation(files("libs/service-100-1.0.0.aar"))  // https://github.com/libxposed/service
+    compileOnly(files("libs/api-82.jar"))          // Xposed API 82（legacy 后端编译需要，运行时由旧框架提供）
+    compileOnly(libs.libxposed.api)                // libxposed API 102（框架运行时提供）
+    implementation(libs.libxposed.`interface`)    // Binder 接口 https://github.com/libxposed/service
+    implementation(libs.libxposed.service)         // 服务客户端实现 https://github.com/libxposed/service
 
     // 代码生成和工具库
-    compileOnly(libs.lombok)                       // Lombok 注解处理器（编译时）
-    annotationProcessor(libs.lombok)               // Lombok 注解处理
     implementation(libs.okhttp)                    // OkHttp 网络请求库
     implementation(libs.dexkit)                    // DEX 文件分析工具
     implementation(libs.jackson.kotlin)            // Jackson Kotlin 支持
-
-    // 核心库脱糖和系统 API 访问
-//    coreLibraryDesugaring(libs.desugar)            // Java 8+ API 脱糖支持
-
-    implementation(libs.hiddenapibypass)           // 隐藏 API 访问绕过
 
     // Jackson JSON 处理库
     implementation(libs.jackson.core)

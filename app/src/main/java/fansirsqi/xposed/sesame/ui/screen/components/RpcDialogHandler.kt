@@ -42,8 +42,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import fansirsqi.xposed.sesame.ui.viewmodel.RpcDebugViewModel
 import fansirsqi.xposed.sesame.ui.viewmodel.RpcDialogState
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 @Composable
 fun RpcDialogHandler(state: RpcDialogState, viewModel: RpcDebugViewModel) {

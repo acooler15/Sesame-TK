@@ -2,8 +2,8 @@ package fansirsqi.xposed.sesame.task.antStall
 
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.task.AnswerAI.AnswerAI
-import fansirsqi.xposed.sesame.util.JsonUtil
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.json.JsonUtil
+import fansirsqi.xposed.sesame.core.log.Log
 import org.json.JSONObject
 
 /**
@@ -22,7 +22,7 @@ object ReadingDada {
      * @param bizInfo 业务信息JSON对象
      * @return 是否回答成功
      */
-    fun answerQuestion(bizInfo: JSONObject): Boolean {
+    suspend fun answerQuestion(bizInfo: JSONObject): Boolean {
         try {
             // 获取任务跳转URL
             val taskJumpUrl = bizInfo.optString("taskJumpUrl").takeIf { it.isNotEmpty() }

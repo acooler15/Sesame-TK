@@ -8,11 +8,10 @@ import android.util.LruCache
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.SesameApplication.Companion.PREFERENCES_KEY
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -421,7 +420,7 @@ class LogViewerViewModel(application: Application) : AndroidViewModel(applicatio
             }
             val exportFile = Files.exportFile(file, true)
             if (exportFile != null && exportFile.exists()) {
-                val msg = "${context.getString(R.string.file_exported)} ${exportFile.path}"
+                val msg = "文件已导出到:  ${exportFile.path}"
                 ToastUtil.showToast(context, msg)
             } else {
                 ToastUtil.showToast(context, "导出失败")

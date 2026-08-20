@@ -1,5 +1,6 @@
 package fansirsqi.xposed.sesame.hook.server.handlers
 
+import fansirsqi.xposed.sesame.entity.RpcEntity
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.hook.server.ServerCommon.MIME_JSON
 import fi.iki.elonen.NanoHTTPD
@@ -26,7 +27,8 @@ class DebugHandler(secretToken: String) : BaseHandler(secretToken) {
         }
 
         return try {
-            val result = RequestManager.requestString(request.methodName, dataStr)
+            // onPost 为非协程 override，走兼容层同步入口
+            val result = RequestManager.requestStringBlocking(RpcEntity(request.methodName, dataStr))
 
             if (result.isBlank()) {
                 json(Response.Status.OK, mapOf("status" to "empty"))

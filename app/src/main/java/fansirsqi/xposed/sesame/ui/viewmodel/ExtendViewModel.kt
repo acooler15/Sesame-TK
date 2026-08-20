@@ -10,13 +10,11 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.fasterxml.jackson.core.type.TypeReference
 import fansirsqi.xposed.sesame.BuildConfig
-import fansirsqi.xposed.sesame.R
 import fansirsqi.xposed.sesame.model.CustomSettings
-import fansirsqi.xposed.sesame.util.DataStore
-import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.FansirsqiUtil
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.store.DataStore
+import fansirsqi.xposed.sesame.core.app.FansirsqiUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import rikka.shizuku.Shizuku
 
 // 定义菜单项数据类
@@ -57,22 +55,22 @@ class ExtendViewModel : ViewModel() {
         menuItems.clear()
 
         // 1. 广播类功能
-        val debugTips = context.getString(R.string.debug_tips)
+        val debugTips = "请在debug日志查看结果！"
 
-        fun addBroadcastItem(titleResId: Int, type: String) {
-            menuItems.add(MenuItem(context.getString(titleResId)) {
+        fun addBroadcastItem(title: String, type: String) {
+            menuItems.add(MenuItem(title) {
                 sendItemsBroadcast(context, type)
                 ToastUtil.makeText(context, debugTips, 0).show()
             })
         }
 
-        addBroadcastItem(R.string.query_the_remaining_amount_of_saplings, "getTreeItems")
-        addBroadcastItem(R.string.search_for_new_items_on_saplings, "getNewTreeItems")
-        addBroadcastItem(R.string.search_for_unlocked_regions, "queryAreaTrees")
-        addBroadcastItem(R.string.search_for_unlocked_items, "getUnlockTreeItems")
+        addBroadcastItem("查询树苗余量", "getTreeItems")
+        addBroadcastItem("查询树苗上新", "getNewTreeItems")
+        addBroadcastItem("查询未解锁地区", "queryAreaTrees")
+        addBroadcastItem("查询未解锁项目", "getUnlockTreeItems")
 
         // 2. 清空图片
-        menuItems.add(MenuItem(context.getString(R.string.clear_photo)) {
+        menuItems.add(MenuItem("清空光盘行动图片\uD83D\uDCBF") {
             val currentCount = DataStore
                 .getOrCreate("plate", object : TypeReference<List<Map<String, String>>>() {})
                 .size
@@ -94,12 +92,6 @@ class ExtendViewModel : ViewModel() {
             menuItems.add(MenuItem("获取DataStore字段") {
                 currentDialog = ExtendDialog.InputDialog("输入字段Key") { key ->
                     handleGetDataStore(context, key)
-                }
-            })
-
-            menuItems.add(MenuItem("获取BaseUrl") {
-                currentDialog = ExtendDialog.InputDialog("请输入Key") { input ->
-                    handleGetBaseUrl(context, input)
                 }
             })
 
@@ -142,17 +134,6 @@ class ExtendViewModel : ViewModel() {
             DataStore.getOrCreate(key, object : TypeReference<String>() {})
         }
         ToastUtil.showToast(context, "$value \n输入内容: $key")
-        dismissDialog()
-    }
-
-    private fun handleGetBaseUrl(context: Context, input: String) {
-        val key = input.toIntOrNull(16)
-        if (key != null) {
-            val output = Detector.getApiUrl(key)
-            ToastUtil.showToast(context, "$output \n输入内容: $input")
-        } else {
-            ToastUtil.showToast(context, "输入内容: $input , 请输入正确的十六进制数字")
-        }
         dismissDialog()
     }
 

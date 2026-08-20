@@ -2,9 +2,9 @@ package fansirsqi.xposed.sesame.task.antForest
 
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.hook.Toast
-import fansirsqi.xposed.sesame.util.GameTask
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.task.GameTask
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import kotlinx.coroutines.delay
 import org.json.JSONObject
@@ -232,7 +232,7 @@ object EnergyRainCoroutine {
      * @return Boolean 是否还有待处理的任务
      */
     @JvmStatic
-    private fun checkAndDoEndGameTask(): Boolean {
+    private suspend fun checkAndDoEndGameTask(): Boolean {
         try {
             // 1. 查询当前是否有可接或已接的游戏任务
             val response = AntForestRpcCall.queryEnergyRainEndGameList()

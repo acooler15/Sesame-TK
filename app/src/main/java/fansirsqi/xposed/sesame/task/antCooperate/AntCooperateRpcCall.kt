@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antCooperate
 
 import fansirsqi.xposed.sesame.hook.RequestManager
-import fansirsqi.xposed.sesame.util.RandomUtil
+import fansirsqi.xposed.sesame.core.util.RandomUtil
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -14,7 +14,7 @@ object AntCooperateRpcCall {
     private val RANDOM: Random = Random()
 
     @JvmStatic
-    fun queryUserCooperatePlantList(): String {
+    suspend fun queryUserCooperatePlantList(): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryUserCooperatePlantList",
             "[{}]"
@@ -22,7 +22,7 @@ object AntCooperateRpcCall {
     }
 
     @JvmStatic
-    fun queryCooperatePlant(coopId: String): String {
+    suspend fun queryCooperatePlant(coopId: String): String {
         val args1 = "[{\"cooperationId\":\"" + coopId + "\"}]"
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryCooperatePlant",
@@ -31,7 +31,7 @@ object AntCooperateRpcCall {
     }
 
     @JvmStatic
-    fun cooperateWater(uid: String?, coopId: String, count: Int): String {
+    suspend fun cooperateWater(uid: String?, coopId: String, count: Int): String {
         val args = "[{\"bizNo\":\"" + uid + "_" + coopId + "_" + System.currentTimeMillis() +
                 "\",\"cooperationId\":\"" + coopId + "\",\"energyCount\":" + count +
                 ",\"source\":\"\",\"version\":\"" + VERSION + "\"}]"
@@ -48,7 +48,7 @@ object AntCooperateRpcCall {
      * @param coopId  合种ID
      * @return x
      */
-    fun queryCooperateRank(bizType: String?, coopId: String?): String {
+    suspend fun queryCooperateRank(bizType: String?, coopId: String?): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryCooperateRank",
             "[{\"bizType\":\"$bizType\",\"cooperationId\":\"$coopId\",\"source\":\"ch_appcenter__chsub_9patch\"}]"
@@ -78,7 +78,7 @@ object AntCooperateRpcCall {
 
 
     @JvmStatic
-    fun updateUserConfig(inTeam: Boolean): String {
+    suspend fun updateUserConfig(inTeam: Boolean): String {
         val inTeamValue = if (inTeam) "Y" else "N"
         val args = "[{" +
                 "\"configMap\":{\"inTeam\":\"$inTeamValue\"}," +
@@ -94,7 +94,7 @@ object AntCooperateRpcCall {
 
     @JvmStatic
     @Throws(JSONException::class)
-    fun sendCooperateBeckon(userId: String, cooperationId: String): String {
+    suspend fun sendCooperateBeckon(userId: String, cooperationId: String): String {
         val jo = JSONObject().apply {
             put("bizImage", "https://gw.alipayobjects.com/zos/rmsportal/gzYPfxdAxLrkzFUeVkiY.jpg")
             put(
@@ -120,7 +120,7 @@ object AntCooperateRpcCall {
     }
 
     @JvmStatic
-    fun queryLoveHome(): String {
+    suspend fun queryLoveHome(): String {
         val start = "20251022"
         val end = "20251217"
         val args = "[{\"calenderEnd\":\"" + end +
@@ -133,7 +133,7 @@ object AntCooperateRpcCall {
     }
 
     @JvmStatic
-    fun loveTeamWater(teamId: String, donateNum: Int): String {
+    suspend fun loveTeamWater(teamId: String, donateNum: Int): String {
         val args = "[{\"donateNum\":" + donateNum +
                 ",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"teamId\":\"" + teamId + "\"}]"
         return RequestManager.requestString(
@@ -143,7 +143,7 @@ object AntCooperateRpcCall {
     }
 
     @JvmStatic
-    fun queryHomePage(): String {
+    suspend fun queryHomePage(): String {
         val args = "[{\"configVersionMap\":{\"wateringBubbleConfig\":\"0\"},\"skipWhackMole\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"version\":\"20250818\"}]"
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryHomePage",
@@ -159,7 +159,7 @@ object AntCooperateRpcCall {
      * @return 响应字符串，可能为 null
      */
     @JvmStatic
-    fun teamWater(teamId: String, energyCount: Int): String {
+    suspend fun teamWater(teamId: String, energyCount: Int): String {
         // 1. 生成毫秒级时间戳
         val ts = System.currentTimeMillis()
 
@@ -200,7 +200,7 @@ object AntCooperateRpcCall {
      * @return 返回 RPC 响应字符串
      */
     @JvmStatic
-    fun queryMiscInfo(queryBizType: String, Teamid: String): String {
+    suspend fun queryMiscInfo(queryBizType: String, Teamid: String): String {
         // 构造 H5 RPC 参数（森林所有 H5 RPC 都要求外层包一层数组）
         val args = """
         [{
@@ -221,7 +221,7 @@ object AntCooperateRpcCall {
      * 获取用户配置
      */
     @JvmStatic
-    fun queryUserTag(): String {
+    suspend fun queryUserTag(): String {
         return RequestManager.requestString(
             "alipay.antmember.h5.queryUserTag",
             "[{}]"

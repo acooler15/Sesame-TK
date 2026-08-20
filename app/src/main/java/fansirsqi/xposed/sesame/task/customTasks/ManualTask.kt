@@ -1,12 +1,12 @@
 package fansirsqi.xposed.sesame.task.customTasks
 
 import fansirsqi.xposed.sesame.hook.ApplicationHook
-import fansirsqi.xposed.sesame.hook.CaptchaHook
+import fansirsqi.xposed.sesame.hook.captcha.CaptchaHook
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.task.antFarm.AntFarm
 import fansirsqi.xposed.sesame.task.antForest.AntForest
-import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
+import fansirsqi.xposed.sesame.core.log.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

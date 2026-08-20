@@ -15,9 +15,9 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import fansirsqi.xposed.sesame.SesameApplication.Companion.PREFERENCES_KEY
 import fansirsqi.xposed.sesame.entity.RpcDebugEntity
 import fansirsqi.xposed.sesame.ui.LogViewerActivity
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,20 +1,19 @@
 package fansirsqi.xposed.sesame.task
 
 import android.annotation.SuppressLint
+import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelType
 import fansirsqi.xposed.sesame.task.antForest.AntForest
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.Notify.setStatusTextExec
-import fansirsqi.xposed.sesame.util.Notify.updateNextExecText
-import fansirsqi.xposed.sesame.util.StringUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.Notify.setStatusTextExec
+import fansirsqi.xposed.sesame.core.notify.Notify.updateNextExecText
+import fansirsqi.xposed.sesame.core.util.StringUtil
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import lombok.Setter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -68,13 +67,7 @@ abstract class ModelTask : Model() {
      * 准备任务执行环境
      */
     override fun prepare() {
-        if (taskScope == null) {
-            taskScope = CoroutineScope(
-                Dispatchers.Default + 
-                SupervisorJob() + 
-                CoroutineName("ModelTask-${getName()}")
-            )
-        }
+        ensureTaskScope()
     }
 
     /**
@@ -82,8 +75,11 @@ abstract class ModelTask : Model() {
      */
     private fun ensureTaskScope() {
         if (taskScope == null || !taskScope!!.isActive) {
-            taskScope =
-                CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineName("Task-$id"))
+            taskScope = CoroutineScope(
+                Dispatchers.Default +
+                SupervisorJob() +
+                CoroutineName("ModelTask-${getName()}")  // 统一命名
+            )
         }
     }
 
@@ -108,10 +104,10 @@ abstract class ModelTask : Model() {
 
         // 只有蚂蚁森林启用且当前不是蚂蚁森林任务时，才拦截能量时间
         if (getName() != "蚂蚁森林") {
-            val antForest = getModel(AntForest::class.java)
+            val antForest = Model.getModel(AntForest::class.java)
             if (antForest != null && antForest.isEnable) {
                 if (TaskCommon.IS_ENERGY_TIME) {
-                    Log.record(getName() ?: "Task", "⏸ 当前为只收能量时间【${BaseModel.energyTime.value}】，停止执行${getName()}任务！")
+                    Log.record(getName() ?: "Task", "⏸ 当前为只收能量时间【${ApplicationHook.config.energyTime.value}】，停止执行${getName()}任务！")
                     return false
                 }
             }
@@ -119,7 +115,7 @@ abstract class ModelTask : Model() {
 
         // 模块休眠检查
         if (TaskCommon.IS_MODULE_SLEEP_TIME) {
-            Log.record(getName() ?: "Task", "💤 模块休眠时间【${BaseModel.modelSleepTime.value}】停止执行${getName()}任务！")
+            Log.record(getName() ?: "Task", "💤 模块休眠时间【${ApplicationHook.config.modelSleepTime.value}】停止执行${getName()}任务！")
             return false
         }
         return true
@@ -175,17 +171,14 @@ abstract class ModelTask : Model() {
         val job = CoroutineScope(currentCoroutineContext()).launch {
             try {
                 childTask.run()
+            } catch (e: CancellationException) {
+                val taskName = getName() ?: "未知任务"
+                Log.record("子任务协程被取消: $taskName-$childId - ${e.message}")
+                // 协程取消是正常控制流程，必须重新抛出
+                throw e
             } catch (e: Exception) {
                 val taskName = getName() ?: "未知任务"
-                // 检查是否是协程取消相关的异常
-                if (e.javaClass.name.contains("CancellationException") || 
-                    e.message?.contains("cancelled") == true ||
-                    e.message?.contains("StandaloneCoroutine") == true) {
-                    Log.record("子任务协程被取消: $taskName-$childId - ${e.message}")
-                    // 协程取消是正常现象，不需要打印堆栈
-                } else {
-                    Log.printStackTrace("addChildTaskSuspend 子任务执行异常1: $taskName-$childId", e)
-                }
+                Log.printStackTrace("addChildTaskSuspend 子任务执行异常1: $taskName-$childId", e)
             } finally {
 //                childTaskMap.remove(childId)
                 childTaskMap.remove(childTask.id, childTask)
@@ -219,7 +212,8 @@ abstract class ModelTask : Model() {
      */
     fun addChildTask(childTask: ChildModelTask): Boolean {
         ensureTaskScope()
-        taskScope!!.launch(start = CoroutineStart.UNDISPATCHED) {
+        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             addChildTaskSuspend(childTask)
         }
         return true
@@ -235,8 +229,8 @@ abstract class ModelTask : Model() {
         rounds: Int = 2
     ): Job {
         ensureTaskScope()
-        
-        return taskScope!!.launch {
+        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
+        return scope.launch {
             executionMutex.withLock {
                 if (isRunning && !force) {
                     Log.record(TAG, "任务 ${getName()} 正在运行，跳过启动")
@@ -279,7 +273,7 @@ abstract class ModelTask : Model() {
             if (getName() != "MAIN_TASK") {
                 Log.record(TAG, "开始执行第${round}轮任务: ${getName()}")
             }
-            // 无论什么模式，都使用顺序执行
+            // 顺序执行本轮任务
             executeSequential(round, stats)
             
             // 轮次间延迟
@@ -319,7 +313,6 @@ abstract class ModelTask : Model() {
      * 停止任务（协程版本）
      * 注意：此方法是非阻塞的，会异步取消任务
      */
-    @OptIn(DelicateCoroutinesApi::class)
     open fun stopTask() {
         // 立即标记为非运行状态
         isRunning = false
@@ -329,8 +322,8 @@ abstract class ModelTask : Model() {
         taskScope = null
         
         // 异步清理子任务映射
-        // 使用 GlobalScope 确保清理逻辑能够完成，即使父作用域已被取消
-        kotlinx.coroutines.GlobalScope.launch(Dispatchers.Default) {
+        // 使用 applicationScope 确保清理逻辑能够完成，即使父作用域已被取消
+        ApplicationHook.applicationScope.launch(Dispatchers.Default) {
             try {
                 childTaskMap.values.forEach { childTask ->
                     try {
@@ -344,13 +337,6 @@ abstract class ModelTask : Model() {
                 Log.printStackTrace("stopTask err", e)
             }
         }
-    }
-
-    /**
-     * 任务执行模式（仅支持顺序执行）
-     */
-    enum class TaskExecutionMode {
-        SEQUENTIAL  // 顺序执行（唯一支持的模式）
     }
 
     /**
@@ -417,7 +403,6 @@ abstract class ModelTask : Model() {
         var onCompleted: ((isSuccess: Boolean) -> Unit)? = null,
         var useSmartScheduler: Boolean = true
     ) {
-        @Setter
         var modelTask: ModelTask? = null
         
         /** 协程任务Job */
@@ -439,10 +424,8 @@ abstract class ModelTask : Model() {
 
 
             /** 获取当前等待中的任务总数 */
-            @JvmStatic
             fun getWaitingCount(): Int = waitingTasks.size
             /** 获取当前所有正在等待的任务列表 */
-            @JvmStatic
             fun getWaitingTasks(): List<ChildModelTask> = waitingTasks.values.toList()
 
         }
@@ -512,18 +495,8 @@ abstract class ModelTask : Model() {
                 return
             } catch (e: Exception) {
                 val parentTaskName = modelTask?.getName() ?: "未知任务"
-                // 检查是否是协程取消相关的异常
-                if (e.javaClass.name.contains("CancellationException") ||
-                    e.message?.contains("cancelled") == true ||
-                    e.message?.contains("StandaloneCoroutine") == true) {
-                    isCancelled = true
-                    Log.record("子任务协程被取消: $parentTaskName-$id - ${e.message}")
-                    // 协程取消是正常现象，不需要打印堆栈
-                    return
-                } else {
-                    Log.printStackTrace("run err: $parentTaskName-$id", e)
-                    throw e
-                }
+                Log.printStackTrace("run err: $parentTaskName-$id", e)
+                throw e
             } finally {
                 // 【关键】确保无论发生什么情况，只要加了计数就必须减掉
                 if (isCounted) {
@@ -585,25 +558,18 @@ abstract class ModelTask : Model() {
     companion object {
         /** 日志标签 */
         private const val TAG = "ModelTask"
-        
-        /** 全局任务管理器协程作用域 */
-        private val globalTaskScope = CoroutineScope(
-            Dispatchers.Default + SupervisorJob() + CoroutineName("GlobalTaskManager")
-        )
 
         /**
-         * 停止所有任务（协程版本）
+         * 停止所有任务（同步版本）
+         * 同步取消，确保 destroyHandler 返回时所有 taskScope 已取消
          */
-        @JvmStatic
         fun stopAllTask() {
-            globalTaskScope.launch {
-                for (model in modelArray) {
-                    if (model is ModelTask) {
-                        try {
-                            model.stopTask()
-                        } catch (e: Exception) {
-                            Log.printStackTrace("停止任务异常", e)
-                        }
+            for (model in Model.modelArray) {
+                if (model is ModelTask) {
+                    try {
+                        model.stopTask()
+                    } catch (e: Exception) {
+                        Log.printStackTrace("停止任务异常", e)
                     }
                 }
             }

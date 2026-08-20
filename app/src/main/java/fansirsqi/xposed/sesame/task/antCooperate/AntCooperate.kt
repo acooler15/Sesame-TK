@@ -3,7 +3,6 @@ package fansirsqi.xposed.sesame.task.antCooperate
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.StatusFlags
 import fansirsqi.xposed.sesame.entity.CooperateEntity.Companion.getList
-import fansirsqi.xposed.sesame.model.BaseModel
 import fansirsqi.xposed.sesame.model.ModelFields
 import fansirsqi.xposed.sesame.model.ModelGroup
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
@@ -11,10 +10,11 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectAndCountModelField
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.TaskCommon
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.CooperateMap
+import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject
 
@@ -84,7 +84,7 @@ class AntCooperate : ModelTask() {
      */
     override suspend fun runSuspend() {
         try {
-            Log.record(TAG, "执行开始-$name")
+            Log.record(TAG, "执行开始-${getName()}")
 
             // 1. 真爱合种
             if (loveCooperateWater.value) {
@@ -122,7 +122,7 @@ class AntCooperate : ModelTask() {
                         }
 
                         // 3. 记录合种信息到本地 Map
-                        CooperateMap.getInstance(CooperateMap::class.java).add(cooperationId, name)
+                        IdMapManager.getInstance(CooperateMap::class.java).add(cooperationId, name)
 
                         // 4. 检查是否满足“今日是否可浇水”的本地状态缓存
                         if (!Status.canCooperateWaterToday(UserMap.currentUid, cooperationId)) {
@@ -194,13 +194,13 @@ class AntCooperate : ModelTask() {
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, t)
         } finally {
-            CooperateMap.getInstance(CooperateMap::class.java).save(UserMap.currentUid)
-            Log.record(TAG, "执行结束-$name")
+            IdMapManager.getInstance(CooperateMap::class.java).save(UserMap.currentUid)
+            Log.record(TAG, "执行结束-${getName()}")
         }
     }
 
     // 真爱合种逻辑
-    private fun loveCooperateWater() {
+    private suspend fun loveCooperateWater() {
         try {
             // 1. 本地状态检查 (快速失败)
             if (Status.hasFlagToday("love::teamWater")) {
@@ -254,7 +254,7 @@ class AntCooperate : ModelTask() {
             }
 
             // 6. 执行浇水
-            val waterAmount = loveCooperateWaterNum.value ?: 0 // 防止空指针
+            val waterAmount = loveCooperateWaterNum.value // 防止空指针
             if (waterAmount <= 0) {
                 Log.error(TAG, "配置的浇水数值无效: $waterAmount")
                 return
@@ -276,11 +276,11 @@ class AntCooperate : ModelTask() {
     }
 
     // 组队合种浇水逻辑
-    private fun teamCooperateWater() {
+    private suspend fun teamCooperateWater() {
         try {
             // --- 1. 基础配置与本地校验 ---
             // 用户设置的“每日目标浇水量”
-            val userDailyTarget = (teamCooperateWaterNum.value ?: 10).coerceIn(10, 5000)
+            val userDailyTarget = (teamCooperateWaterNum.value).coerceIn(10, 5000)
 
             // 获取今日已浇水量
             val todayUsed = Status.getIntFlagToday(StatusFlags.FLAG_TEAM_WATER_DAILY_COUNT) ?: 0
@@ -423,7 +423,7 @@ class AntCooperate : ModelTask() {
         /**
          * 合种浇水
          */
-        private fun cooperateWater(coopId: String, count: Int, name: String) {
+        private suspend fun cooperateWater(coopId: String, count: Int, name: String) {
             try {
                 val jo = JSONObject(AntCooperateRpcCall.cooperateWater(UserMap.currentUid, coopId, count))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -440,7 +440,7 @@ class AntCooperate : ModelTask() {
         /**
          * 计算合种需要浇水的克数
          */
-        private fun getTotalWatering(coopId: String?): Int {
+        private suspend fun getTotalWatering(coopId: String?): Int {
             try {
                 val jo = JSONObject(AntCooperateRpcCall.queryCooperateRank("A", coopId))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -468,7 +468,7 @@ class AntCooperate : ModelTask() {
         /**
          * 召唤队友浇水（仅队长）
          */
-        private fun cooperateSendCooperateBeckon(cooperationId: String, name: String) {
+        private suspend fun cooperateSendCooperateBeckon(cooperationId: String, name: String) {
             try {
                 if (TimeUtil.isNowBeforeTimeStr("1800")) {
                     return

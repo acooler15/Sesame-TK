@@ -99,3 +99,10 @@ ai.py
 /serve-debug/user.py
 .roo
 tmp/
+
+# IDA analysis database residuals
+*.id0
+*.id1
+*.id2
+*.nam
+*.til

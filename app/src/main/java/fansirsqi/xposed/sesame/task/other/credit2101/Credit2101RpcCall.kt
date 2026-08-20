@@ -7,7 +7,7 @@ import org.json.JSONObject
 object Credit2101RpcCall {
 
     /** 查询账户资产：包含信用印记、碎片、体力、宝箱等 */
-    fun queryAccountAsset(): String {
+    suspend fun queryAccountAsset(): String {
         val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryAccountAsset",
@@ -16,7 +16,7 @@ object Credit2101RpcCall {
     }
 
     /** 开宝箱（触发收益） */
-    fun triggerBenefit(): String {
+    suspend fun triggerBenefit(): String {
         val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.triggerBenefit",
@@ -25,7 +25,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询签到数据 */
-    fun querySignInData(): String {
+    suspend fun querySignInData(): String {
         val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.querySignInData",
@@ -34,7 +34,7 @@ object Credit2101RpcCall {
     }
 
     /** 执行签到，day 为 totalLoginDays */
-    fun userSignIn(day: Int): String {
+    suspend fun userSignIn(day: Int): String {
         val data = "[{\"day\":$day}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.userSignIn",
@@ -43,7 +43,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询当前坐标附近事件 */
-    fun queryGridEvent(cityCode: String, latitude: Double, longitude: Double, guideState: Boolean = false): String {
+    suspend fun queryGridEvent(cityCode: String, latitude: Double, longitude: Double, guideState: Boolean = false): String {
         val data = """[
                 {
                   "extParams": {
@@ -62,7 +62,7 @@ object Credit2101RpcCall {
     }
 
     /** 小游戏开始：MINI_GAME_ELIMINATE / MINI_GAME_COLLECTYJ 通用 */
-    fun eventGameStart(batchNo: String, eventId: String, miniGameStageId: String): String {
+    suspend fun eventGameStart(batchNo: String, eventId: String, miniGameStageId: String): String {
         val data = """[
                 {
                   "batchNo": "$batchNo",
@@ -86,7 +86,7 @@ object Credit2101RpcCall {
      * @param collectedYJ 收集的印记数
      * @return 接口响应字符串
      */
-    fun eventGameCompleteCollectYj(
+    suspend fun eventGameCompleteCollectYj(
         batchNo: String,
         eventId: String,
         miniGameStageId: String,
@@ -127,7 +127,7 @@ object Credit2101RpcCall {
      *                    "BX_PRIZE": 3
      *                  }
      */
-    fun eventGameComplete(
+    suspend fun eventGameComplete(
         batchNo: String,
         eventId: String,
         miniGameStageId: String,
@@ -155,7 +155,7 @@ object Credit2101RpcCall {
     }
 
     /** 小游戏完成：普通消除类，不带 extParams */
-    fun eventGameCompleteSimple(
+    suspend fun eventGameCompleteSimple(
         batchNo: String,
         eventId: String,
         miniGameStageId: String
@@ -176,7 +176,7 @@ object Credit2101RpcCall {
     }
 
     /** 黄金印记事件领取 */
-    fun collectCredit(
+    suspend fun collectCredit(
         batchNo: String,
         eventId: String,
         cityCode: String,
@@ -202,7 +202,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询黑色印记事件详情 */
-    fun queryBlackMarkEvent(eventId: String): String {
+    suspend fun queryBlackMarkEvent(eventId: String): String {
         val data = "[{\"eventId\":\"$eventId\"}]"
 
         return RequestManager.requestString(
@@ -212,7 +212,7 @@ object Credit2101RpcCall {
     }
 
     /** 加入黑色印记事件（最低 10 点能量） */
-    fun joinBlackMarkEvent(creditEnergy: Int, eventId: String): String {
+    suspend fun joinBlackMarkEvent(creditEnergy: Int, eventId: String): String {
         val data = """[
                 {
                   "creditEnergy": $creditEnergy,
@@ -227,7 +227,7 @@ object Credit2101RpcCall {
     }
 
     /** 黑色印记事件注能 */
-    fun chargeBlackMarkEvent(creditEnergy: Int, eventId: String): String {
+    suspend fun chargeBlackMarkEvent(creditEnergy: Int, eventId: String): String {
         val data = """[
                 {
                   "creditEnergy": $creditEnergy,
@@ -242,7 +242,7 @@ object Credit2101RpcCall {
     }
 
     /** 探测事件（消耗探索次数） */
-    fun exploreGridEvent(cityCode: String, latitude: Double, longitude: Double): String {
+    suspend fun exploreGridEvent(cityCode: String, latitude: Double, longitude: Double): String {
         val data = """[
                 {
                   "extParams": {
@@ -260,7 +260,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询每日任务列表 */
-    fun queryUserTask(): String {
+    suspend fun queryUserTask(): String {
         val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryUserTask",
@@ -269,7 +269,7 @@ object Credit2101RpcCall {
     }
 
     /** 任务操作：例如 TASK_CLAIM */
-    fun operateTask(taskAction: String, taskConfigId: String): String {
+    suspend fun operateTask(taskAction: String, taskConfigId: String): String {
         val data = """[
                 {
                   "taskAction": "$taskAction",
@@ -284,7 +284,7 @@ object Credit2101RpcCall {
     }
 
     /** 领取任务奖励 */
-    fun awardTask(taskConfigId: String): String {
+    suspend fun awardTask(taskConfigId: String): String {
         val data = """[
                 {
                   "taskConfigId": "$taskConfigId"
@@ -298,7 +298,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询故事事件（时空之门） */
-    fun queryEventGate(
+    suspend fun queryEventGate(
         batchNo: String,
         eventId: String,
         cityCode: String,
@@ -324,7 +324,7 @@ object Credit2101RpcCall {
     }
 
     /** 完成故事事件（时空之门） */
-    fun completeEventGate(
+    suspend fun completeEventGate(
         batchNo: String,
         eventId: String,
         cityCode: String,
@@ -400,7 +400,7 @@ object Credit2101RpcCall {
      * @param popupId 弹窗 ID
      * @return RPC 返回的原始 JSON 字符串
      */
-    fun queryPopupView(popupId: String = "1"): String {
+    suspend fun queryPopupView(popupId: String = "1"): String {
         val data = """
         [
           {
@@ -428,7 +428,7 @@ object Credit2101RpcCall {
      * ]
      * }
      */
-    fun queryChapterProgress(): String {
+    suspend fun queryChapterProgress(): String {
         val data = "[{}]"
 
         return RequestManager.requestString(
@@ -448,7 +448,7 @@ object Credit2101RpcCall {
      * 合成响应示例：{"success":true, "chapter":"10005", "awardStatus":"UNLOCKED"}
      * 领奖响应示例：{"success":true, "gainByCollectedAll":{"awardAmount":"1200","awardType":"YJ_PRIZE"}}
      */
-    fun completeChapterAction(action: String, chapter: String): String {
+    suspend fun completeChapterAction(action: String, chapter: String): String {
         val data = """
         [
           {
@@ -465,7 +465,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询天赋状态 */
-    fun queryRelationTalent(): String {
+    suspend fun queryRelationTalent(): String {
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryRelationTalent",
             "[{}]"
@@ -473,7 +473,7 @@ object Credit2101RpcCall {
     }
 
     /** 升级具体属性 */
-    fun upgradeTalentAttribute(
+    suspend fun upgradeTalentAttribute(
         attrType: String,
         treeType: String,
         targetLevel: Int
@@ -496,7 +496,7 @@ object Credit2101RpcCall {
     }
 
     /** 查询修复列表 (黑色印记列表) */
-    fun queryGuardMarkList(): String {
+    suspend fun queryGuardMarkList(): String {
         // 构造查询参数，通常为 [{}]
         val data = "[{}]"
 
@@ -507,7 +507,7 @@ object Credit2101RpcCall {
     }
 
     /** 领取修复列表奖励 */
-    fun claimGuardMarkAward(): String {
+    suspend fun claimGuardMarkAward(): String {
 
         val data = "[{}]"
 

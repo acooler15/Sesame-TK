@@ -2,13 +2,14 @@ package fansirsqi.xposed.sesame.hook
 
 import android.content.pm.PackageInfo
 import androidx.core.content.pm.PackageInfoCompat
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XposedHelpers
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.entity.AlipayVersion
-import fansirsqi.xposed.sesame.util.Log.printStackTrace
-import fansirsqi.xposed.sesame.util.Log.record
-import lombok.Getter
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
+import fansirsqi.xposed.sesame.core.log.Log.printStackTrace
+import fansirsqi.xposed.sesame.core.log.Log.record
 import kotlin.concurrent.Volatile
 
 /**
@@ -18,13 +19,7 @@ import kotlin.concurrent.Volatile
 object VersionHook {
     private const val TAG = "VersionHook"
 
-    /**
-     * -- GETTER --
-     * 获取已捕获的版本信息
-     *
-     */
     // 缓存捕获的版本信息
-    @Getter
     @Volatile
     private var capturedVersion: AlipayVersion? = null
 
@@ -44,17 +39,18 @@ object VersionHook {
         }
 
         try {
-            XposedHelpers.findAndHookMethod(
-                "android.app.ApplicationPackageManager",
-                classLoader,
-                "getPackageInfo",
-                String::class.java,
-                Int::class.javaPrimitiveType,
-                object : XC_MethodHook() {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName("android.app.ApplicationPackageManager", false, classLoader),
+                    "getPackageInfo",
+                    String::class.java,
+                    Int::class.javaPrimitiveType!!
+                ),
+                object : HookCallback {
                     @Throws(Throwable::class)
-                    override fun afterHookedMethod(param: MethodHookParam) {
+                    override fun after(p: HookParam) {
                         try {
-                            val packageInfo = param.result as PackageInfo?
+                            val packageInfo = p.result as PackageInfo?
 
                             // 只处理目标应用的包信息
                             if (packageInfo != null &&

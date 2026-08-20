@@ -9,9 +9,9 @@ import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.SelectModelField
 import fansirsqi.xposed.sesame.task.ModelTask
 import fansirsqi.xposed.sesame.task.TaskCommon
-import fansirsqi.xposed.sesame.util.GlobalThreadPools.sleepCompat
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ResChecker
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools.sleepCompat
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.util.ResChecker
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,21 +61,21 @@ class EcoProtection : ModelTask() {
 
     override suspend fun runSuspend() {
         try {
-            Log.record(TAG, "开始执行$name")
+            Log.record(TAG, "开始执行${getName()}")
             ancientTree(ancientTreeCityCodeList!!.value)
         } catch (t: Throwable) {
             Log.printStackTrace(TAG, "start.run err:",t)
         } finally {
-            Log.record(TAG, "结束执行$name")
+            Log.record(TAG, "结束执行${getName()}")
         }
     }
 
     companion object {
         private val TAG: String = EcoProtection::class.java.getSimpleName()
-        private fun ancientTree(ancientTreeCityCodeList: MutableCollection<String>) {
+        private suspend fun ancientTree(ancientTreeCityCodeList: MutableCollection<String?>) {
             try {
                 for (cityCode in ancientTreeCityCodeList) {
-                    if (!canAncientTreeToday(cityCode)) continue
+                    if (!canAncientTreeToday(cityCode!!)) continue
                     ancientTreeProtect(cityCode)
                     sleepCompat(1000L)
                 }
@@ -84,7 +84,7 @@ class EcoProtection : ModelTask() {
             }
         }
 
-        private fun ancientTreeProtect(cityCode: String) {
+        private suspend fun ancientTreeProtect(cityCode: String) {
             try {
                 val jo = JSONObject(EcoProtectionRpcCall.homePage(cityCode))
                 if (ResChecker.checkRes(TAG, jo)) {
@@ -109,7 +109,7 @@ class EcoProtection : ModelTask() {
             }
         }
 
-        private fun districtDetail(districtCode: String?) {
+        private suspend fun districtDetail(districtCode: String?) {
             try {
                 var jo = JSONObject(EcoProtectionRpcCall.districtDetail(districtCode))
                 if (ResChecker.checkRes(TAG, jo)) {

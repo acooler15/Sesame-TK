@@ -1,16 +1,16 @@
 package fansirsqi.xposed.sesame.task.other.haojia
 
-import fansirsqi.xposed.sesame.util.GlobalThreadPools
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ResChecker
-import fansirsqi.xposed.sesame.util.TaskBlacklist
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.util.ResChecker
+import fansirsqi.xposed.sesame.core.app.TaskBlacklist
+import fansirsqi.xposed.sesame.core.util.TimeUtil
+import kotlinx.coroutines.delay
 import org.json.JSONObject
 
 object HaoJiaWuyou {
     private const val TAG = "好家无忧卡"
 
-    fun start() {
+    suspend fun start() {
         Log.record(TAG, "开始执行")
         try {
             doSignIn()
@@ -25,7 +25,7 @@ object HaoJiaWuyou {
      * 处理签到
      * 修正：增加对 SIG_DUPLICATED_SIGN_IN 的判断，避免误报失败
      */
-    private fun doSignIn() {
+    private suspend fun doSignIn() {
         try {
             val resp = HaoJiaRpcCall.querySignIn()
             if (!ResChecker.checkRes(TAG, resp)) return
@@ -114,7 +114,7 @@ object HaoJiaWuyou {
      * 处理任务
      * 修正：过滤 eventPush 类型任务，校验 rewardStatus 确保真实发奖
      */
-    private fun doTasks() {
+    private suspend fun doTasks() {
         try {
             val resp = HaoJiaRpcCall.queryTaskList()
             if (!ResChecker.checkRes(TAG, resp)) return
@@ -164,9 +164,9 @@ object HaoJiaWuyou {
                     // 模拟浏览
                     if (browseTime > 0) {
                         Log.record(TAG, "浏览任务: $taskName, 等待 ${browseTime}秒")
-                        GlobalThreadPools.sleepCompat((browseTime * 1000).toLong())
+                        delay((browseTime * 1000).toLong())
                     } else {
-                        GlobalThreadPools.sleepCompat(1000)
+                        delay(1000)
                     }
 
                     // 提交任务/领取奖励

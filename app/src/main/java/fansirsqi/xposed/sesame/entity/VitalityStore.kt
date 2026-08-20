@@ -2,7 +2,6 @@ package fansirsqi.xposed.sesame.entity
 
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VitalityRewardsMap
-import lombok.Getter
 
 /**
  * @author Byseven
@@ -15,7 +14,6 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
         this.name = n
     }
 
-    @Getter
     enum class ExchangeStatus(val nickName: String) {
         NO_ENOUGH_POINT("活力值不足"),
         NO_ENOUGH_STOCK("库存量不足"),
@@ -28,20 +26,18 @@ class VitalityStore(i: String, n: String) : MapperEntity() {
     companion object {
         private var idNameMap: MutableMap<String?, String?>? = null
 
-        @JvmStatic
         val list: MutableList<VitalityStore>
             get() {
                 val list: MutableList<VitalityStore> = ArrayList()
                 val instance = IdMapManager.getInstance(VitalityRewardsMap::class.java)
-                val entries = instance?.map?.entries ?: emptySet()
+                val entries = instance.map.entries
 
                 for (entry in entries) {
-                    list.add(VitalityStore(entry.key!!, entry.value!!))
+                    list.add(VitalityStore(entry.key, entry.value))
                 }
                 return list
             }
 
-        @JvmStatic
         fun getNameById(id: String?): String? {
             if (idNameMap == null) {
                 idNameMap = HashMap()

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>滑块样本复核</title>
+<style>
+  :root { --bg:#1e1f24; --panel:#27282f; --line:#3a3b44; --txt:#e8e8ec; --dim:#9a9ba6;
+          --gap:#ff4d4f; --block:#52c41a; --refresh:#1677ff; --ok:#52c41a; --bad:#ff4d4f; --warn:#faad14; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--txt); font:14px/1.5 system-ui, "Microsoft YaHei", sans-serif;
+         height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+  header { display:flex; gap:16px; align-items:center; padding:10px 16px; background:var(--panel);
+           border-bottom:1px solid var(--line); }
+  header h1 { font-size:16px; font-weight:600; }
+  #stats { color:var(--dim); font-size:13px; }
+  #stats b { color:var(--txt); }
+  main { flex:1; display:flex; min-height:0; }
+  #sidebar { width:260px; background:var(--panel); border-right:1px solid var(--line);
+             overflow-y:auto; flex-shrink:0; }
+  .item { padding:8px 12px; border-bottom:1px solid var(--line); cursor:pointer; display:flex;
+          justify-content:space-between; align-items:center; gap:6px; }
+  .item:hover { background:#313239; }
+  .item.active { background:#3a3b44; outline:2px solid #4f51ff; }
+  .item .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tag { font-size:11px; padding:1px 6px; border-radius:8px; flex-shrink:0; }
+  .tag.pending { background:#4a3a00; color:var(--warn); }
+  .tag.approved { background:#10351c; color:var(--ok); }
+  .tag.rejected { background:#3d1013; color:var(--bad); }
+  .tag.nopre { background:#2c2c33; color:var(--dim); }
+  #stage { flex:1; display:flex; flex-direction:column; min-width:0; }
+  #canvasWrap { flex:1; display:flex; align-items:center; justify-content:center;
+                overflow:auto; padding:16px; }
+  canvas { max-width:100%; max-height:100%; box-shadow:0 0 0 1px var(--line);
+           cursor:crosshair; touch-action:none; }
+  #actionbar { display:flex; gap:10px; align-items:center; padding:10px 16px;
+               background:var(--panel); border-top:1px solid var(--line); }
+  button { background:#3a3b44; color:var(--txt); border:1px solid var(--line);
+           padding:8px 18px; border-radius:6px; cursor:pointer; font-size:14px; }
+  button:hover { filter:brightness(1.15); }
+  button.primary { background:#1652c4; border-color:#1652c4; }
+  button.danger { background:#8f1d24; border-color:#8f1d24; }
+  #curName { color:var(--dim); margin-left:auto; font-size:13px; }
+  #hint { color:var(--dim); font-size:12px; padding:4px 16px 8px; background:var(--panel); }
+  #legend { display:flex; gap:14px; font-size:12px; color:var(--dim); }
+  #legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; }
+  #legend kbd { display:inline-block; min-width:14px; padding:0 3px; margin-left:2px;
+                background:#3a3b44; border:1px solid var(--line); border-radius:3px;
+                font:11px/1.4 monospace; text-align:center; color:var(--txt); }
+  .empty { color:var(--dim); padding:40px; text-align:center; }
+  button.tagbtn { padding:6px 12px; font-size:13px; }
+  button.tagbtn.active { outline:2px solid #4f51ff; background:#313239; }
+  #editLabel { color:var(--dim); font-size:13px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>滑块样本复核</h1>
+  <div id="stats"></div>
+  <div id="legend">
+    <span><i style="background:var(--gap)"></i>gap <kbd>1</kbd></span>
+    <span><i style="background:var(--block)"></i>block <kbd>2</kbd></span>
+    <span><i style="background:var(--refresh)"></i>refresh <kbd>3</kbd></span>
+  </div>
+</header>
+<main>
+  <aside id="sidebar"></aside>
+  <section id="stage">
+    <div id="canvasWrap"><div class="empty">加载中…</div></div>
+    <div id="actionbar">
+      <button class="primary" id="btnApprove" title="A">通过 (A)</button>
+      <button class="danger" id="btnReject" title="R">剔除 (R)</button>
+      <button id="btnPrev" title="←">← 上一张</button>
+      <button id="btnNext" title="→">下一张 →</button>
+      <span class="sep" id="editLabel">编辑:</span>
+      <button class="tagbtn" id="btnGap" title="1">缺口 (1)</button>
+      <button class="tagbtn" id="btnBlock" title="2">滑块 (2)</button>
+      <button class="tagbtn" id="btnRefresh" title="3">刷新 (3)</button>
+      <span id="curName"></span>
+    </div>
+    <div id="hint">点击框=选中并拖动；空白处拖拽=重画当前框；1/2/3 或按钮切换编辑目标（缺口/滑块/刷新）；A 通过、R 剔除、←/→ 翻页。手改随审批自动保存。</div>
+  </section>
+</main>
+
+<script>
+'use strict';
+const COLORS = { gap:'#ff4d4f', block:'#52c41a', refresh:'#1677ff' };
+let samples = [];          // /api/list 结果
+let idx = -1;              // 当前样本下标
+let data = null;           // 当前 *_prelabeled.json 内容
+let img = null;            // Image 对象
+let scale = 1;             // 画布缩放（画布px / 图像px）
+let gap = null;            // {x,y,width,height} 图像坐标
+let drag = null;           // {mode:'move'|'draw', startX,startY, orig}
+let savedGapJson = null;   // 进入本张时的 gap 快照（判断是否手改）
+// 三种可编辑目标：key -> 字段名。block 存 slotimg、refresh 存 refreshButton（无则 refreshImg）
+const BOX_FIELDS = { gap:'gapimg', block:'slotimg', refresh:null };
+let editing = 'gap';       // 当前编辑目标: 'gap' | 'block' | 'refresh'
+let boxes = {};            // { gap, block, refresh } 图像坐标，编辑时的统一工作副本
+let savedBoxesJson = {};   // 进入本张时各框快照（判断是否手改）
+
+const $ = (id) => document.getElementById(id);
+
+// ---------- 数据加载 ----------
+async function loadList(keepIdx = true) {
+  samples = await (await fetch('/api/list')).json();
+  renderSidebar(); renderStats();
+  if (!keepIdx || idx < 0 || idx >= samples.length) idx = firstPending();
+  if (idx >= 0) await loadSample(idx); else showEmpty('没有样本。先采集并运行 prelabel_gap.py。');
+}
+const firstPending = () => {
+  const i = samples.findIndex(s => s.prelabeled && !s.reviewed);
+  return i >= 0 ? i : (samples.length ? 0 : -1);
+};
+function showEmpty(msg) {
+  $('canvasWrap').innerHTML = `<div class="empty">${msg}</div>`;
+  $('curName').textContent = '';
+}
+
+async function loadSample(i) {
+  idx = i; const s = samples[i];
+  renderSidebar();
+  if (!s.prelabeled) {
+    data = null; img = null; gap = null; drawNothing();
+    $('curName').textContent = `${s.name} — 未预标注（先跑 prelabel_gap.py）`;
+    return;
+  }
+  data = await (await fetch('/api/sample/' + encodeURIComponent(s.name))).json();
+  img = new Image();
+  img.onload = () => {
+    const rf = data.refreshButton && data.refreshButton.width ? data.refreshButton : data.refreshImg;
+    boxes = {
+      gap: data.gapimg ? { ...data.gapimg } : null,
+      block: data.slotimg ? { ...data.slotimg } : null,
+      refresh: rf && rf.width ? { ...rf } : null,
+    };
+    gap = boxes.gap ? { ...boxes.gap } : null;
+    savedBoxesJson = {};
+    for (const k of ['gap','block','refresh'])
+      savedBoxesJson[k] = boxes[k] ? JSON.stringify(boxes[k]) : null;
+    savedGapJson = savedBoxesJson.gap;
+    fitCanvas(); render();
+  };
+  img.src = '/image/' + encodeURIComponent(s.name) + '.png';
+  $('curName').textContent = `${s.name} — gap 置信度 ${
+    data.gapConfidence != null ? data.gapConfidence.toFixed(2) : '—'}`;
+}
+
+function drawNothing() {
+  const c = document.createElement('canvas'); c.width = c.height = 0;
+  const wrap = $('canvasWrap'); wrap.innerHTML = '';
+  wrap.appendChild(Object.assign(document.createElement('div'),
+    { className: 'empty', textContent: '该样本未预标注，跳过或先运行 prelabel_gap.py' }));
+}
+
+// ---------- 画布 ----------
+function fitCanvas() {
+  const wrap = $('canvasWrap');
+  const maxW = wrap.clientWidth - 32, maxH = wrap.clientHeight - 32;
+  scale = Math.min(1, maxW / img.width, maxH / img.height);
+  let c = wrap.querySelector('canvas');
+  if (!c) { wrap.innerHTML = ''; c = document.createElement('canvas'); bindPointer(c); wrap.appendChild(c); }
+  c.width = Math.round(img.width * scale);
+  c.height = Math.round(img.height * scale);
+}
+function render() {
+  if (!img) return;
+  const c = $('canvasWrap').querySelector('canvas'); if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  for (const key of ['block', 'refresh', 'gap']) {
+    const r = boxes[key];
+    if (!r) continue;
+    const conf = key === 'gap' ? data.gapConfidence : null;
+    const active = key === editing;
+    drawRect(ctx, r, COLORS[key], key + (active ? ' ◀' : ''), conf, active);
+  }
+  if (!boxes.gap && data.gapConfidence == null) {
+    ctx.fillStyle = 'rgba(250,173,20,.9)'; ctx.font = '14px sans-serif';
+    ctx.fillText('无 gap 预标注 — 空白处拖拽画一个', 10, 20);
+  }
+}
+function drawRect(ctx, r, color, label, conf, active) {
+  if (!r || !r.width) return;
+  const x = r.x * scale, y = r.y * scale, w = r.width * scale, h = r.height * scale;
+  ctx.strokeStyle = color; ctx.lineWidth = active ? 4 : 2;
+  if (active) { ctx.setLineDash([6,4]); } else { ctx.setLineDash([]); }
+  ctx.strokeRect(x, y, w, h);
+  ctx.setLineDash([]);
+  const text = label + (conf != null ? ` ${conf.toFixed(2)}` : '');
+  ctx.font = '12px sans-serif';
+  const tw = ctx.measureText(text).width + 8;
+  ctx.fillStyle = color; ctx.fillRect(x, Math.max(0, y - 16), tw, 15);
+  ctx.fillStyle = '#fff'; ctx.fillText(text, x + 4, Math.max(11, y - 5));
+}
+
+// ---------- 交互 ----------
+function boxAt(p) {
+  // 返回点 p 命中的框 key；优先点击已有框以选中它
+  for (const key of ['gap', 'block', 'refresh']) {
+    const r = boxes[key];
+    if (r && p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height) return key;
+  }
+  return null;
+}
+function bindPointer(c) {
+  c.addEventListener('pointerdown', (e) => {
+    if (!img) return;
+    c.setPointerCapture(e.pointerId);
+    const p = pos(e);
+    const hit = boxAt(p);
+    if (hit) {
+      // 点击已有框：选中并准备移动
+      editing = hit; render();
+      const cur = boxes[editing];
+      drag = { mode: 'move', startPx: p, orig: { ...cur } };
+    } else {
+      // 空白处：重画当前编辑目标
+      drag = { mode: 'draw', startPx: p, target: editing };
+    }
+  });
+  c.addEventListener('pointermove', (e) => {
+    if (!drag || !img) return;
+    const p = pos(e);
+    const k = drag.mode === 'move' ? editing : drag.target;
+    const cur = boxes[k] || { x: 0, y: 0, width: 0, height: 0 };
+    if (drag.mode === 'move') {
+      const dx = p.x - drag.startPx.x, dy = p.y - drag.startPx.y;
+      boxes[k] = clampRect(drag.orig.x + dx, drag.orig.y + dy, drag.orig.width, drag.orig.height);
+    } else {
+      boxes[k] = clampRect(Math.min(drag.startPx.x, p.x), Math.min(drag.startPx.y, p.y),
+                      Math.abs(p.x - drag.startPx.x), Math.abs(p.y - drag.startPx.y));
+    }
+    if (k === 'gap') gap = boxes.gap ? { ...boxes.gap } : null;
+    render();
+  });
+  c.addEventListener('pointerup', () => {
+    if (drag && drag.mode === 'draw') {
+      const k = drag.target;
+      if (boxes[k] && (boxes[k].width < 6 || boxes[k].height < 6)) {
+        boxes[k] = savedBoxesJson[k] ? JSON.parse(savedBoxesJson[k]) : null; // 误触微框还原
+        if (k === 'gap') gap = boxes.gap ? { ...boxes.gap } : null;
+      }
+    }
+    drag = null; render(); refreshCurName();
+  });
+}
+function pos(e) {
+  const r = e.target.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+}
+function clampRect(x, y, w, h) {
+  x = Math.max(0, Math.min(x, img.width)); y = Math.max(0, Math.min(y, img.height));
+  w = Math.max(0, Math.min(w, img.width - x)); h = Math.max(0, Math.min(h, img.height - y));
+  return { x, y, width: w, height: h };
+}
+
+// ---------- 审批 ----------
+function setEditing(key) {
+  editing = key;
+  for (const k of ['gap', 'block', 'refresh'])
+    editBtns[k].classList.toggle('active', k === key);
+  render();
+}
+function boxToPayload(key) {
+  const r = boxes[key];
+  if (!r) return null;
+  const o = { x: +r.x.toFixed(1), y: +r.y.toFixed(1), width: +r.width.toFixed(1), height: +r.height.toFixed(1) };
+  // 与进入本张时的快照比较，仅手改过才标记 source
+  if (savedBoxesJson[key] !== JSON.stringify(o)) o.source = 'manual';
+  return o;
+}
+async function review(status) {
+  const s = samples[idx]; if (!s || !s.prelabeled) return;
+  const payload = { reviewStatus: status, reviewedAt: new Date().toISOString() };
+  if (status === 'approved') {
+    const g = boxToPayload('gap');
+    if (g) {
+      payload.gapimg = { x: g.x, y: g.y, width: g.width, height: g.height };
+      if (g.source) { payload.gapSource = 'manual'; payload.gapConfidence = null; }
+    }
+    const b = boxToPayload('block');
+    if (b) payload.slotimg = { x: b.x, y: b.y, width: b.width, height: b.height };
+    const rf = boxToPayload('refresh');
+    if (rf) payload.refreshButton = { x: rf.x, y: rf.y, width: rf.width, height: rf.height };
+  }
+  await fetch('/api/save/' + encodeURIComponent(s.name), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  s.reviewed = true; s.reviewStatus = status;
+  renderSidebar(); renderStats();
+  const next = nextIdx(); if (next >= 0) await loadSample(next);
+}
+function nextIdx() {
+  for (let i = 0; i < samples.length; i++)
+    if (samples[i].prelabeled && !samples[i].reviewed && i !== idx) return i;
+  return idx + 1 < samples.length ? idx + 1 : -1;
+}
+function refreshCurName() {
+  const s = samples[idx]; if (!s) return;
+  const g = boxes.gap;
+  const gapTxt = (g && savedBoxesJson.gap !== JSON.stringify(norm(g))) ? '手改' :
+    (data && data.gapConfidence != null ? data.gapConfidence.toFixed(2) : '—');
+  const edited = ['gap','block','refresh'].some(k =>
+    boxes[k] && savedBoxesJson[k] !== JSON.stringify(norm(boxes[k])));
+  $('curName').textContent = `${s.name} — gap 置信度 ${gapTxt} · 编辑:${editing}` +
+    (edited ? ' · 有手改' : '');
+}
+const norm = (g) => ({ x: +g.x.toFixed(1), y: +g.y.toFixed(1),
+                       width: +g.width.toFixed(1), height: +g.height.toFixed(1) });
+
+// ---------- 侧栏与统计 ----------
+function renderSidebar() {
+  $('sidebar').innerHTML = samples.map((s, i) => {
+    const tag = !s.prelabeled ? ['nopre', '未预标']
+      : s.reviewed ? [s.reviewStatus, s.reviewStatus === 'approved' ? '通过' : '剔除']
+      : ['pending', '待复核'];
+    return `<div class="item ${i === idx ? 'active' : ''}" data-i="${i}">
+      <span class="nm">${s.name}</span><span class="tag ${tag[0]}">${tag[1]}</span></div>`;
+  }).join('');
+  $('sidebar').querySelectorAll('.item').forEach(el =>
+    el.onclick = () => loadSample(+el.dataset.i));
+}
+function renderStats() {
+  const n = samples.length;
+  const ok = samples.filter(s => s.reviewStatus === 'approved').length;
+  const bad = samples.filter(s => s.reviewStatus === 'rejected').length;
+  const pend = samples.filter(s => s.prelabeled && !s.reviewed).length;
+  $('stats').innerHTML = `共 <b>${n}</b> · 待复核 <b>${pend}</b> · 通过 <b>${ok}</b> · 剔除 <b>${bad}</b>`;
+}
+
+// ---------- 快捷键与按钮 ----------
+$('btnApprove').onclick = () => review('approved');
+$('btnReject').onclick = () => review('rejected');
+$('btnPrev').onclick = () => idx > 0 && loadSample(idx - 1);
+$('btnNext').onclick = () => idx + 1 < samples.length && loadSample(idx + 1);
+const editBtns = { gap: $('btnGap'), block: $('btnBlock'), refresh: $('btnRefresh') };
+editBtns.gap.onclick = () => setEditing('gap');
+editBtns.block.onclick = () => setEditing('block');
+editBtns.refresh.onclick = () => setEditing('refresh');
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'a' || e.key === 'A') review('approved');
+  else if (e.key === 'r' || e.key === 'R') review('rejected');
+  else if (e.key === '1') setEditing('gap');
+  else if (e.key === '2') setEditing('block');
+  else if (e.key === '3') setEditing('refresh');
+  else if (e.key === 'ArrowLeft') $('btnPrev').click();
+  else if (e.key === 'ArrowRight') $('btnNext').click();
+});
+window.addEventListener('resize', () => { if (img) { fitCanvas(); render(); } });
+
+setEditing('gap');
+loadList(false);
+</script>
+</body>
+</html>

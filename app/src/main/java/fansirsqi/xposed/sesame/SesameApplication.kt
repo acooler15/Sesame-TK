@@ -5,8 +5,8 @@ import android.content.Intent
 import fansirsqi.xposed.sesame.ui.repository.ConfigRepository
 import fansirsqi.xposed.sesame.service.CommandService
 import fansirsqi.xposed.sesame.ui.theme.ThemeManager
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.ToastUtil
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.notify.ToastUtil
 
 /**
  * 芝麻粒应用主类

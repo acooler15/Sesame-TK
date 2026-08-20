@@ -2,7 +2,7 @@
 
 package fansirsqi.xposed.sesame.task.antForest
 
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject
 import java.util.concurrent.ConcurrentHashMap

@@ -29,7 +29,7 @@
         android:name=".SesameApplication"
         android:description="@string/xposed_description"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="芝麻粒-TK"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
@@ -39,10 +39,10 @@
             android:value="true" />
         <meta-data
             android:name="xposeddescription"
-            android:value="@string/xposed_description" />
+            android:value="大鹏一日同风起，扶摇直上九万里。" />
         <meta-data
             android:name="xposedminversion"
-            android:value="54" />
+            android:value="82" />
         <meta-data
             android:name="xposedscope"
             android:resource="@array/xposed_scopes" />
@@ -62,10 +62,10 @@
             android:name=".ui.ExtendActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.WebSettingsActivity"
+            android:name=".ui.legacy.WebSettingsActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.SettingActivity"
+            android:name=".ui.legacy.SettingActivity"
             android:exported="false" />
         <!-- RPC 调试 Activity -->
         <activity
@@ -95,20 +95,6 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- 圣诞图标 -->
-        <activity-alias
-            android:name=".ui.MainActivityAliasChristmas"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@drawable/ic_launcher_christmas"
-            android:label="@string/app_name"
-            android:targetActivity="fansirsqi.xposed.sesame.ui.MainActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
         <!-- CommandService 用于执行 root/Shizuku 命令 -->
         <!-- exported=true 允许跨进程绑定 -->
         <!-- process=":command" 运行在独立进程中 -->
@@ -131,6 +117,18 @@
             android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
 
+        <!-- 内置解锁无障碍服务：解锁期间执行上滑手势与点击锁屏数字键 -->
+        <service
+            android:name="fansirsqi.xposed.sesame.service.unlock.UnlockAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/unlock_accessibility_config" />
+        </service>
 
     </application>
 </manifest>

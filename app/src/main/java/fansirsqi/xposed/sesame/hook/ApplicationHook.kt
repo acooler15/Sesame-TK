@@ -1,115 +1,76 @@
 package fansirsqi.xposed.sesame.hook
 
+import fansirsqi.xposed.sesame.hook.captcha.CaptchaHook
+import fansirsqi.xposed.sesame.hook.schedule.TaskScheduler
 import android.annotation.SuppressLint
 import android.app.Application
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageInfo
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import androidx.core.content.ContextCompat
-import de.robv.android.xposed.XC_MethodHook
-import de.robv.android.xposed.XSharedPreferences
-import de.robv.android.xposed.XposedBridge
-import de.robv.android.xposed.XposedHelpers
-import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam
 import fansirsqi.xposed.sesame.BuildConfig
-import fansirsqi.xposed.sesame.SesameApplication
+import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import fansirsqi.xposed.sesame.data.Config
 import fansirsqi.xposed.sesame.data.General
 import fansirsqi.xposed.sesame.data.Status
 import fansirsqi.xposed.sesame.data.Status.Companion.load
-import fansirsqi.xposed.sesame.data.Status.Companion.save
 import fansirsqi.xposed.sesame.entity.AlipayVersion
 import fansirsqi.xposed.sesame.hook.Toast.show
-import fansirsqi.xposed.sesame.hook.TokenHooker.start
-import fansirsqi.xposed.sesame.hook.XposedEnv.processName
+import fansirsqi.xposed.sesame.hook.rpc.TokenHooker.start
 import fansirsqi.xposed.sesame.hook.internal.AlipayMiniMarkHelper
 import fansirsqi.xposed.sesame.hook.internal.LocationHelper
 import fansirsqi.xposed.sesame.hook.internal.AuthCodeHelper
 import fansirsqi.xposed.sesame.hook.internal.SecurityBodyHelper
-import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.cleanup
-import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.schedule
 import fansirsqi.xposed.sesame.hook.rpc.bridge.NewRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.OldRpcBridge
 import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcBridge
-import fansirsqi.xposed.sesame.hook.rpc.bridge.RpcVersion
-import fansirsqi.xposed.sesame.hook.rpc.debug.DebugRpc
-import fansirsqi.xposed.sesame.hook.rpc.intervallimit.RpcIntervalLimit.clearIntervalLimit
-import fansirsqi.xposed.sesame.hook.simple.SliderTFLite
+import fansirsqi.xposed.sesame.hook.rpc.intervallimit.GlobalRpcRateLimiter.clearIntervalLimit
+import fansirsqi.xposed.sesame.hook.view.SliderTFLite
 import fansirsqi.xposed.sesame.hook.server.ModuleHttpServerManager.startIfNeeded
-import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.addHandler
-import fansirsqi.xposed.sesame.hook.simple.SimplePageManager.enableWindowMonitoring
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.batteryPerm
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.checkInterval
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.debugMode
 import fansirsqi.xposed.sesame.model.BaseModel.Companion.destroyData
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.execAtTimeList
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.newRpc
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookData
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.sendHookDataUrl
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.wakenAtTimeList
-import fansirsqi.xposed.sesame.model.BaseModel.Companion.webViewDebug
 import fansirsqi.xposed.sesame.model.Model
-import fansirsqi.xposed.sesame.task.MainTask
+import fansirsqi.xposed.sesame.model.SesameConfig
 import fansirsqi.xposed.sesame.task.MainTask.Companion.newInstance
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
-import fansirsqi.xposed.sesame.task.TaskRunnerAdapter
-import fansirsqi.xposed.sesame.task.customTasks.CustomTask
-import fansirsqi.xposed.sesame.task.customTasks.ManualTask
-import fansirsqi.xposed.sesame.task.customTasks.ManualTaskModel
-import fansirsqi.xposed.sesame.util.AssetUtil
-import fansirsqi.xposed.sesame.util.AssetUtil.checkerDestFile
-import fansirsqi.xposed.sesame.util.AssetUtil.copyStorageSoFileToPrivateDir
-import fansirsqi.xposed.sesame.util.AssetUtil.dexkitDestFile
-import fansirsqi.xposed.sesame.util.AssetUtil.tfliteDestFile
-import fansirsqi.xposed.sesame.util.AssetUtil.tfliteGpuDestFile
-import fansirsqi.xposed.sesame.util.DataStore.init
-import fansirsqi.xposed.sesame.util.Detector
-import fansirsqi.xposed.sesame.util.Detector.loadLibrary
-import fansirsqi.xposed.sesame.util.Files
-import fansirsqi.xposed.sesame.util.GlobalThreadPools.execute
-import fansirsqi.xposed.sesame.util.GlobalThreadPools.shutdownAndRestart
-import fansirsqi.xposed.sesame.util.Log
-import fansirsqi.xposed.sesame.util.Log.error
-import fansirsqi.xposed.sesame.util.Log.printStackTrace
-import fansirsqi.xposed.sesame.util.Log.record
-import fansirsqi.xposed.sesame.util.ModuleStatus
-import fansirsqi.xposed.sesame.util.Notify
-import fansirsqi.xposed.sesame.util.Notify.stop
-import fansirsqi.xposed.sesame.util.Notify.updateStatusText
-import fansirsqi.xposed.sesame.util.PermissionUtil
-import fansirsqi.xposed.sesame.util.PermissionUtil.checkBatteryPermissions
-import fansirsqi.xposed.sesame.util.StatusManager.updateStatus
-import fansirsqi.xposed.sesame.util.TimeUtil
+import fansirsqi.xposed.sesame.core.app.AssetUtil
+import fansirsqi.xposed.sesame.core.app.AssetUtil.copyStorageSoFileToPrivateDir
+import fansirsqi.xposed.sesame.core.app.AssetUtil.dexkitDestFile
+import fansirsqi.xposed.sesame.core.app.AssetUtil.tfliteDestFile
+import fansirsqi.xposed.sesame.core.app.AssetUtil.tfliteGpuDestFile
+import fansirsqi.xposed.sesame.core.store.DataStore.init
+
+import fansirsqi.xposed.sesame.core.app.Files
+import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools.shutdownAndRestart
+import fansirsqi.xposed.sesame.core.log.Log
+import fansirsqi.xposed.sesame.core.log.Log.printStackTrace
+import fansirsqi.xposed.sesame.core.log.Log.record
+import fansirsqi.xposed.sesame.core.app.ModuleStatus
+import fansirsqi.xposed.sesame.core.notify.Notify
+import fansirsqi.xposed.sesame.core.notify.Notify.stop
+import fansirsqi.xposed.sesame.core.notify.Notify.updateStatusText
+import fansirsqi.xposed.sesame.core.permission.PermissionUtil
+import fansirsqi.xposed.sesame.core.permission.PermissionUtil.checkBatteryPermissions
+import fansirsqi.xposed.sesame.core.app.StatusManager.updateStatus
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import fansirsqi.xposed.sesame.util.maps.UserMap.currentUid
-import io.github.libxposed.api.XposedInterface
-import io.github.libxposed.api.XposedModuleInterface.PackageLoadedParam
 import org.luckypray.dexkit.DexKitBridge
 import java.io.File
-import java.lang.AutoCloseable
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Member
-import java.lang.reflect.Method
 import java.util.Calendar
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 
 class ApplicationHook {
-    var xposedInterface: XposedInterface? = null
-
-    private object BroadcastActions {
-        const val RESTART: String = "com.eg.android.AlipayGphone.sesame.restart"
-        const val RE_LOGIN: String = "com.eg.android.AlipayGphone.sesame.reLogin"
-        const val STATUS: String = "com.eg.android.AlipayGphone.sesame.status"
-        const val RPC_TEST: String = "com.eg.android.AlipayGphone.sesame.rpctest"
-        const val MANUAL_TASK: String = "com.eg.android.AlipayGphone.sesame.manual_task"
-    }
 
     private object AlipayClasses {
         const val APPLICATION: String = "com.alipay.mobile.framework.AlipayApplication"
@@ -119,97 +80,50 @@ class ApplicationHook {
         const val LOADED_APK: String = "android.app.LoadedApk"
     }
 
-    private class TaskLock : AutoCloseable {
-        private val acquired: Boolean
-
-        init {
-            synchronized(taskLock) {
-                if (isTaskRunning) {
-                    acquired = false
-                    throw IllegalStateException("任务已在运行中")
-                }
-                isTaskRunning = true
-                acquired = true
-            }
-        }
-
-        override fun close() {
-            if (acquired) {
-                synchronized(taskLock) {
-                    isTaskRunning = false
-                }
-            }
-        }
-    }
-
-    // --- 入口方法 ---
-    fun loadPackage(lpparam: PackageLoadedParam) {
-        if (General.PACKAGE_NAME != lpparam.packageName) return
-        handleHookLogic(
-            lpparam.classLoader,
-            lpparam.packageName,
-            lpparam.applicationInfo.sourceDir,
-            lpparam
-        )
-    }
-
-    fun loadPackageCompat(lpparam: LoadPackageParam) {
-        if (General.PACKAGE_NAME != lpparam.packageName) return
-        val apkPath: String = (if (lpparam.appInfo != null) lpparam.appInfo.sourceDir else null)!!
-        handleHookLogic(lpparam.classLoader, lpparam.packageName, apkPath, lpparam)
+    // --- 入口方法（双入口统一调用，参数仅框架无关类型） ---
+    fun loadPackage(loader: ClassLoader?, packageName: String, apkPath: String) {
+        if (General.PACKAGE_NAME != packageName) return
+        handleHookLogic(loader, packageName, apkPath)
     }
 
     @SuppressLint("PrivateApi")
-    private fun handleHookLogic(loader: ClassLoader?, packageName: String, apkPath: String, rawParam: Any?) {
+    private fun handleHookLogic(loader: ClassLoader?, packageName: String, apkPath: String) {
         classLoader = loader
-        // 1. 初始化配置读取
-        val prefs = XSharedPreferences(General.MODULE_PACKAGE_NAME, SesameApplication.PREFERENCES_KEY)
-        prefs.makeWorldReadable()
 
-        // 2. 进程检查
-        resolveProcessName(rawParam)
+        // 1. 进程检查（processName 由双入口写入 XposedEnv）
+        finalProcessName = XposedEnv.processName
         if (!shouldHookProcess()) return
 
         init(Files.CONFIG_DIR)
         if (isHooked) return
         isHooked = true
 
-        // 3. 基础环境 Hook
-        ModuleStatus.detectFramework(classLoader!!)
-        updateStatus(ModuleStatus.detectFramework(classLoader!!), packageName)
+        // 2. 基础环境 Hook
+        ModuleStatus.detectFramework()
+        updateStatus(ModuleStatus.detectFramework(), packageName)
         VersionHook.installHook(classLoader)
         initReflection(classLoader!!)
 
-        // 4. 功能模块 Hook
+        // 3. 功能模块 Hook
         try {
             CaptchaHook.setupHook(classLoader!!)
         } catch (t: Throwable) {
             printStackTrace(TAG, "验证码Hook初始化失败", t)
         }
 
-        // 5. WebView Hook
-        if (webViewDebug.value) {
-            try {
-                WebViewHook.installHook(classLoader!!)
-            } catch (t: Throwable) {
-                printStackTrace(TAG, "WebView Hook初始化失败", t)
-            }
+        // 4. WebView Hook（无条件安装，回调内运行时检查 webViewDebug 开关）
+        try {
+            WebViewHook.installHook(classLoader!!)
+        } catch (t: Throwable) {
+            printStackTrace(TAG, "WebView Hook初始化失败", t)
         }
 
-        // 6. 核心生命周期 Hook
+        // 5. 核心生命周期 Hook
         hookApplicationAttach(packageName)
         hookLauncherResume()
         hookServiceLifecycle(apkPath)
 
         HookUtil.hookOtherService(classLoader!!)
-    }
-
-    private fun resolveProcessName(rawParam: Any?) {
-        if (rawParam is LoadPackageParam) {
-            finalProcessName = rawParam.processName
-        } else if (rawParam is PackageLoadedParam) {
-            finalProcessName = processName
-        }
     }
 
     private fun shouldHookProcess(): Boolean {
@@ -220,8 +134,8 @@ class ApplicationHook {
 
     private fun initReflection(loader: ClassLoader) {
         try {
-            XposedHelpers.findClass(AlipayClasses.APPLICATION, loader)
-            XposedHelpers.findClass(AlipayClasses.SOCIAL_SDK, loader)
+            Class.forName(AlipayClasses.APPLICATION, false, loader)
+            Class.forName(AlipayClasses.SOCIAL_SDK, false, loader)
         } catch (_: Throwable) {
             // ignore
         }
@@ -236,17 +150,19 @@ class ApplicationHook {
 
     private fun hookApplicationAttach(packageName: String?) {
         try {
-            XposedHelpers.findAndHookMethod(
-                Application::class.java,
-                "attach",
-                Context::class.java,
-                object : XC_MethodHook() {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Application::class.java,
+                    "attach",
+                    Context::class.java
+                ),
+                object : HookCallback {
                     @Throws(Throwable::class)
-                    override fun afterHookedMethod(param: MethodHookParam) {
-                        appContext = param.args[0] as Context?
+                    override fun after(p: HookParam) {
+                        appContext = p.args[0] as Context?
                         mainHandler = Handler(Looper.getMainLooper())
                         Log.init(appContext!!)
-                        ensureScheduler()
+                        TaskScheduler.ensureScheduler()
 
                         SecurityBodyHelper.init(classLoader!!)
                         AlipayMiniMarkHelper.init(classLoader!!)
@@ -272,9 +188,9 @@ class ApplicationHook {
                         }
 
                         try {
-                            initSimplePageManager()
+                            CaptchaHook.registerHandlers()
                         } catch (t: Throwable) {
-                            printStackTrace(TAG, "initSimplePageManager 失败", t)
+                            printStackTrace(TAG, "registerCaptchaHandlers 失败", t)
                         }
 
                         try {
@@ -291,12 +207,13 @@ class ApplicationHook {
 
     private fun hookLauncherResume() {
         try {
-            XposedHelpers.findAndHookMethod(
-                AlipayClasses.LAUNCHER_ACTIVITY,
-                classLoader,
-                "onResume",
-                object : XC_MethodHook() {
-                    override fun afterHookedMethod(param: MethodHookParam?) {
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.LAUNCHER_ACTIVITY, false, classLoader),
+                    "onResume"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
                         val targetUid = HookUtil.getUserId(classLoader!!)
                         if (targetUid == null) {
                             show("用户未登录")
@@ -310,7 +227,7 @@ class ApplicationHook {
                         if (targetUid != currentUid) {
                             if (currentUid != null) {
                                 initHandler()
-                                lastExecTime = 0
+                                TaskScheduler.lastExecTime = 0
                                 show("用户已切换")
                                 return
                             }
@@ -325,43 +242,48 @@ class ApplicationHook {
 
     private fun hookServiceLifecycle(apkPath: String) {
         try {
-            XposedHelpers.findAndHookMethod(AlipayClasses.SERVICE, classLoader, "onCreate", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val appService = param.thisObject as Service
-                    if (General.CURRENT_USING_SERVICE != appService.javaClass.getCanonicalName()) {
-                        return
-                    }
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.SERVICE, false, classLoader),
+                    "onCreate"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val appService = p.thisObject as Service
+                        if (General.CURRENT_USING_SERVICE != appService.javaClass.getCanonicalName()) {
+                            return
+                        }
 
-                    service = appService
-                    appContext = appService.applicationContext
-                    ensureScheduler()
+                        service = appService
+                        appContext = appService.applicationContext
+                        TaskScheduler.ensureScheduler()
 
-                    if (Detector.isLegitimateEnvironment(appContext!!)) {
-                        Detector.dangerous(appContext!!)
-                        return
+                        DexKitBridge.create(apkPath).use { _ ->
+                            record(TAG, "Hook DexKit successfully")
+                        }
+                        TaskScheduler.mainTask = newInstance("主任务") { TaskScheduler.runMainTaskLogic() }
+                        TaskScheduler.dayCalendar = Calendar.getInstance()
+                        if (initHandler()) {
+                            init = true
+                        }
                     }
+                })
 
-                    DexKitBridge.create(apkPath).use { _ ->
-                        record(TAG, "Hook DexKit successfully")
+            Hooker.get().hookMethod(
+                ReflectUtil.findMethodExact(
+                    Class.forName(AlipayClasses.SERVICE, false, classLoader),
+                    "onDestroy"
+                ),
+                object : HookCallback {
+                    override fun after(p: HookParam) {
+                        val s = p.thisObject as Service
+                        if (General.CURRENT_USING_SERVICE == s.javaClass.getCanonicalName()) {
+                            updateStatusText("目标应用前台服务被销毁")
+                            destroyHandler()
+                            BroadcastReceiverManager.restartByBroadcast()
+                        }
                     }
-                    mainTask = newInstance("主任务") { runMainTaskLogic() }
-                    dayCalendar = Calendar.getInstance()
-                    if (initHandler()) {
-                        init = true
-                    }
-                }
-            })
-
-            XposedHelpers.findAndHookMethod(AlipayClasses.SERVICE, classLoader, "onDestroy", object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    val s = param.thisObject as Service
-                    if (General.CURRENT_USING_SERVICE == s.javaClass.getCanonicalName()) {
-                        updateStatusText("目标应用前台服务被销毁")
-                        destroyHandler()
-                        restartByBroadcast()
-                    }
-                }
-            })
+                })
         } catch (t: Throwable) {
             printStackTrace(TAG, "Hook Service failed", t)
         }
@@ -382,7 +304,6 @@ class ApplicationHook {
     }
 
     private fun loadLibs() {
-        loadNativeLibs(appContext!!, checkerDestFile)
         loadNativeLibs(appContext!!, dexkitDestFile)
         loadNativeLibs(appContext!!, tfliteDestFile)
         loadNativeLibs(appContext!!, tfliteGpuDestFile)
@@ -400,21 +321,6 @@ class ApplicationHook {
         }
     }
 
-    // 滑块验证hook注册
-    private fun initSimplePageManager() {
-        record(TAG, "准备初始化 SimplePageManager，当前版本: $alipayVersion")
-        if (shouldEnableSimplePageManager()) {
-            record(TAG, "SimplePageManager 已启用，开始注册验证码页面处理器")
-            enableWindowMonitoring(classLoader)
-            addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverActivity", Captcha1Handler())
-            addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverTransActivity\$Main", Captcha2Handler())
-            addHandler("com.alipay.mobile.nebulax.integration.mpaas.activity.NebulaTransActivity\$Main", Captcha2Handler())
-            record(TAG, "验证码页面处理器注册完成")
-        } else {
-            record(TAG, "SimplePageManager 未启用，跳过验证码页面处理器注册")
-        }
-    }
-
     @SuppressLint("UnsafeDynamicallyLoadedCode")
     private fun loadNativeLibs(context: Context, soFile: File) {
         try {
@@ -422,97 +328,12 @@ class ApplicationHook {
             if (finalSoFile != null) {
                 System.load(finalSoFile.absolutePath)
             } else {
-                loadLibrary(soFile.getName().replace(".so", "").replace("lib", ""))
+                System.loadLibrary(soFile.getName().replace(".so", "").replace("lib", ""))
             }
-        } catch (e: Exception) {
-            Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), e)
-        }
-    }
-
-    // --- 广播接收器 ---
-    internal class AlipayBroadcastReceiver : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            val action = intent.action ?: return
-
-            if (finalProcessName != null && finalProcessName!!.endsWith(":widgetProvider")) {
-                return  // 忽略小组件进程
-            }
-
-            when (action) {
-                BroadcastActions.RESTART -> execute(Runnable {
-                    val targetUserId = intent.getStringExtra("userId")
-                    val currentUserId = HookUtil.getUserId(classLoader!!)
-                    if (targetUserId != null && targetUserId != currentUserId) {
-                        record(TAG, "忽略非当前用户的重启广播: target=$targetUserId, current=$currentUserId")
-                        return@Runnable
-                    }
-                    initHandler()
-                })
-
-                BroadcastActions.RE_LOGIN -> reOpenApp()
-                BroadcastActions.RPC_TEST -> handleRpcTest(intent)
-                BroadcastActions.MANUAL_TASK -> {
-                    record(TAG, "🚀 收到手动庄园任务指令")
-                    execute {
-                        val taskName = intent.getStringExtra("task")
-                        if (taskName != null) {
-                            val normalizedTaskName = taskName.replace("+", "_")
-                            try {
-                                val task = CustomTask.valueOf(normalizedTaskName)
-                                val extraParams = HashMap<String, Any>()
-                                when (task) {
-                                    CustomTask.FOREST_WHACK_MOLE -> {
-                                        extraParams["whackMoleMode"] = intent.getIntExtra("whackMoleMode", 1)
-                                        extraParams["whackMoleGames"] = intent.getIntExtra("whackMoleGames", 5)
-                                    }
-
-                                    CustomTask.FOREST_ENERGY_RAIN -> {
-                                        extraParams["exchangeEnergyRainCard"] = intent.getBooleanExtra("exchangeEnergyRainCard", false)
-                                    }
-
-                                    CustomTask.FARM_SPECIAL_FOOD -> {
-                                        extraParams["specialFoodCount"] = intent.getIntExtra("specialFoodCount", 0)
-                                    }
-
-                                    CustomTask.FARM_USE_TOOL -> {
-                                        extraParams["toolType"] = intent.getStringExtra("toolType") ?: ""
-                                        extraParams["toolCount"] = intent.getIntExtra("toolCount", 1)
-                                    }
-
-                                    else -> {
-                                        record(TAG, "❌ 无效的任务指令: $taskName")
-                                    }
-                                }
-                                ManualTask.runSingle(task, extraParams)
-                            } catch (e: Exception) {
-                                record(TAG, "❌ 无效的任务指令: $taskName -> ${e.message}")
-                            }
-                        } else {
-                            for (model in Model.modelArray) {
-                                if (model is ManualTaskModel) {
-                                    model.startTask(true, 1)
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private fun handleRpcTest(intent: Intent) {
-            execute({
-                record(TAG, "RPC测试: $intent")
-                try {
-                    val rpc = DebugRpc()
-                    rpc.start(
-                        intent.getStringExtra("method"),
-                        intent.getStringExtra("data"),
-                        intent.getStringExtra("type")
-                    )
-                } catch (_: Throwable) { /* ignore */
-                }
-            })
+        } catch (t: Throwable) {
+            // 必须捕获 Throwable：System.load 抛 UnsatisfiedLinkError（Error），
+            // 若逃逸会击穿 attach 回调导致 registerCaptchaHandlers 等后续初始化全部跳过
+            Log.printStackTrace(TAG, "载入so库失败: " + soFile.getName(), t)
         }
     }
 
@@ -520,67 +341,38 @@ class ApplicationHook {
         const val TAG: String = "ApplicationHook" // 简化TAG
         var finalProcessName: String? = ""
 
-        // 广播接收器实例，用于注销
-        private var mBroadcastReceiver: AlipayBroadcastReceiver? = null
+        /**
+         * 全局配置对象，运行时统一读取配置（方案13重构）。
+         */
+        var config: SesameConfig
+            private set
 
-        @JvmField
+        /**
+         * 全局应用协程作用域
+         * 替代 GlobalScope，统一管理应用内长生命周期协程的生命周期。
+         * 在 destroyHandler 中统一取消，切换账号时由 shutdownAndRestart 取消并重建。
+         */
+        @Volatile
+        var applicationScope: CoroutineScope = CoroutineScope(
+            SupervisorJob() + Dispatchers.Default + CoroutineName("Application")
+        )
+
         var classLoader: ClassLoader? = null
 
-        @JvmField
-        @get:JvmStatic
         @Volatile
         var appContext: Context? = null
 
-        // 任务锁
-        private val taskLock = Any()
-
-        @Volatile
-        private var isTaskRunning = false
-
-        @JvmStatic
         var alipayVersion: AlipayVersion = AlipayVersion("")
 
-        @get:JvmStatic
         @Volatile
         var isHooked: Boolean = false
             private set
 
-        /**
-         * 检查目标应用版本是否需要启用SimplePageManager功能
-         * @return true表示版本低于等于10.6.58.99999，需要启用；false表示不需要
-         */
-        @JvmStatic
-        fun shouldEnableSimplePageManager(): Boolean {
-            if (!VersionHook.hasVersion() || alipayVersion.toString().isEmpty()) {
-                record(TAG, "SimplePageManager 版本判断失败：未捕获到目标应用版本")
-                return false
-            }
-
-            val maxSupported = AlipayVersion("10.9.99.99999")
-            if (alipayVersion > maxSupported) {
-                // 只有在不支持时才打印警告
-                record(TAG, "目标应用版本 $alipayVersion 高于 $maxSupported，不支持自动过滑块验证")
-                return false
-            }
-
-            record(TAG, "SimplePageManager 版本判断通过: $alipayVersion <= $maxSupported")
-            return true
-        }
-
         @Volatile
-        private var init = false
+        internal var init = false
 
-        @Volatile
-        var dayCalendar: Calendar?
-
-        @JvmField
         @Volatile
         var offline: Boolean = false
-
-        @JvmStatic
-        fun setOffline(value: Boolean) {
-            offline = value
-        }
 
         @Volatile
         private var batteryPermissionChecked = false
@@ -590,133 +382,80 @@ class ApplicationHook {
 
         var mainHandler: Handler? = null
 
-        var mainTask: MainTask? = null
-
         @Volatile
         var rpcBridge: RpcBridge? = null
         private val rpcBridgeLock = Any()
 
-        private var rpcVersion: RpcVersion? = null
-
-        @Volatile
-        var lastExecTime: Long = 0
-
-        @Volatile
-        var nextExecutionTime: Long = 0
-        private const val MAX_INACTIVE_TIME: Long = 3600000 // 1小时
-
-        // Deoptimize 方法缓存
-        private val deoptimizeMethod: Method?
-
         init {
-            dayCalendar = Calendar.getInstance()
-            resetToMidnight(dayCalendar!!)
-            var m: Method? = null
-            try {
-                m = XposedBridge::class.java.getDeclaredMethod("deoptimizeMethod", Member::class.java)
-            } catch (_: Throwable) {
-            }
-            deoptimizeMethod = m
+            config = SesameConfig()
         }
 
-        private fun runMainTaskLogic() {
-            try {
-                TaskLock().use { _ ->
-                    if (!init || !Config.isLoaded()) return
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastExecTime < 2000) {
-                        record(TAG, "⚠️ 间隔过短，跳过")
-                        schedule(checkInterval.value.toLong(), "间隔重试") {
-                            execHandler()
-                        }
-                        return
-                    }
-
-                    val currentUid = currentUid
-                    val targetUid = HookUtil.getUserId(classLoader!!)
-                    if (targetUid == null || targetUid != currentUid) {
-                        reOpenApp()
-                        return
-                    }
-
-                    lastExecTime = currentTime
-                    TaskRunnerAdapter().run()
-                }
-            } catch (e: IllegalStateException) {
-                record(TAG, "⚠️ " + e.message)
-            } catch (e: Exception) {
-                Log.printStackTrace(TAG, e)
+        // --- 委托方法（保持对外 API 兼容，实现见 TaskScheduler/BroadcastReceiverManager） ---
+        var lastExecTime: Long
+            get() = TaskScheduler.lastExecTime
+            set(value) {
+                TaskScheduler.lastExecTime = value
             }
-        }
 
-        // --- 辅助方法 ---
-        private fun ensureScheduler() {
-            if (appContext != null) {
-                SmartSchedulerManager.initialize(appContext!!)
+        var nextExecutionTime: Long
+            get() = TaskScheduler.nextExecutionTime
+            set(value) {
+                TaskScheduler.nextExecutionTime = value
             }
-        }
+
+        fun updateDay() = TaskScheduler.updateDay()
+
+        fun scheduleNextExecutionInternal(lastTime: Long) = TaskScheduler.scheduleNextExecutionInternal(lastTime)
+
+        fun reOpenApp() = TaskScheduler.reOpenApp()
+
+        fun execHandler() = TaskScheduler.execHandler()
+
+        fun sendBroadcast(action: String?) = BroadcastReceiverManager.sendBroadcast(action)
+
+        fun sendBroadcastShell(api: String?, message: String?) = BroadcastReceiverManager.sendBroadcastShell(api, message)
+
+        fun reLoginByBroadcast() = BroadcastReceiverManager.reLoginByBroadcast()
+
+        fun restartByBroadcast() = BroadcastReceiverManager.restartByBroadcast()
+
+        fun registerBroadcastReceiver(context: Context) = BroadcastReceiverManager.registerBroadcastReceiver(context)
+
+        fun unregisterBroadcastReceiver(context: Context?) = BroadcastReceiverManager.unregisterBroadcastReceiver(context)
 
         @Throws(InvocationTargetException::class, IllegalAccessException::class)
         fun deoptimizeClass(c: Class<*>) {
-            if (deoptimizeMethod == null) return
+            if (!Hooker.get().isDeoptimizationSupported) return
             for (m in c.getDeclaredMethods()) {
                 if (m.name == "makeApplicationInner") {
-                    deoptimizeMethod.invoke(null, m)
+                    Hooker.get().deoptimize(m)
                 }
-            }
-        }
-
-
-        fun scheduleNextExecutionInternal(lastTime: Long) {
-            try {
-                checkInactiveTime()
-                val checkInterval = checkInterval.value
-                val execAtTimeList = execAtTimeList.value
-                if (execAtTimeList != null && execAtTimeList.contains("-1")) {
-                    record(TAG, "定时执行未开启")
-                    return
-                }
-                var delayMillis = checkInterval.toLong()
-                var targetTime: Long = 0
-                if (execAtTimeList != null) {
-                    val lastCal = TimeUtil.getCalendarByTimeMillis(lastTime)
-                    val nextCal = TimeUtil.getCalendarByTimeMillis(lastTime + checkInterval)
-                    for (timeStr in execAtTimeList) {
-                        val execCal = TimeUtil.getTodayCalendarByTimeStr(timeStr)
-                        if (execCal != null && lastCal < execCal && nextCal > execCal) {
-                            record(TAG, "设置定时执行:$timeStr")
-                            targetTime = execCal.getTimeInMillis()
-                            delayMillis = targetTime - lastTime
-                            break
-                        }
-                    }
-                }
-                nextExecutionTime = if (targetTime > 0) targetTime else (lastTime + delayMillis)
-                ensureScheduler()
-                schedule(delayMillis, "轮询任务") {
-                    execHandler()
-                }
-            } catch (e: Exception) {
-                Log.printStackTrace(TAG, "scheduleNextExecution failed", e)
             }
         }
 
         // --- 初始化核心逻辑 ---
         @Synchronized
-        private fun initHandler(): Boolean {
+        internal fun initHandler(): Boolean {
             try {
                 if (init) destroyHandler()
+
+                // 账号切换/服务重建后 applicationScope 已被取消，重新初始化前需要重建为活跃作用域
+                if (!applicationScope.isActive) {
+                    applicationScope = CoroutineScope(
+                        SupervisorJob() + Dispatchers.Default + CoroutineName("Application")
+                    )
+                }
 
                 // 调试模式初始化
                 if (BuildConfig.DEBUG) {
                     try {
-                        startIfNeeded(8080, "ET3vB^#td87sQqKaY*eMUJXP", processName, General.PACKAGE_NAME)
-                        registerBroadcastReceiver(appContext!!)
+                        startIfNeeded(8080, "ET3vB^#td87sQqKaY*eMUJXP", XposedEnv.processName, General.PACKAGE_NAME)
+                        BroadcastReceiverManager.registerBroadcastReceiver(appContext!!)
                     } catch (_: Throwable) { /* ignore */
                     }
                 }
 
-                ensureScheduler()
+                TaskScheduler.ensureScheduler()
                 Model.initAllModel()
 
                 if (service == null) return false
@@ -733,16 +472,15 @@ class ApplicationHook {
                 if (!Config.isLoaded()) return false
 
                 Notify.start(service!!)
-                setWakenAtTimeAlarm()
+                TaskScheduler.setWakenAtTimeAlarm()
 
                 synchronized(rpcBridgeLock) {
-                    rpcBridge = if (newRpc.value) NewRpcBridge() else OldRpcBridge()
+                    rpcBridge = if (config.newRpc.value) NewRpcBridge() else OldRpcBridge()
                     rpcBridge!!.load()
-                    rpcVersion = rpcBridge!!.getVersion()
                 }
 
-                if (newRpc.value && debugMode.value) {
-                    HookUtil.hookRpcBridgeExtension(classLoader!!, sendHookData.value, sendHookDataUrl.value)
+                if (config.newRpc.value) {
+                    HookUtil.hookRpcBridgeExtension(classLoader!!)
                     HookUtil.hookDefaultBridgeCallback(classLoader!!)
                 }
 
@@ -751,7 +489,7 @@ class ApplicationHook {
 
                 Model.bootAllModel(classLoader)
                 load(userId)
-                updateDay()
+                TaskScheduler.updateDay()
 
                 val successMsg = "Loaded SesameTk " + BuildConfig.VERSION_NAME + "✨"
                 record(successMsg)
@@ -759,7 +497,7 @@ class ApplicationHook {
 
                 offline = false
                 init = true
-                execHandler()
+                TaskScheduler.execHandler()
                 return true
             } catch (th: Throwable) {
                 printStackTrace(TAG, "startHandler", th)
@@ -768,7 +506,7 @@ class ApplicationHook {
         }
 
         private fun checkBatteryPermission() {
-            if (!batteryPerm.value || batteryPermissionChecked) return
+            if (!config.batteryPerm.value || batteryPermissionChecked) return
 
             val hasPermission = checkBatteryPermissions(appContext)
             batteryPermissionChecked = true
@@ -785,10 +523,12 @@ class ApplicationHook {
         @Synchronized
         fun destroyHandler() {
             try {
+                // 先同步停止所有任务，确保在资源卸载前所有 taskScope 已取消，避免竞态
+                stopAllTask()
                 shutdownAndRestart()
 
                 if (service != null) {
-                    stopHandler()
+                    TaskScheduler.stopHandler()
                     destroyData()
                     Status.unload()
                     stop()
@@ -800,176 +540,19 @@ class ApplicationHook {
                 cleanup()
 
                 // 注销广播接收器
-                unregisterBroadcastReceiver(appContext)
+                BroadcastReceiverManager.unregisterBroadcastReceiver(appContext)
 
                 synchronized(rpcBridgeLock) {
                     if (rpcBridge != null) {
-                        rpcVersion = null
                         rpcBridge!!.unload()
                         rpcBridge = null
                     }
-                    stopAllTask()
                 }
+
+                // 最后统一取消 applicationScope
+                applicationScope.cancel("Application destroyed")
             } catch (th: Throwable) {
                 printStackTrace(TAG, "stopHandler err:", th)
-            }
-        }
-
-        fun execHandler() {
-            if (mainTask != null) mainTask!!.startTask(false)
-        }
-
-        private fun stopHandler() {
-            if (mainTask != null) mainTask!!.stopTask()
-            stopAllTask()
-        }
-
-        // --- 杂项方法 ---
-        private fun checkInactiveTime() {
-            if (lastExecTime == 0L) return
-            val inactiveTime: Long = System.currentTimeMillis() - lastExecTime
-            if (inactiveTime > MAX_INACTIVE_TIME) {
-                record(TAG, "⚠️ 检测到长时间未执行(" + inactiveTime / 60000 + "m)，重新登录")
-                reOpenApp()
-            }
-        }
-
-        fun updateDay() {
-            val now = Calendar.getInstance()
-            if (dayCalendar == null || dayCalendar!!.get(Calendar.DAY_OF_MONTH) != now.get(Calendar.DAY_OF_MONTH)) {
-                dayCalendar = now.clone() as Calendar
-                resetToMidnight(dayCalendar!!)
-                record(TAG, "日期更新")
-                setWakenAtTimeAlarm()
-            }
-            try {
-                save(now)
-            } catch (_: Exception) {
-            }
-        }
-
-        private fun resetToMidnight(calendar: Calendar) {
-            calendar.set(Calendar.HOUR_OF_DAY, 0)
-            calendar.set(Calendar.MINUTE, 0)
-            calendar.set(Calendar.SECOND, 0)
-            calendar.set(Calendar.MILLISECOND, 0)
-        }
-
-        fun sendBroadcast(action: String?) {
-            if (appContext != null) appContext!!.sendBroadcast(Intent(action))
-        }
-
-        fun sendBroadcastShell(api: String?, message: String?) {
-            if (appContext == null) return
-            val intent = Intent("fansirsqi.xposed.sesame.SHELL")
-            intent.putExtra(api, message)
-            appContext!!.sendBroadcast(intent, null)
-        }
-
-        @JvmStatic
-        fun reLoginByBroadcast() {
-            sendBroadcast(BroadcastActions.RE_LOGIN)
-        }
-
-        fun restartByBroadcast() {
-            sendBroadcast(BroadcastActions.RESTART)
-        }
-
-        fun reOpenApp() {
-            ensureScheduler()
-            schedule(20000L, "重新登录") {
-                try {
-                    val intent = Intent(Intent.ACTION_VIEW)
-                    intent.setClassName(General.PACKAGE_NAME, General.CURRENT_USING_ACTIVITY)
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    offline = true
-                    if (appContext != null) appContext!!.startActivity(intent)
-                } catch (e: Exception) {
-                    error(TAG, "重启Activity失败: " + e.message)
-                }
-            }
-        }
-
-        // --- 定时唤醒 ---
-        private fun setWakenAtTimeAlarm() {
-            if (appContext == null) return
-            ensureScheduler()
-
-            val wakenAtTimeList = wakenAtTimeList.value
-            if (wakenAtTimeList != null && wakenAtTimeList.contains("-1")) return
-
-            // 1. 每日0点
-            val calendar = Calendar.getInstance()
-            calendar.add(Calendar.DAY_OF_MONTH, 1)
-            resetToMidnight(calendar)
-            val delayToMidnight = calendar.getTimeInMillis() - System.currentTimeMillis()
-
-            if (delayToMidnight > 0) {
-                schedule(delayToMidnight, "每日0点任务") {
-                    record(TAG, "⏰ 0点任务触发")
-                    updateDay()
-                    execHandler()
-                    setWakenAtTimeAlarm() // 递归设置明天
-                }
-            }
-
-            // 2. 自定义时间
-            if (wakenAtTimeList != null) {
-                val now = Calendar.getInstance()
-                for (timeStr in wakenAtTimeList) {
-                    try {
-                        val target = TimeUtil.getTodayCalendarByTimeStr(timeStr)
-                        if (target != null && target > now) {
-                            val delay = target.getTimeInMillis() - System.currentTimeMillis()
-                            schedule(delay, "自定义: $timeStr") {
-                                record(TAG, "⏰ 自定义触发: $timeStr")
-                                execHandler()
-                            }
-                        }
-                    } catch (_: Exception) { /* ignore */
-                    }
-                }
-            }
-        }
-
-        fun registerBroadcastReceiver(context: Context) {
-            if (mBroadcastReceiver != null) return  // 防止重复注册
-
-            try {
-                mBroadcastReceiver = AlipayBroadcastReceiver()
-                val filter = IntentFilter()
-                filter.addAction(BroadcastActions.RESTART)
-                filter.addAction(BroadcastActions.RE_LOGIN)
-                filter.addAction(BroadcastActions.STATUS)
-                filter.addAction(BroadcastActions.RPC_TEST)
-                filter.addAction(BroadcastActions.MANUAL_TASK)
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    context.registerReceiver(mBroadcastReceiver, filter, Context.RECEIVER_EXPORTED)
-                } else {
-                    ContextCompat.registerReceiver(
-                        context,
-                        mBroadcastReceiver,
-                        filter,
-                        ContextCompat.RECEIVER_NOT_EXPORTED
-                    )
-                }
-                record(TAG, "BroadcastReceiver registered")
-            } catch (th: Throwable) {
-                mBroadcastReceiver = null
-                printStackTrace(TAG, "Register Receiver failed", th)
-            }
-        }
-
-        fun unregisterBroadcastReceiver(context: Context?) {
-            if (mBroadcastReceiver == null || context == null) return
-            try {
-                context.unregisterReceiver(mBroadcastReceiver)
-                record(TAG, "BroadcastReceiver unregistered")
-            } catch (_: Throwable) {
-                // ignore: receiver not registered
-            } finally {
-                mBroadcastReceiver = null
             }
         }
     }

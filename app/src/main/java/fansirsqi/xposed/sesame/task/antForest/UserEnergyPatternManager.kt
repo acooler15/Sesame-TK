@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antForest
 
 import android.annotation.SuppressLint
-import fansirsqi.xposed.sesame.util.Log
+import fansirsqi.xposed.sesame.core.log.Log
 import java.util.concurrent.ConcurrentHashMap
 
 /**

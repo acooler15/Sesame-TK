@@ -83,6 +83,39 @@ object MotionEventSimulator {
     }
 
     /**
+     * 异步模拟一次单击操作（在指定屏幕坐标按下并快速抬起）。
+     *
+     * @param view 目标视图（通常为 DecorView）。
+     * @param screenX 点击的屏幕绝对 X 坐标.
+     * @param screenY 点击的屏幕绝对 Y 坐标.
+     * @return true 表示触摸事件已成功派发，false 表示 View 不可交互无法派发.
+     */
+    suspend fun simulateTap(
+        view: View,
+        screenX: Float,
+        screenY: Float
+    ): Boolean {
+        if (!view.isShown || !view.isEnabled) {
+            Log.w(TAG, "simulateTap 跳过: view.isShown=${view.isShown}, view.isEnabled=${view.isEnabled}")
+            return false
+        }
+
+        val local = toLocalPoint(view, screenX, screenY)
+        Log.d(TAG, "simulateTap screen=($screenX,$screenY), local=(${local.x},${local.y})")
+
+        val downTime = SystemClock.uptimeMillis()
+        return try {
+            dispatchTouchEvent(view, MotionEvent.ACTION_DOWN, local.x, local.y, downTime, downTime)
+            delay(Random.nextLong(80, 150)) // 按压停留
+            dispatchTouchEvent(view, MotionEvent.ACTION_UP, local.x, local.y, downTime, downTime + 120)
+            true
+        } catch (e: Throwable) {
+            Log.e(TAG, "点击异常", e)
+            false
+        }
+    }
+
+    /**
      * 生成非线性的拟人轨迹
      * 逻辑：加速 -> 快速 -> 减速 -> 超过目标(Overshoot) -> 拨回(Back)
      */

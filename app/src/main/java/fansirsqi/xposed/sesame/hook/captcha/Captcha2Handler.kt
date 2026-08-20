@@ -84,6 +84,17 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         private const val HANDLE_Y_RATIO_MIN = 0.55f
         private const val HANDLE_Y_RATIO_MAX = 0.95f
 
+        // ---- 识别失败刷新流程阈值 ----
+
+        /** gap 识别失败时最大刷新次数（每次点击刷新按钮换一张新图重试） */
+        private const val MAX_REFRESH_ATTEMPTS = 2
+
+        /** 点击刷新按钮后等待新图加载完成的时长（ms） */
+        private const val REFRESH_SETTLE_DELAY_MS = 1_800L
+
+        /** 刷新按钮点击所需最小置信度 */
+        private const val REFRESH_CONFIDENCE_MIN = 0.4f
+
         /** 无文本锚点时手柄最小像素数（有锚点时放宽，靠锚点兜底） */
         private const val HANDLE_MIN_PIXELS_NO_ANCHOR = 1400
 
@@ -351,83 +362,150 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
      * 坐标系约定：模型识别结果在裁剪图坐标系，Y 轴补偿 [CaptchaPreCheckResult.cropTop]
      * 后即为 DecorView 局部坐标；实际按压点取像素扫描的滑块手柄中心，
      * 水平位移取模型识别的滑块->缺口距离。
+     *
+     * 缺口（gap）识别失败时，若模型识别到刷新按钮，则点击刷新换图并重新
+     * 截图+识别重试（上限 [MAX_REFRESH_ATTEMPTS] 次）。
      */
     private suspend fun prepareSlidePlan(
         activity: Activity,
-        lightweight: CaptchaPreCheckResult,
+        initialLightweight: CaptchaPreCheckResult,
         anchorText: String?,
         rpcConfirmed: Boolean,
         hasStrongAnchor: Boolean
     ): SlidePreparation {
-        // 轻量检测产物完备性校验（信号覆盖路径下产物可能缺失）
-        lightweight.fullBitmap ?: return terminateRetryable("轻量前置检测未产出全屏截图", "轻量前置产出缺失: fullBitmap")
-        val croppedBitmap = lightweight.croppedBitmap
-            ?: return terminateRetryable("轻量前置检测未产出裁剪截图", "轻量前置产出缺失: croppedBitmap")
-        val detectedHandle = lightweight.sliderHandle
-            ?: return terminateRetryable("轻量前置检测未命中滑块手柄", "轻量前置产出缺失: sliderHandle")
-        val cropTop = lightweight.cropTop
-        val cropBottom = lightweight.cropBottom
+        var lightweight = initialLightweight
 
-        // 模型识别滑块/缺口（裁剪图坐标系）
-        Log.record(TAG, "[模型识别] callerThread=${Thread.currentThread().name}, isMain=${isMainThread()}")
-        val recognition = SliderTFLite.identifyShared(activity.applicationContext, croppedBitmap)
-            ?: return terminateRetryable("裁剪区域模型识别失败，未检测到滑块和缺口", "模型识别无结果")
+        for (attempt in 0..MAX_REFRESH_ATTEMPTS) {
+            // 轻量检测产物完备性校验（信号覆盖路径下产物可能缺失）
+            lightweight.fullBitmap ?: return terminateRetryable("轻量前置检测未产出全屏截图", "轻量前置产出缺失: fullBitmap")
+            val croppedBitmap = lightweight.croppedBitmap
+                ?: return terminateRetryable("轻量前置检测未产出裁剪截图", "轻量前置产出缺失: croppedBitmap")
+            val detectedHandle = lightweight.sliderHandle
+                ?: return terminateRetryable("轻量前置检测未命中滑块手柄", "轻量前置产出缺失: sliderHandle")
+            val cropTop = lightweight.cropTop
+            val cropBottom = lightweight.cropBottom
 
-        val distance = recognition.targetX - recognition.sliderX
-        Log.record(
-            TAG,
-            "裁剪识别成功: 裁剪内坐标 滑块=(${recognition.sliderX.toInt()},${recognition.sliderY.toInt()}) 目标=(${recognition.targetX.toInt()},${recognition.targetY.toInt()})"
-        )
-        Log.record(
-            TAG,
-            "DecorView坐标: 滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 置信度=${recognition.confidence}"
-        )
+            // 模型识别滑块/缺口（裁剪图坐标系）
+            Log.record(TAG, "[模型识别] callerThread=${Thread.currentThread().name}, isMain=${isMainThread()}")
+            val recognition = SliderTFLite.identifyShared(activity.applicationContext, croppedBitmap)
+                ?: return terminateRetryable("裁剪区域模型识别失败，推理无结果", "模型识别无结果")
 
-        // 深度前置检测（识别结果级）
-        val preCheck = evaluateModelPreCheck(croppedBitmap, recognition, anchorText, detectedHandle)
-        if (!preCheck.passed) {
-            if (rpcConfirmed || hasStrongAnchor) {
-                // 强信号已确认是验证码页，模型检测失败应重试而非跳过
-                return terminateRetryable(
-                    if (rpcConfirmed) {
-                        "RPC信号已确认验证码页，但模型前置检测未通过"
-                    } else {
-                        "文本锚点已确认验证码页，但模型前置检测未通过"
-                    },
-                    "强信号确认但模型前置检测未通过"
+            // gap 缺失：尝试点击刷新按钮换图重试
+            if (!recognition.hasGap) {
+                Log.record(
+                    TAG,
+                    "[刷新流程] 未识别到缺口，尝试刷新 (第 ${attempt + 1} 次) candidateCount=${recognition.candidateCount}"
                 )
+                if (attempt >= MAX_REFRESH_ATTEMPTS) {
+                    return terminateRetryable("刷新${MAX_REFRESH_ATTEMPTS}次后仍未识别到缺口", "刷新后仍无gap")
+                }
+                val refreshClicked = attemptRefreshForRetry(activity, recognition, cropTop)
+                if (!refreshClicked) {
+                    return terminateRetryable("无法点击刷新按钮重试", "刷新按钮缺失或点击失败")
+                }
+                // 等待新图加载完成后重新截图 + 轻量前置检测
+                delay(REFRESH_SETTLE_DELAY_MS)
+                val decorView = activity.window.decorView
+                lightweight = evaluateLightweightPreCheck(decorView, anchorText)
+                continue
             }
-            logPrecheckSkip("文本锚点缺失且前置检测未通过", preCheck.failReasons, preCheck.passReasons)
-            return SlidePreparation.Terminate(ActivityHandleResult.SKIP_NON_RETRYABLE)
+
+            val distance = recognition.targetX - recognition.sliderX
+            Log.record(
+                TAG,
+                "裁剪识别成功: 裁剪内坐标 滑块=(${recognition.sliderX.toInt()},${recognition.sliderY.toInt()}) 目标=(${recognition.targetX.toInt()},${recognition.targetY.toInt()})"
+            )
+            Log.record(
+                TAG,
+                "DecorView坐标: 滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 置信度=${recognition.confidence}"
+            )
+
+            // 深度前置检测（识别结果级）
+            val preCheck = evaluateModelPreCheck(croppedBitmap, recognition, anchorText, detectedHandle)
+            if (!preCheck.passed) {
+                if (rpcConfirmed || hasStrongAnchor) {
+                    // 强信号已确认是验证码页，模型检测失败应重试而非跳过
+                    return terminateRetryable(
+                        if (rpcConfirmed) {
+                            "RPC信号已确认验证码页，但模型前置检测未通过"
+                        } else {
+                            "文本锚点已确认验证码页，但模型前置检测未通过"
+                        },
+                        "强信号确认但模型前置检测未通过"
+                    )
+                }
+                logPrecheckSkip("文本锚点缺失且前置检测未通过", preCheck.failReasons, preCheck.passReasons)
+                return SlidePreparation.Terminate(ActivityHandleResult.SKIP_NON_RETRYABLE)
+            }
+            Log.record(
+                TAG,
+                "[前置检测通过] 原因=${if (rpcConfirmed) "RPC信号确认" else if (hasStrongAnchor) "文本锚点确认" else "文本锚点缺失但视觉前置通过"}; 判定为滑块验证码页: ${preCheck.passReasons.joinToString(", ")}"
+            )
+            Log.record(
+                TAG,
+                "滑动参数: 模型滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 模型目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 距离=${distance.toInt()}px"
+            )
+
+            val handle = preCheck.sliderHandle ?: detectedHandle
+            val plan = SlidePlan(
+                view = activity.window.decorView,
+                startX = handle.centerX,
+                startY = handle.centerY,
+                endX = handle.centerX + distance,
+                endY = handle.centerY,
+                cropTop = cropTop,
+                cropBottom = cropBottom
+            )
+            Log.record(
+                TAG,
+                "命中滑块手柄: bounds=(${handle.left},${handle.top},${handle.right},${handle.bottom}), center=(${handle.centerX.toInt()},${handle.centerY.toInt()}), pixels=${handle.pixelCount}"
+            )
+            Log.record(
+                TAG,
+                "实际滑动参数: 起点=(${plan.startX.toInt()},${plan.startY.toInt()}), 终点=(${plan.endX.toInt()},${plan.endY.toInt()}), 距离=${distance.toInt()}px"
+            )
+            return SlidePreparation.Ready(plan)
         }
+        return terminateRetryable("滑动计划构建失败", "prepareSlidePlan 未产出计划")
+    }
+
+    /**
+     * 阶段⑦刷新：点击验证码刷新按钮换一张新图。
+     *
+     * 刷新按钮中心位于模型识别返回的裁剪图坐标系，需换算到 DecorView 局部坐标
+     * （Y 加 cropTop、X 加 cropLeft=0）后派发点击手势。
+     *
+     * @return true=已成功点击刷新；false=无刷新框或点击失败（无可重试路径）
+     */
+    private suspend fun attemptRefreshForRetry(
+        activity: Activity,
+        recognition: SliderTFLite.SlideRecognitionResult,
+        cropTop: Int
+    ): Boolean {
+        val refreshX = recognition.refreshX ?: run {
+            Log.record(TAG, "[刷新流程] 模型未识别到刷新按钮，无法刷新重试")
+            return false
+        }
+        val refreshY = recognition.refreshY ?: return false
+        val refreshScore = recognition.refreshScore ?: 0f
+        if (refreshScore < REFRESH_CONFIDENCE_MIN) {
+            Log.record(TAG, "[刷新流程] 刷新按钮置信度过低 $refreshScore < $REFRESH_CONFIDENCE_MIN，放弃刷新")
+            return false
+        }
+
+        // 模型坐标在裁剪图（DecorView 局部）坐标系：X 不变，Y 补偿 cropTop
+        val decorView = activity.window.decorView
+        val tapX = refreshX
+        val tapY = refreshY + cropTop
         Log.record(
             TAG,
-            "[前置检测通过] 原因=${if (rpcConfirmed) "RPC信号确认" else if (hasStrongAnchor) "文本锚点确认" else "文本锚点缺失但视觉前置通过"}; 判定为滑块验证码页: ${preCheck.passReasons.joinToString(", ")}"
-        )
-        Log.record(
-            TAG,
-            "滑动参数: 模型滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 模型目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 距离=${distance.toInt()}px"
+            "[刷新流程] 点击刷新按钮: 裁剪坐标=(${refreshX.toInt()},${refreshY.toInt()}) -> DecorView局部=(${tapX.toInt()},${tapY.toInt()}), conf=${refreshScore}"
         )
 
-        val handle = preCheck.sliderHandle ?: detectedHandle
-        val plan = SlidePlan(
-            view = activity.window.decorView,
-            startX = handle.centerX,
-            startY = handle.centerY,
-            endX = handle.centerX + distance,
-            endY = handle.centerY,
-            cropTop = cropTop,
-            cropBottom = cropBottom
-        )
-        Log.record(
-            TAG,
-            "命中滑块手柄: bounds=(${handle.left},${handle.top},${handle.right},${handle.bottom}), center=(${handle.centerX.toInt()},${handle.centerY.toInt()}), pixels=${handle.pixelCount}"
-        )
-        Log.record(
-            TAG,
-            "实际滑动参数: 起点=(${plan.startX.toInt()},${plan.startY.toInt()}), 终点=(${plan.endX.toInt()},${plan.endY.toInt()}), 距离=${distance.toInt()}px"
-        )
-        return SlidePreparation.Ready(plan)
+        // DecorView 局部坐标 -> 屏幕坐标
+        val viewLocation = IntArray(2)
+        decorView.getLocationOnScreen(viewLocation)
+        return dispatchTapWithFallback(decorView, tapX + viewLocation[0], tapY + viewLocation[1])
     }
 
     /**
@@ -591,6 +669,12 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
             null
         } ?: run {
             Log.record(TAG, "校正探测未识别到可继续修正的目标")
+            return false
+        }
+
+        // 校正路径下缺口缺失则目标不可靠，放弃校正（保留原滑动位置等待页面自行判定）
+        if (!probeRecognition.hasGap) {
+            Log.record(TAG, "校正探测未识别到缺口(gap)，放弃校正滑动")
             return false
         }
 

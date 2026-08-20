@@ -134,6 +134,30 @@ abstract class BaseCaptchaHandler {
     }
 
     /**
+     * 派发单击手势（屏幕坐标系）：优先 view 本地 dispatch（MotionEvent 注入），
+     * 失败退 shell input 兜底。用于点击刷新按钮等轻交互。
+     *
+     * @return true=手势已派发；false=两条路径均失败
+     */
+    protected suspend fun dispatchTapWithFallback(
+        view: View,
+        screenX: Float,
+        screenY: Float
+    ): Boolean {
+        if (MotionEventSimulator.simulateTap(view, screenX, screenY)) {
+            Log.record(TAG, "[点击路径] path=view-dispatch")
+            return true
+        }
+        Log.record(TAG, "[点击路径] view-dispatch 失败，尝试 shell input 兜底")
+        if (!SystemInputSwiper.tap(screenX, screenY)) {
+            Log.record(TAG, "[点击路径] shell input 兜底也失败")
+            return false
+        }
+        Log.record(TAG, "[点击路径] path=shell-input")
+        return true
+    }
+
+    /**
      * 设置 KEEP_SCREEN_ON，返回原始 Window Flag 以便恢复。
      */
     protected fun applyKeepScreenOn(activity: Activity): Int {

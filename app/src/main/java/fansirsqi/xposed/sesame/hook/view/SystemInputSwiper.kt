@@ -64,6 +64,33 @@ object SystemInputSwiper {
     }
 
     /**
+     * 使用系统级 `input tap` 命令执行单击。
+     * 策略与 [swipe] 一致：CommandService 优先 -> 直接 su 执行。
+     *
+     * @return true 表示命令执行成功，false 表示所有路径均失败
+     */
+    suspend fun tap(x: Float, y: Float): Boolean {
+        val context = PageMonitor.getContext()
+        if (context == null) {
+            Log.record(TAG, "[系统级输入] 无法获取 Context，跳过点击")
+            return false
+        }
+        val cmd = "input tap ${x.toInt()} ${y.toInt()}"
+        Log.record(TAG, "[系统级输入] 尝试路径1: CommandService -> $cmd")
+        if (tryCommandService(context, cmd)) {
+            Log.record(TAG, "[系统级输入] 路径1(CommandService) 成功")
+            return true
+        }
+        Log.record(TAG, "[系统级输入] 尝试路径2: 直接 su -> $cmd")
+        if (tryDirectSuExec(cmd)) {
+            Log.record(TAG, "[系统级输入] 路径2(直接su) 成功")
+            return true
+        }
+        Log.record(TAG, "[系统级输入] 所有系统级输入路径均失败")
+        return false
+    }
+
+    /**
      * 通过 CommandService (AIDL) 执行命令。
      * 不检查 serviceStatus，因为 executeCommand 内部会自动绑定服务。
      */

@@ -6,6 +6,7 @@ import fansirsqi.xposed.sesame.hook.captcha.CaptchaRpcSignal
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.IdMapManager
 import fansirsqi.xposed.sesame.util.maps.VipDataIdMap
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -66,7 +67,13 @@ object TokenHooker {
      */
     private fun handleAntFarmToken(userId: String, paramsJson: JSONObject) {
         try {
-            val positionRequest = paramsJson.optJSONObject("positionRequest") ?: run {
+            // 真实请求参数包裹在 requestData 数组中：requestData: [{positionRequest, sdkPageInfo}]
+            val businessParams = extractBusinessParams(paramsJson) ?: run {
+                Log.error(TAG, "未找到 requestData")
+                return
+            }
+
+            val positionRequest = businessParams.optJSONObject("positionRequest") ?: run {
                 Log.error(TAG, "未找到 positionRequest")
                 return
             }
@@ -98,6 +105,33 @@ object TokenHooker {
 
         } catch (e: Exception) {
             Log.error(TAG, "解析 referToken 异常: ${e.message}")
+        }
+    }
+
+    /**
+     * 从 RPC 参数中提取业务参数对象。
+     * 真实请求结构为 requestData: [{...}]，同时兼容直接传对象或 JSON 字符串的变体。
+     */
+    private fun extractBusinessParams(params: JSONObject): JSONObject? {
+        val requestData = params.opt("requestData") ?: return null
+        return when (requestData) {
+            is JSONArray -> requestData.optJSONObject(0)
+            is JSONObject -> requestData
+            is String -> {
+                val content = requestData.trim()
+                if (content.isEmpty()) {
+                    null
+                } else {
+                    runCatching {
+                        if (content.startsWith("[")) {
+                            JSONArray(content).optJSONObject(0)
+                        } else {
+                            JSONObject(content)
+                        }
+                    }.getOrNull()
+                }
+            }
+            else -> null
         }
     }
 

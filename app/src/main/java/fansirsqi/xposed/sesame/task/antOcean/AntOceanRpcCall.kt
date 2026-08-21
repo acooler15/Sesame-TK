@@ -18,6 +18,10 @@ object AntOceanRpcCall {
         return System.currentTimeMillis().toString() + RandomUtil.nextLong()
     }
 
+    private fun getAIFishUniqueId(): String {
+        return RandomUtil.getRandomString(16)
+    }
+
     @JvmStatic
     suspend fun queryOceanStatus(): String {
         return RequestManager.requestString(
@@ -342,4 +346,5 @@ object AntOceanRpcCall {
             return "{}"
         }
     }
+
 }

@@ -1471,7 +1471,8 @@ class AntStall : ModelTask() {
             "tianjiashouye",                 // 添加首页
             "ANTSTALL_ELEME_VISIT",          // 去饿了么果园逛一逛
             "ANTSTALL_TASK_diantao202311",   // 去点淘赚元宝提现
-            "ANTSTALL_TASK_nongchangleyuan"  // 农场乐园
+            "ANTSTALL_TASK_nongchangleyuan",  // 农场乐园
+//            "APP_CENTER_VISIT" // 首页访问
         )
     }
 }

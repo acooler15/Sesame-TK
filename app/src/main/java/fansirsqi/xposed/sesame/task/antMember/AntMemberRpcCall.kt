@@ -356,12 +356,13 @@ object AntMemberRpcCall {
 
     /**
      * 领取保障金
+     * 抓包确认 requestData 为数组形态，需用 JSONArray 包裹
      */
     @JvmStatic
     suspend fun collectInsuredGold(goldBallObj: JSONObject): String {
         return RequestManager.requestString(
             "com.alipay.insgiftbff.insgiftMain.gainMyAndFamilySumInsured",
-            goldBallObj.toString(), "insgiftbff", "gainMyAndFamilySumInsured", "insgiftMain"
+            JSONArray().put(goldBallObj).toString(), "insgiftbff", "gainMyAndFamilySumInsured", "insgiftMain"
         )
     }
 

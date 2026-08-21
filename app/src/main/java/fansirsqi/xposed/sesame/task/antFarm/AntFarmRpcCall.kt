@@ -414,10 +414,6 @@ object AntFarmRpcCall {
 
     @JvmStatic
     suspend fun useFarmFood(cookbookId: String?, cuisineId: String?): String {
-        //        return RequestManager.requestString("com.alipay.antfarm.useFarmFood",
-        //                "[{\"cookbookId\":\"" + cookbookId + "\",\"cuisineId\":\"" + cuisineId
-        //                        + "\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ANTFARM\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"useCuisine\":true,\"version\":\""
-        //                        + VERSION + "\"}]");
         try {
             val args = JSONObject()
             args.put("cookbookId", cookbookId)

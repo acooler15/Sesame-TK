@@ -138,7 +138,7 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.queryMainPage
      */
     suspend fun queryMainPage(): String {
-        val args = """{"apiVersion":"energy","chInfo":"ch_shouquan_shouye","cityCode":"$CITY_CODE","clientOS":"android","features":$FEATURES,"timezone":"Asia/Shanghai"}"""
+        val args = """[{"apiVersion":"energy","chInfo":"ch_shouquan_shouye","cityCode":"$CITY_CODE","clientOS":"android","features":$FEATURES,"timezone":"Asia/Shanghai"}]"""
         return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.queryMainPage", args)
     }
 

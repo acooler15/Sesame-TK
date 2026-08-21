@@ -27,11 +27,20 @@ object PageMonitor {
 
     private const val TAG = "PageMonitor"
 
+    /** 验证码对话框类名（可弹在任意宿主 Activity 之上，路由时优先走 Dialog 处理器） */
+    private const val CAPTCHA_DIALOG_CLASS = "com.alipay.rdssecuritysdk.v3.captcha.view.CaptchaDialog"
+
     private var mContextRef: WeakReference<Context>? = null
     private var mClassLoader: ClassLoader? = null
     private var topActivity: Activity? = null
 
     private val activityFocusHandlerMap = ConcurrentHashMap<String, ActivityFocusHandler>()
+
+    /**
+     * Dialog 兜底处理器：验证码类 Dialog（CaptchaDialog）弹出时优先路由到这里，
+     * 不依赖顶层 Activity 类名（它可能弹在任意宿主 Activity 之上）。
+     */
+    private var dialogFocusHandler: ActivityFocusHandler? = null
 
     /** 处理器触发延迟（毫秒），等待页面布局稳定 */
     private const val TRIGGER_DELAY_MS = 100L
@@ -91,6 +100,11 @@ object PageMonitor {
 
     fun addHandler(activityClassName: String, handler: ActivityFocusHandler) {
         activityFocusHandlerMap[activityClassName] = handler
+    }
+
+    /** 注册 Dialog 兜底处理器（验证码 Dialog 弹出时优先路由，与顶层 Activity 类名无关） */
+    fun addDialogHandler(handler: ActivityFocusHandler) {
+        dialogFocusHandler = handler
     }
 
     fun enableWindowMonitoring(classLoader: ClassLoader? = null) {
@@ -182,14 +196,19 @@ object PageMonitor {
     /**
      * 如果对话框不存在则添加到监控列表
      */
-    private fun addDialogIfNotExists(dialog: android.app.Dialog, source: String) {
+    /**
+     * 如果对话框不存在则添加到监控列表
+     * @return true=本次新增（已触发处理）；false=已存在（未触发）
+     */
+    private fun addDialogIfNotExists(dialog: android.app.Dialog, source: String): Boolean {
         if (!dialogs.any { it.get() === dialog }) {
             dialogs.add(WeakReference(dialog))
             Log.d(TAG, "对话框已从 $source 添加，总数: ${dialogs.size}")
-            triggerDialogProcessing()
-        } else {
-            Log.d(TAG, "对话框从 $source 已存在于列表中")
+            triggerDialogProcessing(dialog)
+            return true
         }
+        Log.d(TAG, "对话框从 $source 已存在于列表中")
+        return false
     }
 
     /**
@@ -232,7 +251,7 @@ object PageMonitor {
 
         try {
             val captchaDialogClass = Class.forName(
-                "com.alipay.rdssecuritysdk.v3.captcha.view.CaptchaDialog",
+                CAPTCHA_DIALOG_CLASS,
                 false,
                 getClassLoader()
             )
@@ -241,7 +260,14 @@ object PageMonitor {
                 object : HookCallback {
                     override fun after(p: HookParam) {
                         val dialog = p.thisObject as android.app.Dialog
-                        addDialogIfNotExists(dialog, "CaptchaDialog.show()")
+                        val newlyAdded = addDialogIfNotExists(dialog, "CaptchaDialog.show()")
+                        // 构造函数钩子可能已提前触发过一次处理（彼时 Dialog 尚未 show，
+                        // 锚点查不到会被 SKIP_NON_RETRYABLE 终止），show() 时视图已挂载，
+                        // 无论是否去重命中都强制再路由一次；与构造期任务并发由
+                        // hasPendingActivityTask / 处理窗口互斥锁兜底。
+                        if (!newlyAdded) {
+                            triggerDialogProcessing(dialog)
+                        }
                     }
                 }
             )
@@ -258,22 +284,31 @@ object PageMonitor {
     }
 
     /**
-     * 触发 Dialog 处理
+     * 触发 Dialog 处理：验证码 Dialog（CaptchaDialog）优先路由 Dialog 兜底处理器，
+     * 其余 Dialog 维持原有按顶层 Activity 类名路由。
      */
-    private fun triggerDialogProcessing() {
-        triggerPendingActivityHandler("Dialog 已创建")
+    private fun triggerDialogProcessing(dialog: android.app.Dialog) {
+        val preferDialogHandler = dialog.javaClass.name == CAPTCHA_DIALOG_CLASS
+        triggerPendingActivityHandler("Dialog 已创建", preferDialogHandler)
     }
 
     /**
      * 触发待处理的 Activity 处理器
+     *
+     * @param preferDialogHandler true=优先使用 Dialog 兜底处理器（验证码 Dialog 弹在任意宿主
+     * Activity 上都能被处理，且覆盖底下 H5 页面自己的处理器——此时可见的验证码是 Dialog 里的）
      */
-    private fun triggerPendingActivityHandler(source: String) {
+    private fun triggerPendingActivityHandler(source: String, preferDialogHandler: Boolean = false) {
         val activity = topActivity ?: run {
             Log.i(TAG, "无法从 $source 触发处理器，未找到顶层 Activity")
             SesameLog.record(TAG, "无法从 $source 触发处理器，未找到顶层 Activity")
             return
         }
-        val handler = activityFocusHandlerMap[activity.javaClass.name]
+        val handler = if (preferDialogHandler) {
+            dialogFocusHandler ?: activityFocusHandlerMap[activity.javaClass.name]
+        } else {
+            activityFocusHandlerMap[activity.javaClass.name]
+        }
         if (handler == null) {
             Log.d(TAG, "未找到 ${activity.javaClass.name} 的处理器，来源: $source")
             SesameLog.record(TAG, "未找到 ${activity.javaClass.name} 的处理器，来源: $source")

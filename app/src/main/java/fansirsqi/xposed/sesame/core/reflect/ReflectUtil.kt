@@ -3,6 +3,7 @@ package fansirsqi.xposed.sesame.core.reflect
 import java.lang.reflect.Field
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.lang.reflect.Modifier
 
 /**
  * 框架无关的字符串反射工具（纯 java.lang.reflect）。
@@ -109,6 +110,46 @@ object ReflectUtil {
             current = current.superclass
         }
         throw NoSuchFieldException("$clazz.$name")
+    }
+
+    /**
+     * 查找单例工厂方法：无参静态方法且返回类型为 clazz（或其子类），不限定方法名。
+     *
+     * 用于适配目标 App 混淆名随版本变化的场景（如 `RpcManager.a()` 被改名为 `b()`），
+     * 避免硬编码 `"a"` 导致 NoSuchMethodException。找不到返回 null。
+     */
+    fun findStaticFactory(clazz: Class<*>): Method? {
+        for (m in clazz.declaredMethods) {
+            if (!m.isSynthetic && !m.isBridge &&
+                Modifier.isStatic(m.modifiers) &&
+                m.parameterTypes.isEmpty() &&
+                clazz.isAssignableFrom(m.returnType)
+            ) {
+                m.isAccessible = true
+                return m
+            }
+        }
+        return null
+    }
+
+    /**
+     * 按参数签名查找方法（不限定方法名，沿继承链向上），找不到返回 null。
+     *
+     * 与 [findMethodExact] 互补：前者按名精确匹配，本方法按签名匹配，
+     * 适用于混淆名不可预知但签名相对稳定的目标方法。
+     */
+    fun findMethodBySignature(clazz: Class<*>, vararg types: Class<*>): Method? {
+        var current: Class<*>? = clazz
+        while (current != null) {
+            for (m in current.declaredMethods) {
+                if (!m.isSynthetic && !m.isBridge && isMatch(m.parameterTypes, types)) {
+                    m.isAccessible = true
+                    return m
+                }
+            }
+            current = current.superclass
+        }
+        return null
     }
 
     // ---------- 内部工具 ----------

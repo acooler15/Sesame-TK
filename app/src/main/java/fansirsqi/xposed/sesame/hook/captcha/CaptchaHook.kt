@@ -7,7 +7,11 @@ import android.content.Intent
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.entity.AlipayVersion
+import fansirsqi.xposed.sesame.hook.compat.HookCallback
+import fansirsqi.xposed.sesame.hook.compat.HookParam
+import fansirsqi.xposed.sesame.hook.compat.Hooker
 import fansirsqi.xposed.sesame.hook.view.PageMonitor
+import fansirsqi.xposed.sesame.hook.view.PageMonitor.addDialogHandler
 import fansirsqi.xposed.sesame.hook.view.PageMonitor.addHandler
 import fansirsqi.xposed.sesame.hook.view.PageMonitor.enableWindowMonitoring
 
@@ -24,6 +28,12 @@ object CaptchaHook {
 
     /** 验证码对话框类名 */
     private const val CLASS_CAPTCHA_DIALOG = "com.alipay.rdssecuritysdk.v3.captcha.view.CaptchaDialog"
+
+    /** RDS 风控验证码入口处理器（原生 Dialog 路径的上游唯一入口） */
+    private const val CLASS_RDS_HANDLER = "com.alipay.rdssecuritysdk.v3.captcha.RdsHandler"
+
+    /** 验证结果回调接口（openRdsCaptchaPage 的参数类型） */
+    private const val CLASS_CAPTCHA_VERIFY_INTERFACE = "com.alipay.serviceframework.handler.rds.CaptchaVerifyInterface"
 
     /** 核身验证码 Activity */
     private const val CLASS_CAPTCHA_SWIPE_ACTIVITY = "com.alipay.mobile.verifyidentity.module.captchaswipe.ui.CaptchaSwipeActivity"
@@ -61,7 +71,51 @@ object CaptchaHook {
         addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverActivity", captcha1Handler)
         addHandler("com.alipay.mobile.nebulax.xriver.activity.XRiverTransActivity\$Main", captcha2Handler)
         addHandler("com.alipay.mobile.nebulax.integration.mpaas.activity.NebulaTransActivity\$Main", captcha2Handler)
-        Log.record(TAG, "验证码页面处理器注册完成")
+        // CaptchaDialog 是原生 Dialog，可弹在任意宿主 Activity 之上（含首页/原生页面），
+        // 不能依赖 topActivity 类名路由——注册为 Dialog 兜底处理器，show() 时直接处理
+        addDialogHandler(captcha1Handler)
+        hookRdsCaptchaEntry()
+        Log.record(TAG, "验证码页面处理器注册完成（含 CaptchaDialog 兜底路由）")
+    }
+
+    /**
+     * 钩住 RdsHandler.openRdsCaptchaPage（原生验证码 Dialog 的上游唯一入口，业务 RPC 被
+     * 风控拦截时由服务框架调用）。
+     *
+     * 作用：原生 Dialog 路径不经过 H5 的 "alipay.security.antcaptcha.verify" RPC，
+     * [CaptchaRpcSignal] 感知不到 → 在此激活 [RpcPauseGate]，暂停后续 RPC 请求，
+     * 避免验证码未通过时继续发请求、反复触发新的验证码。
+     * Dialog 的实际滑动处理仍由 CaptchaDialog.show() → PageMonitor Dialog 兜底路由完成。
+     */
+    private fun hookRdsCaptchaEntry() {
+        try {
+            val classLoader = savedClassLoader ?: run {
+                Log.error(TAG, "挂钩 RdsHandler 失败：ClassLoader 未初始化")
+                return
+            }
+            val rdsHandlerClass = Class.forName(CLASS_RDS_HANDLER, false, classLoader)
+            val verifyInterfaceClass = Class.forName(CLASS_CAPTCHA_VERIFY_INTERFACE, false, classLoader)
+            // 2 参重载内部转调 3 参方法，钩 3 参即可全覆盖
+            val method = rdsHandlerClass.getDeclaredMethod(
+                "openRdsCaptchaPage",
+                Map::class.java,
+                verifyInterfaceClass,
+                java.lang.Boolean.TYPE
+            ).apply { isAccessible = true }
+            Hooker.get().hookMethod(
+                method,
+                object : HookCallback {
+                    override fun before(p: HookParam) {
+                        Log.record(TAG, "[RdsHandler] openRdsCaptchaPage 命中（原生验证码即将弹出），激活 RPC 暂停闸门")
+                        RpcPauseGate.activate()
+                    }
+                }
+            )
+            Log.record(TAG, "RdsHandler.openRdsCaptchaPage 钩子注册成功")
+        } catch (e: Throwable) {
+            // 类不存在或方法签名变化（如支付宝版本更新）时降级：仅失去闸门激活，不影响 Dialog 路由
+            Log.error(TAG, "挂钩 RdsHandler.openRdsCaptchaPage 失败: ${e.message}")
+        }
     }
 
     /**

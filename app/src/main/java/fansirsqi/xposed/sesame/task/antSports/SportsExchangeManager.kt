@@ -64,18 +64,24 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                             return@Runnable
                         }
 
-                        val rpcManager = ReflectUtil.callStaticMethod(
-                            loader.loadClass("com.alibaba.health.pedometer.intergation.rpc.RpcManager"),
-                            "a"
-                        )
+                        val rpcClazz =
+                            loader.loadClass("com.alibaba.health.pedometer.intergation.rpc.RpcManager")
 
-                        val success = ReflectUtil.callMethod(
-                            rpcManager,
-                            "a",
-                            step,
-                            java.lang.Boolean.FALSE,
-                            "system"
-                        ) as Boolean
+                        // 反编译确认（支付宝 12.12.1.8000）：RpcManager 是普通类，
+                        // 无静态工厂方法；同步步数入口为实例方法 a(int, boolean, String)。
+                        // 因此：无参构造实例化 + 按参数签名查找实例方法（不依赖混淆名）。
+                        val rpcManager = ReflectUtil.newInstance(rpcClazz)
+
+                        // 兼容混淆名变化：按参数签名 (int, boolean, String) 查找同步方法
+                        val syncMethod = ReflectUtil.findMethodBySignature(
+                            rpcClazz, java.lang.Integer.TYPE, java.lang.Boolean.TYPE, String::class.java
+                        )
+                        if (syncMethod == null) {
+                            dumpRpcManagerMethods(rpcClazz, "未找到同步步数方法 (int, boolean, String)")
+                            return@Runnable
+                        }
+                        val success =
+                            syncMethod.invoke(rpcManager, step, java.lang.Boolean.FALSE, "system") as Boolean
 
                         if (success) {
                             Log.other("同步步数🏃🏻‍♂️[$step 步]")
@@ -89,6 +95,16 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                 }
             )
         )
+    }
+
+    /**
+     * @brief 目标类方法签名 dump，用于在新版本 App 上定位混淆后的方法名
+     */
+    private fun dumpRpcManagerMethods(clazz: Class<*>, reason: String) {
+        Log.error(AntSports.TAG, "$reason，RpcManager 方法清单:")
+        clazz.declaredMethods.forEach { m ->
+            Log.error(AntSports.TAG, "  ${m.toString()}")
+        }
     }
 
     // ---------------------------------------------------------------------

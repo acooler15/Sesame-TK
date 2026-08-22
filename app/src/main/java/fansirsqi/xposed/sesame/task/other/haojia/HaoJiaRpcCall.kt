@@ -1,6 +1,8 @@
 package fansirsqi.xposed.sesame.task.other.haojia
 
 import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData.putStandard
 import org.json.JSONObject
 
 object HaoJiaRpcCall {
@@ -12,33 +14,29 @@ object HaoJiaRpcCall {
      * 通用请求构建器
      */
     private suspend fun request(componentId: String, content: JSONObject = JSONObject()): String {
-        // 构造 components 结构
-        val componentPayload = JSONObject()
-        if (CHANNEL.isNotEmpty()) {
-            componentPayload.put("channel", CHANNEL)
-        }
-        // 合并额外参数
-        val keys = content.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            componentPayload.put(key, content.get(key))
-        }
-
-        val components = JSONObject()
-        components.put(componentId, componentPayload)
-
-        val requestData = JSONObject()
-        requestData.put("channel", CHANNEL)
-        requestData.put("components", components)
-        requestData.put("operationParamIdentify", OPERATION_PARAM_ID)
-        requestData.put("source", "jiaofei")
-
-        // 包装成数组
-        val args = "[$requestData]"
-
         return RequestManager.requestString(
             "alipay.imasp.program.programInvoke",
-            args
+            RpcRequestData.array {
+                // 构造 components 结构
+                val componentPayload = JSONObject()
+                if (CHANNEL.isNotEmpty()) {
+                    componentPayload.put("channel", CHANNEL)
+                }
+                // 合并额外参数
+                val keys = content.keys()
+                while (keys.hasNext()) {
+                    val key = keys.next()
+                    componentPayload.put(key, content.get(key))
+                }
+
+                val components = JSONObject()
+                components.put(componentId, componentPayload)
+
+                put("channel", CHANNEL)
+                put("components", components)
+                put("operationParamIdentify", OPERATION_PARAM_ID)
+                putStandard(source = "jiaofei")
+            }
         )
     }
 

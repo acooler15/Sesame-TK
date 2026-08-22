@@ -6,6 +6,7 @@ import org.json.JSONObject
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 
 /**
  * @author Constanline
@@ -26,7 +27,9 @@ object AntOceanRpcCall {
     suspend fun queryOceanStatus(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanStatus",
-            "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\"}]"
+            RpcRequestData.array {
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+            }
         )
     }
 
@@ -34,7 +37,11 @@ object AntOceanRpcCall {
     suspend fun queryHomePage(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryHomePage",
-            "[{\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+                put("version", VERSION)
+            }
         )
     }
 
@@ -42,7 +49,11 @@ object AntOceanRpcCall {
     suspend fun cleanOcean(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.cleanOcean",
-            "[{\"cleanedUserId\":\"$userId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("cleanedUserId", userId ?: "null")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -50,7 +61,10 @@ object AntOceanRpcCall {
     suspend fun ipOpenSurprise(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.ipOpenSurprise",
-            "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -58,7 +72,12 @@ object AntOceanRpcCall {
     suspend fun collectReplicaAsset(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.collectReplicaAsset",
-            "[{\"replicaCode\":\"avatar\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("replicaCode", "avatar")
+                put("source", "senlinzuoshangjiao")
+                put("uniqueId", getUniqueId())
+                put("version", VERSION)
+            }
         )
     }
 
@@ -66,7 +85,14 @@ object AntOceanRpcCall {
     suspend fun receiveTaskAward(sceneCode: String?, taskType: String?): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
-            "[{\"ignoreLimit\":false,\"requestType\":\"RPC\",\"sceneCode\":\"$sceneCode\",\"source\":\"ANT_FOREST\",\"taskType\":\"$taskType\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("ignoreLimit", false)
+                put("requestType", "RPC")
+                put("sceneCode", sceneCode ?: "null")
+                put("source", "ANT_FOREST")
+                put("taskType", taskType ?: "null")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -75,7 +101,14 @@ object AntOceanRpcCall {
         val outBizNo = taskType + "_" + RandomUtil.nextDouble()
         return RequestManager.requestString(
             "com.alipay.antiep.finishTask",
-            "[{\"outBizNo\":\"$outBizNo\",\"requestType\":\"RPC\",\"sceneCode\":\"$sceneCode\",\"source\":\"ANTFOCEAN\",\"taskType\":\"$taskType\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("outBizNo", outBizNo)
+                put("requestType", "RPC")
+                put("sceneCode", sceneCode ?: "null")
+                put("source", "ANTFOCEAN")
+                put("taskType", taskType ?: "null")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -83,7 +116,13 @@ object AntOceanRpcCall {
     suspend fun unLockReplicaPhase(replicaCode: String?, replicaPhaseCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.unLockReplicaPhase",
-            "[{\"replicaCode\":\"$replicaCode\",\"replicaPhaseCode\":\"$replicaPhaseCode\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"20220707\"}]"
+            RpcRequestData.array {
+                put("replicaCode", replicaCode ?: "null")
+                put("replicaPhaseCode", replicaPhaseCode ?: "null")
+                put("source", "senlinzuoshangjiao")
+                put("uniqueId", getUniqueId())
+                put("version", "20220707")
+            }
         )
     }
 
@@ -91,7 +130,11 @@ object AntOceanRpcCall {
     suspend fun queryReplicaHome(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryReplicaHome",
-            "[{\"replicaCode\":\"avatar\",\"source\":\"senlinzuoshangjiao\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("replicaCode", "avatar")
+                put("source", "senlinzuoshangjiao")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -99,7 +142,10 @@ object AntOceanRpcCall {
     suspend fun repairSeaArea(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.repairSeaArea",
-            "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -107,7 +153,12 @@ object AntOceanRpcCall {
     suspend fun queryOceanPropList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
-            "[{\"propTypeList\":\"UNIVERSAL_PIECE\",\"skipPropId\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("propTypeList", "UNIVERSAL_PIECE")
+                put("skipPropId", false)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -115,7 +166,12 @@ object AntOceanRpcCall {
     suspend fun querySeaAreaDetailList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.querySeaAreaDetailList",
-            "[{\"seaAreaCode\":\"\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"targetUserId\":\"\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("seaAreaCode", "")
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("targetUserId", "")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -123,7 +179,10 @@ object AntOceanRpcCall {
     suspend fun queryOceanChapterList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanChapterList",
-            "[{\"source\":\"chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("source", "chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -131,7 +190,11 @@ object AntOceanRpcCall {
     suspend fun switchOceanChapter(chapterCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.switchOceanChapter",
-            "[{\"chapterCode\":\"$chapterCode\",\"source\":\"chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("chapterCode", chapterCode ?: "null")
+                put("source", "chInfo_ch_url-https://2021003115672468.h5app.alipay.com/www/atlasOcean.html")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -139,7 +202,11 @@ object AntOceanRpcCall {
     suspend fun queryMiscInfo(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryMiscInfo",
-            "[{\"queryBizTypes\":[\"HOME_TIPS_REFRESH\"],\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("queryBizTypes", JSONArray().put("HOME_TIPS_REFRESH"))
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -147,7 +214,11 @@ object AntOceanRpcCall {
     suspend fun combineFish(fishId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.combineFish",
-            "[{\"fishId\":\"$fishId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("fishId", fishId ?: "null")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -155,7 +226,15 @@ object AntOceanRpcCall {
     suspend fun collectEnergy(bubbleId: String?, userId: String?): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.collectEnergy",
-            "[{\"bubbleIds\":[$bubbleId],\"channel\":\"ocean\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"userId\":\"$userId\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                // bubbleId 原为无引号插值（数字形态），toBigDecimalOrNull 保持数字类型（兼容整数与小数）；null 时保持 null
+                put("bubbleIds", JSONArray().put(bubbleId?.toBigDecimalOrNull() ?: JSONObject.NULL))
+                put("channel", "ocean")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+                put("userId", userId ?: "null")
+                put("version", VERSION)
+            }
         )
     }
 
@@ -163,7 +242,11 @@ object AntOceanRpcCall {
     suspend fun cleanFriendOcean(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.cleanFriendOcean",
-            "[{\"cleanedUserId\":\"$userId\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("cleanedUserId", userId ?: "null")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -171,7 +254,13 @@ object AntOceanRpcCall {
     suspend fun queryFriendPage(userId: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryFriendPage",
-            "[{\"friendUserId\":\"$userId\",\"interactFlags\":\"T\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("friendUserId", userId ?: "null")
+                put("interactFlags", "T")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+                put("version", VERSION)
+            }
         )
     }
 
@@ -179,7 +268,10 @@ object AntOceanRpcCall {
     suspend fun queryUserRanking(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryUserRanking",
-            "[{\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -188,7 +280,10 @@ object AntOceanRpcCall {
     suspend fun queryCultivationList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryCultivationList",
-            "[{\"source\":\"ANT_FOREST\",\"version\":\"20231031\"}]"
+            RpcRequestData.array {
+                put("source", "ANT_FOREST")
+                put("version", "20231031")
+            }
         )
     }
 
@@ -196,7 +291,12 @@ object AntOceanRpcCall {
     suspend fun queryCultivationDetail(cultivationCode: String?, projectCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryCultivationDetail",
-            "[{\"cultivationCode\":\"$cultivationCode\",\"projectCode\":\"$projectCode\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("cultivationCode", cultivationCode ?: "null")
+                put("projectCode", projectCode ?: "null")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -204,7 +304,12 @@ object AntOceanRpcCall {
     suspend fun oceanExchangeTree(cultivationCode: String?, projectCode: String?): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.exchangeTree",
-            "[{\"cultivationCode\":\"$cultivationCode\",\"projectCode\":\"$projectCode\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("cultivationCode", cultivationCode ?: "null")
+                put("projectCode", projectCode ?: "null")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -213,7 +318,12 @@ object AntOceanRpcCall {
     suspend fun getQuestion(): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.getQuestion",
-            "[{\"activityId\":\"363\",\"dadaVersion\":\"1.3.0\",\"version\":1}]"
+            RpcRequestData.array {
+                put("activityId", "363")
+                put("dadaVersion", "1.3.0")
+                // 协议约束 version 必为字符串，原字面量数字 1 修正为 "1"
+                put("version", "1")
+            }
         )
     }
 
@@ -221,7 +331,11 @@ object AntOceanRpcCall {
     suspend fun record(): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.mdap.record",
-            "[{\"behavior\":\"visit\",\"dadaVersion\":\"1.3.0\",\"version\":\"1\"}]"
+            RpcRequestData.array {
+                put("behavior", "visit")
+                put("dadaVersion", "1.3.0")
+                put("version", "1")
+            }
         )
     }
 
@@ -229,7 +343,14 @@ object AntOceanRpcCall {
     suspend fun submitAnswer(answer: String?, questionId: String?): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.submitAnswer",
-            "[{\"activityId\":\"363\",\"answer\":\"$answer\",\"dadaVersion\":\"1.3.0\",\"outBizId\":\"ANTOCEAN_DATI_PINTU_722_new\",\"questionId\":\"$questionId\",\"version\":\"1\"}]"
+            RpcRequestData.array {
+                put("activityId", "363")
+                put("answer", answer ?: "null")
+                put("dadaVersion", "1.3.0")
+                put("outBizId", "ANTOCEAN_DATI_PINTU_722_new")
+                put("questionId", questionId ?: "null")
+                put("version", "1")
+            }
         )
     }
 
@@ -238,7 +359,11 @@ object AntOceanRpcCall {
     suspend fun PDLqueryReplicaHome(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryReplicaHome",
-            "[{\"replicaCode\":\"avatar\",\"source\":\"seaAreaList\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("replicaCode", "avatar")
+                put("source", "seaAreaList")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -246,7 +371,14 @@ object AntOceanRpcCall {
     suspend fun queryTaskList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryTaskList",
-            "[{\"extend\":{},\"fromAct\":\"dynamic_task\",\"sceneCode\":\"ANTOCEAN_TASK\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("extend", JSONObject())
+                put("fromAct", "dynamic_task")
+                put("sceneCode", "ANTOCEAN_TASK")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+                put("version", VERSION)
+            }
         )
     }
 
@@ -254,7 +386,13 @@ object AntOceanRpcCall {
     suspend fun PDLqueryTaskList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryTaskList",
-            "[{\"fromAct\":\"dynamic_task\",\"sceneCode\":\"ANTOCEAN_AVATAR_TASK\",\"source\":\"seaAreaList\",\"uniqueId\":\"${getUniqueId()}\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("fromAct", "dynamic_task")
+                put("sceneCode", "ANTOCEAN_AVATAR_TASK")
+                put("source", "seaAreaList")
+                put("uniqueId", getUniqueId())
+                put("version", VERSION)
+            }
         )
     }
 
@@ -262,7 +400,14 @@ object AntOceanRpcCall {
     suspend fun PDLreceiveTaskAward(taskType: String?): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
-            "[{\"ignoreLimit\":\"false\",\"requestType\":\"RPC\",\"sceneCode\":\"ANTOCEAN_AVATAR_TASK\",\"source\":\"ANTFOCEAN\",\"taskType\":\"$taskType\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("ignoreLimit", "false")
+                put("requestType", "RPC")
+                put("sceneCode", "ANTOCEAN_AVATAR_TASK")
+                put("source", "ANTFOCEAN")
+                put("taskType", taskType ?: "null")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -271,7 +416,11 @@ object AntOceanRpcCall {
     suspend fun exchangePropList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
-            "[{\"skipPropId\":false,\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("skipPropId", false)
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -280,7 +429,14 @@ object AntOceanRpcCall {
         val timestamp = System.currentTimeMillis()
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.exchangeProp",
-            "[{\"bizNo\":\"$timestamp\",\"exchangeNum\":\"1\",\"propCode\":\"UNIVERSAL_PIECE\",\"propType\":\"UNIVERSAL_PIECE\",\"source\":\"ANT_FOREST\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("bizNo", timestamp.toString())
+                put("exchangeNum", "1")
+                put("propCode", "UNIVERSAL_PIECE")
+                put("propType", "UNIVERSAL_PIECE")
+                put("source", "ANT_FOREST")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -289,7 +445,12 @@ object AntOceanRpcCall {
     suspend fun usePropByTypeList(): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryOceanPropList",
-            "[{\"propTypeList\":\"UNIVERSAL_PIECE\",\"skipPropId\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("propTypeList", "UNIVERSAL_PIECE")
+                put("skipPropId", false)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -297,7 +458,14 @@ object AntOceanRpcCall {
     suspend fun queryFishList(pageNum: Int): String {
         return RequestManager.requestString(
             "alipay.antocean.ocean.h5.queryFishList",
-            "[{\"combineStatus\":\"UNOBTAINED\",\"needSummary\":\"Y\",\"pageNum\":$pageNum,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"targetUserId\":\"\",\"uniqueId\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("combineStatus", "UNOBTAINED")
+                put("needSummary", "Y")
+                put("pageNum", pageNum)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("targetUserId", "")
+                put("uniqueId", getUniqueId())
+            }
         )
     }
 
@@ -316,7 +484,13 @@ object AntOceanRpcCall {
                 }
                 return RequestManager.requestString(
                     "alipay.antocean.ocean.h5.usePropByType",
-                    "[{\"assetsDetails\":$jsonArray,\"propCode\":\"UNIVERSAL_PIECE\",\"propType\":\"UNIVERSAL_PIECE\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"uniqueId\":\"${getUniqueId()}\"}]"
+                    RpcRequestData.array {
+                        put("assetsDetails", jsonArray)
+                        put("propCode", "UNIVERSAL_PIECE")
+                        put("propType", "UNIVERSAL_PIECE")
+                        put("source", "chInfo_ch_appcenter__chsub_9patch")
+                        put("uniqueId", getUniqueId())
+                    }
                 )
             }
         } catch (e: JSONException) {
@@ -331,15 +505,12 @@ object AntOceanRpcCall {
     @JvmStatic
     suspend fun createSeaAreaExtraCollect(): String {
         try {
-            val param = JSONObject()
-            param.put("source", "chInfo_ch_appcenter__chsub_9patch")
-            param.put("uniqueId", getUniqueId())
-
-            val params = JSONArray()
-            params.put(param)
             return RequestManager.requestString(
                 "alipay.antocean.ocean.h5.createSeaAreaExtraCollect",
-                params.toString()
+                RpcRequestData.array {
+                    put("source", "chInfo_ch_appcenter__chsub_9patch")
+                    put("uniqueId", getUniqueId())
+                }
             )
         } catch (e: Exception) {
             Log.printStackTrace("AntOceanRpcCall", e)

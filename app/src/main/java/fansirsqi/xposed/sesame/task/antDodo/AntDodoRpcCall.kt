@@ -3,6 +3,7 @@ package fansirsqi.xposed.sesame.task.antDodo
 import org.json.JSONObject
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 
 object AntDodoRpcCall {
     private const val VERSION = "20241203"
@@ -12,7 +13,9 @@ object AntDodoRpcCall {
     suspend fun queryAnimalStatus(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.queryAnimalStatus",
-            "[{\"source\":\"chInfo_ch_appcenter__chsub_9patch\"}]"
+            RpcRequestData.array {
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+            }
         )
     }
 
@@ -20,7 +23,7 @@ object AntDodoRpcCall {
     suspend fun homePage(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.homePage",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -28,7 +31,7 @@ object AntDodoRpcCall {
     suspend fun collect(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.collect",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -36,7 +39,9 @@ object AntDodoRpcCall {
     suspend fun taskList(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.taskList",
-            "[{\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("version", VERSION)
+            }
         )
     }
 
@@ -45,7 +50,14 @@ object AntDodoRpcCall {
         val uniqueId = getUniqueId()
         return RequestManager.requestString(
             "com.alipay.antiep.finishTask",
-            "[{\"outBizNo\":\"$uniqueId\",\"requestType\":\"rpc\",\"sceneCode\":\"$sceneCode\",\"source\":\"af-biodiversity\",\"taskType\":\"$taskType\",\"uniqueId\":\"$uniqueId\"}]"
+            RpcRequestData.array {
+                put("outBizNo", uniqueId)
+                put("requestType", "rpc")
+                put("sceneCode", sceneCode)
+                put("source", "af-biodiversity")
+                put("taskType", taskType)
+                put("uniqueId", uniqueId)
+            }
         )
     }
 
@@ -57,7 +69,13 @@ object AntDodoRpcCall {
     suspend fun receiveTaskAward(sceneCode: String?, taskType: String?): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
-            "[{\"ignoreLimit\":0,\"requestType\":\"rpc\",\"sceneCode\":\"$sceneCode\",\"source\":\"af-biodiversity\",\"taskType\":\"$taskType\"}]"
+            RpcRequestData.array {
+                put("ignoreLimit", 0)
+                put("requestType", "rpc")
+                put("sceneCode", sceneCode)
+                put("source", "af-biodiversity")
+                put("taskType", taskType)
+            }
         )
     }
 
@@ -65,28 +83,24 @@ object AntDodoRpcCall {
     suspend fun propList(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.propList",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
     //使用道具
     @JvmStatic
     suspend fun consumeProp(propId: String?, propType: String?, animalId: String?): String {
-        // 基础参数
-        val params = StringBuilder("[{")
-
-        // 如果 animalId 不为空，则构建 extendInfo 字段
-        if (!animalId.isNullOrEmpty()) {
-            params.append("\"extendInfo\":{")
-                .append("\"animalId\":\"").append(animalId).append("\"")
-                .append("},")
-        }
-
-        // 拼接 propId 和 propType
-        params.append("\"propId\":\"").append(propId).append("\",")
-            .append("\"propType\":\"").append(propType).append("\"")
-            .append("}]")
-        return RequestManager.requestString("alipay.antdodo.rpc.h5.consumeProp", params.toString())
+        return RequestManager.requestString(
+            "alipay.antdodo.rpc.h5.consumeProp",
+            RpcRequestData.array {
+                // 如果 animalId 不为空，则构建 extendInfo 字段
+                if (!animalId.isNullOrEmpty()) {
+                    put("extendInfo", JSONObject().apply { put("animalId", animalId) })
+                }
+                put("propId", propId)
+                put("propType", propType)
+            }
+        )
     }
 
     /**
@@ -95,12 +109,13 @@ object AntDodoRpcCall {
      */
     @JvmStatic
     suspend fun consumePropForFriend(propId: String?, propType: String?): String {
-        // 构造不含 extendInfo 的参数
-        val params = "[{" +
-                "\"propId\":\"$propId\"," +
-                "\"propType\":\"$propType\"" +
-                "}]"
-        return RequestManager.requestString("alipay.antdodo.rpc.h5.consumeProp", params)
+        return RequestManager.requestString(
+            "alipay.antdodo.rpc.h5.consumeProp",
+            RpcRequestData.array {
+                put("propId", propId)
+                put("propType", propType)
+            }
+        )
     }
 
     //查询图鉴详情
@@ -108,7 +123,9 @@ object AntDodoRpcCall {
     suspend fun queryBookInfo(bookId: String?): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.queryBookInfo",
-            "[{\"bookId\":\"$bookId\"}]"
+            RpcRequestData.array {
+                put("bookId", bookId)
+            }
         )
     }
 
@@ -117,7 +134,13 @@ object AntDodoRpcCall {
     suspend fun social(targetAnimalId: String?, targetUserId: String?): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.social",
-            "[{\"actionCode\":\"GIFT_TO_FRIEND\",\"source\":\"GIFT_TO_FRIEND_FROM_CC\",\"targetAnimalId\":\"$targetAnimalId\",\"targetUserId\":\"$targetUserId\",\"triggerTime\":\"${System.currentTimeMillis()}\"}]"
+            RpcRequestData.array {
+                put("actionCode", "GIFT_TO_FRIEND")
+                put("source", "GIFT_TO_FRIEND_FROM_CC")
+                put("targetAnimalId", targetAnimalId)
+                put("targetUserId", targetUserId)
+                put("triggerTime", System.currentTimeMillis().toString())
+            }
         )
     }
 
@@ -125,7 +148,9 @@ object AntDodoRpcCall {
     suspend fun queryFriend(): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.queryFriend",
-            "[{\"sceneCode\":\"EXCHANGE\"}]"
+            RpcRequestData.array {
+                put("sceneCode", "EXCHANGE")
+            }
         )
     }
 
@@ -133,24 +158,28 @@ object AntDodoRpcCall {
     suspend fun collecttarget(targetUserId: String?): String {
         return RequestManager.requestString(
             "alipay.antdodo.rpc.h5.collect",
-            "[{\"targetUserId\":$targetUserId}]"
+            RpcRequestData.array {
+                // targetUserId 原为无引号插值（数字形态，调用方传 alipay userId 数字字符串），toBigDecimalOrNull 保持数字类型（兼容整数与小数）
+                put("targetUserId", targetUserId?.toBigDecimalOrNull() ?: JSONObject.NULL)
+            }
         )
     }
 
     @JvmStatic
     suspend fun queryBookList(pageSize: Int, pageStart: String?): String {
         try {
-            // 使用 JSONObject 构造可以避免手动拼接字符串导致的转义和逗号错误
-            val params = JSONObject()
-            params.put("pageSize", pageSize)
-            params.put("v2", "true")
+            return RequestManager.requestString(
+                "alipay.antdodo.rpc.h5.queryBookList",
+                RpcRequestData.array {
+                    put("pageSize", pageSize)
+                    put("v2", "true")
 
-            // 仅在 pageStart 不为空时才添加该字段
-            if (!pageStart.isNullOrEmpty()) {
-                params.put("pageStart", pageStart)
-            }
-
-            return RequestManager.requestString("alipay.antdodo.rpc.h5.queryBookList", "[" + params.toString() + "]")
+                    // 仅在 pageStart 不为空时才添加该字段
+                    if (!pageStart.isNullOrEmpty()) {
+                        put("pageStart", pageStart)
+                    }
+                }
+            )
         } catch (e: Exception) {
             return ""
         }
@@ -158,7 +187,11 @@ object AntDodoRpcCall {
 
     @JvmStatic
     suspend fun generateBookMedal(bookId: String?): String {
-        val args = "[{\"bookId\":\"$bookId\"}]"
-        return RequestManager.requestString("alipay.antdodo.rpc.h5.generateBookMedal", args)
+        return RequestManager.requestString(
+            "alipay.antdodo.rpc.h5.generateBookMedal",
+            RpcRequestData.array {
+                put("bookId", bookId)
+            }
+        )
     }
 }

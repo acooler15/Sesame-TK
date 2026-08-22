@@ -2,6 +2,7 @@ package fansirsqi.xposed.sesame.task.antFishPond
 
 import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -24,96 +25,105 @@ object AntFishPondRpcCall {
     private const val SOURCE = "farmpool"
     private const val SCENE_GAME_CENTER = "GameCenter"
 
-    private fun baseArgs(): JSONObject {
-        return JSONObject()
-            .put("requestType", "NORMAL")
-            .put("sceneCode", SCENE_GAME_CENTER)
-            .put("source", SOURCE)
-            .put("version", VERSION)
+    private fun JSONObject.baseArgs() {
+        put("requestType", "NORMAL")
+        put("sceneCode", SCENE_GAME_CENTER)
+        put("source", SOURCE)
+        put("version", VERSION)
     }
 
-    private fun indexArgs(): JSONObject = baseArgs().put("appMode", "normal")
+    private fun JSONObject.indexArgs() {
+        baseArgs()
+        put("appMode", "normal")
+    }
 
-    private suspend fun request(method: String, args: JSONObject): String {
-        return RequestManager.requestString(method, JSONArray().put(args).toString())
+    private suspend fun request(method: String, build: JSONObject.() -> Unit): String {
+        return RequestManager.requestString(method, RpcRequestData.array(build))
     }
 
     suspend fun fishpondIndex(): String {
-        return request(
-            "com.alipay.antfishpond.fishpondIndex",
-            indexArgs().put("darwinSceneList", JSONArray().put("taskFullAreaClick"))
-        )
+        return request("com.alipay.antfishpond.fishpondIndex") {
+            indexArgs()
+            put("darwinSceneList", JSONArray().put("taskFullAreaClick"))
+        }
     }
 
     suspend fun fishpondSyncIndex(syncTypes: List<String>): String {
-        return request(
-            "com.alipay.antfishpond.fishpondSyncIndex",
-            indexArgs().put("syncTypeList", JSONArray(syncTypes))
-        )
+        return request("com.alipay.antfishpond.fishpondSyncIndex") {
+            indexArgs()
+            put("syncTypeList", JSONArray(syncTypes))
+        }
     }
 
     suspend fun querySubplotsActivity(): String {
-        return request("com.alipay.antfishpond.querySubplotsActivity", indexArgs())
+        return request("com.alipay.antfishpond.querySubplotsActivity") {
+            indexArgs()
+        }
     }
 
     suspend fun triggerSubplotsActivity(activityType: String, actionType: String): String {
-        return request(
-            "com.alipay.antfishpond.triggerSubplotsActivity",
+        return request("com.alipay.antfishpond.triggerSubplotsActivity") {
             baseArgs()
-                .put("activityType", activityType)
-                .put("actionType", actionType)
-        )
+            put("activityType", activityType)
+            put("actionType", actionType)
+        }
     }
 
     suspend fun listTask(): String {
-        return request("com.alipay.antfishpond.listTask", indexArgs())
+        return request("com.alipay.antfishpond.listTask") {
+            indexArgs()
+        }
     }
 
     suspend fun sign(signKey: String): String {
-        return request("com.alipay.antfishpond.sign", baseArgs().put("signKey", signKey))
+        return request("com.alipay.antfishpond.sign") {
+            baseArgs()
+            put("signKey", signKey)
+        }
     }
 
     suspend fun fishpondExchangeReward(): String {
-        return request("com.alipay.antfishpond.fishpondExchangeReward", baseArgs())
+        return request("com.alipay.antfishpond.fishpondExchangeReward") {
+            baseArgs()
+        }
     }
 
     suspend fun finishTask(taskType: String, sceneCode: String): String {
-        val args = JSONObject()
-            .put(
+        return request("com.alipay.antiep.finishTask") {
+            put(
                 "outBizNo",
                 "${taskType}_${System.currentTimeMillis()}_${RandomUtil.getRandomString(8)}"
             )
-            .put("requestType", "RPC")
-            .put("sceneCode", sceneCode)
-            .put("source", "ADBASICLIB")
-            .put("taskType", taskType)
-        return request("com.alipay.antiep.finishTask", args)
+            put("requestType", "RPC")
+            put("sceneCode", sceneCode)
+            put("source", "ADBASICLIB")
+            put("taskType", taskType)
+        }
     }
 
     suspend fun receiveTaskAward(taskType: String, sceneCode: String): String {
-        val args = baseArgs()
-            .put("ignoreLimit", false)
-            .put("sceneCode", sceneCode)
-            .put("taskType", taskType)
-        return request("com.alipay.antiep.receiveTaskAward", args)
+        return request("com.alipay.antiep.receiveTaskAward") {
+            baseArgs()
+            put("ignoreLimit", false)
+            put("sceneCode", sceneCode)
+            put("taskType", taskType)
+        }
     }
 
     suspend fun fishpondAngle(riskToken: String): String {
-        return request(
-            "com.alipay.antfishpond.fishpondAngle",
+        return request("com.alipay.antfishpond.fishpondAngle") {
             baseArgs()
-                .put("bizNo", "")
-                .put("riskToken", riskToken)
-        )
+            put("bizNo", "")
+            put("riskToken", riskToken)
+        }
     }
 
     suspend fun fishpondAngleRodPositioning(bizNo: String, areaType: String): String {
-        return request(
-            "com.alipay.antfishpond.fishpondAngleRodPositioning",
+        return request("com.alipay.antfishpond.fishpondAngleRodPositioning") {
             baseArgs()
-                .put("bizNo", bizNo)
-                .put("areaType", areaType)
-        )
+            put("bizNo", bizNo)
+            put("areaType", areaType)
+        }
     }
 }
 

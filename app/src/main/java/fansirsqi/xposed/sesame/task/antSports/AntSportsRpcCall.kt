@@ -5,6 +5,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import fansirsqi.xposed.sesame.hook.ApplicationHook
 import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 
 /**
  * @file AntSportsRpcCall.kt
@@ -38,7 +39,7 @@ object AntSportsRpcCall {
     /**
      * @brief 时区信息 - 亚洲/上海
      */
-    private const val TIME_ZONE = "Asia\\/Shanghai"
+    private const val TIME_ZONE = "Asia/Shanghai"
 
     /**
      * @brief 版本号 - 蚂蚁运动版本
@@ -81,8 +82,18 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.queryCoinTaskPanel
      */
     suspend fun queryCoinTaskPanel(): String {
-        val args1 = """[{"apiVersion":"energy","canAddHome":false,"chInfo":"medical_health","clientAuthStatus":"not_support","clientOS":"android","features":$FEATURES,"topTaskId":""}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.queryCoinTaskPanel", args1)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.queryCoinTaskPanel",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("canAddHome", false)
+                put("chInfo", "medical_health")
+                put("clientAuthStatus", "not_support")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("topTaskId", "")
+            }
+        )
     }
 
     /**
@@ -95,8 +106,17 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signUpTask
      */
     suspend fun signUpTask(taskId: String): String {
-        val args = """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES,"taskCenId":"","taskId":"$taskId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signUpTask", args)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signUpTask",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("taskCenId", "")
+                put("taskId", taskId)
+            }
+        )
     }
 
     /**
@@ -110,8 +130,16 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask
      */
     suspend fun completeExerciseTasks(taskId: String): String {
-        val args1 = """[{"chInfo":"ch_appcenter__chsub_9patch","clientOS":"android","features":$FEATURES,"taskAction":"JUMP","taskId":"$taskId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask", args1)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask",
+            RpcRequestData.array {
+                put("chInfo", "ch_appcenter__chsub_9patch")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("taskAction", "JUMP")
+                put("taskId", taskId)
+            }
+        )
     }
 
     /**
@@ -124,8 +152,17 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask
      */
     suspend fun completeTask(taskId: String): String {
-        val args1 = """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES,"taskAction":"JUMP","taskId":"$taskId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask", args1)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.completeTask",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("taskAction", "JUMP")
+                put("taskId", taskId)
+            }
+        )
     }
 
     /**
@@ -138,8 +175,17 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.queryMainPage
      */
     suspend fun queryMainPage(): String {
-        val args = """[{"apiVersion":"energy","chInfo":"ch_shouquan_shouye","cityCode":"$CITY_CODE","clientOS":"android","features":$FEATURES,"timezone":"Asia/Shanghai"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.queryMainPage", args)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.queryMainPage",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "ch_shouquan_shouye")
+                put("cityCode", CITY_CODE)
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("timezone", TIME_ZONE)
+            }
+        )
     }
 
     /**
@@ -154,8 +200,16 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signInCoinTask
      */
     suspend fun signInCoinTask(operatorType: String): String {
-        val args1 = """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES,"operatorType":"$operatorType"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signInCoinTask", args1)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthCoinTaskRpc.signInCoinTask",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("operatorType", operatorType)
+            }
+        )
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -174,7 +228,33 @@ object AntSportsRpcCall {
     suspend fun queryCoinBubbleModule(): String {
         return RequestManager.requestString(
             "com.alipay.sportshealth.biz.rpc.sportsHealthHomeRpc.queryCoinBubbleModule",
-            """[{"bubbleId":"","canAddHome":false,"chInfo":"$CH_INFO","clientAuthStatus":"not_support","clientOS":"android","distributionChannel":"","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_AI","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"]}]"""
+            RpcRequestData.array {
+                put("bubbleId", "")
+                put("canAddHome", false)
+                put("chInfo", CH_INFO)
+                put("clientAuthStatus", "not_support")
+                put("clientOS", "android")
+                put("distributionChannel", "")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_AI")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+            }
         )
     }
 
@@ -204,8 +284,19 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy
      */
     suspend fun pickBubbleTaskEnergy(medEnergyBallInfoRecordId: String, pickAllEnergyBall: Boolean): String {
-        val args1 = """[{"apiVersion":"energy","chInfo":"medical_health","medEnergyBallInfoRecordIds":["$medEnergyBallInfoRecordId"],"pickAllEnergyBall":$pickAllEnergyBall,"source":"SPORT"}]"""
-        return RequestManager.requestString("com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy", args1)
+        return RequestManager.requestString(
+            "com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put(
+                    "medEnergyBallInfoRecordIds",
+                    JSONArray().apply { put(medEnergyBallInfoRecordId) }
+                )
+                put("pickAllEnergyBall", pickAllEnergyBall)
+                put("source", "SPORT")
+            }
+        )
     }
 
     /**
@@ -218,9 +309,20 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.sportsHealthHomeRpc.queryEnergyBubbleModule
      */
     suspend fun queryEnergyBubbleModule(): String {
-        val features = """["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_AI","SUPPORT_TAB3","SUPPORT_FLYRABBIT","SUPPORT_NEW_MATCH","EXTERNAL_ADVERTISEMENT_TASK","PROP","PROPV2","ASIAN_GAMES"]"""
-        val args1 = """[{"apiVersion":"energy","bubbleId":"","canAddHome":false,"chInfo":"ch_appid-20001003__chsub_pageid-com.alipay.android.phone.businesscommon.globalsearch.ui.MainSearchActivity","clientAuthStatus":"not_support","clientOS":"android","distributionChannel":"","features":$features,"outBizNo":""}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.sportsHealthHomeRpc.queryEnergyBubbleModule", args1)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.sportsHealthHomeRpc.queryEnergyBubbleModule",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("bubbleId", "")
+                put("canAddHome", false)
+                put("chInfo", "ch_appid-20001003__chsub_pageid-com.alipay.android.phone.businesscommon.globalsearch.ui.MainSearchActivity")
+                put("clientAuthStatus", "not_support")
+                put("clientOS", "android")
+                put("distributionChannel", "")
+                put("features", JSONArray(FEATURES))
+                put("outBizNo", "")
+            }
+        )
     }
 
     /**
@@ -233,9 +335,18 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy
      */
     suspend fun pickBubbleTaskEnergy(): String {
-        val features = """["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_AI","SUPPORT_TAB3","SUPPORT_FLYRABBIT","SUPPORT_NEW_MATCH","EXTERNAL_ADVERTISEMENT_TASK","PROP","PROPV2","ASIAN_GAMES"]"""
-        val args1 = """[{"apiVersion":"energy","chInfo":"ch_appid-20001003__chsub_pageid-com.alipay.android.phone.businesscommon.globalsearch.ui.MainSearchActivity","clientOS":"android","features":$features,"medEnergyBallInfoRecordIds":[],"pickAllEnergyBall":true,"source":"SPORT"}]"""
-        return RequestManager.requestString("com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy", args1)
+        return RequestManager.requestString(
+            "com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "ch_appid-20001003__chsub_pageid-com.alipay.android.phone.businesscommon.globalsearch.ui.MainSearchActivity")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("medEnergyBallInfoRecordIds", JSONArray())
+                put("pickAllEnergyBall", true)
+                put("source", "SPORT")
+            }
+        )
     }
 
     /**
@@ -251,7 +362,31 @@ object AntSportsRpcCall {
     suspend fun receiveCoinAsset(assetId: String, coinAmount: Int): String {
         return RequestManager.requestString(
             "com.alipay.sportshealth.biz.rpc.SportsHealthCoinCenterRpc.receiveCoinAsset",
-            """[{"assetId":"$assetId","chInfo":"$CH_INFO","clientOS":"android","coinAmount":$coinAmount,"features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"tracertPos":"首页金币收集"}]"""
+            RpcRequestData.array {
+                put("assetId", assetId)
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put("coinAmount", coinAmount)
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("tracertPos", "首页金币收集")
+            }
         )
     }
 
@@ -269,8 +404,12 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryItemDetail
      */
     suspend fun queryItemDetail(itemId: String): String {
-        val arg = """[{"itemId":"$itemId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryItemDetail", arg)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryItemDetail",
+            RpcRequestData.array {
+                put("itemId", itemId)
+            }
+        )
     }
 
     /**
@@ -284,8 +423,13 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.exchangeItem
      */
     suspend fun exchangeItem(itemId: String, coinAmount: Int): String {
-        val arg = """[{"coinAmount":$coinAmount,"itemId":"$itemId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.exchangeItem", arg)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.exchangeItem",
+            RpcRequestData.array {
+                put("coinAmount", coinAmount)
+                put("itemId", itemId)
+            }
+        )
     }
 
     /**
@@ -298,8 +442,12 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryExchangeRecordPage
      */
     suspend fun queryExchangeRecordPage(exchangeRecordId: String): String {
-        val arg = """[{"exchangeRecordId":"$exchangeRecordId"}]"""
-        return RequestManager.requestString("com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryExchangeRecordPage", arg)
+        return RequestManager.requestString(
+            "com.alipay.sportshealth.biz.rpc.SportsHealthItemCenterRpc.queryExchangeRecordPage",
+            RpcRequestData.array {
+                put("exchangeRecordId", exchangeRecordId)
+            }
+        )
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -319,7 +467,31 @@ object AntSportsRpcCall {
     suspend fun queryMyHomePage(): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.map.queryMyHomePage",
-            """[{"alipayAppVersion":"$ALIPAY_APP_VERSION","chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"pathListUsePage":true,"timeZone":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("alipayAppVersion", ALIPAY_APP_VERSION)
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("pathListUsePage", true)
+                put("timeZone", TIME_ZONE)
+            }
         )
     }
 
@@ -336,7 +508,29 @@ object AntSportsRpcCall {
     suspend fun join(pathId: String): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.map.join",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"pathId":"$pathId"}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("pathId", pathId)
+            }
         )
     }
 
@@ -351,7 +545,28 @@ object AntSportsRpcCall {
     suspend fun openAndJoinFirst(): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.user.openAndJoinFirst",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"]}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+            }
         )
     }
 
@@ -370,7 +585,33 @@ object AntSportsRpcCall {
     suspend fun go(day: String, rankCacheKey: String, stepCount: Int): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.map.go",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","day":"$day","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"needAllBox":true,"rankCacheKey":"$rankCacheKey","timeZone":"$TIME_ZONE","useStepCount":$stepCount}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put("day", day)
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("needAllBox", true)
+                put("rankCacheKey", rankCacheKey)
+                put("timeZone", TIME_ZONE)
+                put("useStepCount", stepCount)
+            }
         )
     }
 
@@ -388,7 +629,30 @@ object AntSportsRpcCall {
     suspend fun openTreasureBox(boxNo: String, userId: String): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.treasureBox.openTreasureBox",
-            """[{"boxNo":"$boxNo","chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"userId":"$userId"}]"""
+            RpcRequestData.array {
+                put("boxNo", boxNo)
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("userId", userId)
+            }
         )
     }
 
@@ -403,7 +667,28 @@ object AntSportsRpcCall {
     suspend fun queryBaseList(): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.path.queryBaseList",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"]}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+            }
         )
     }
 
@@ -420,7 +705,30 @@ object AntSportsRpcCall {
     suspend fun queryProjectList(index: Int): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.charity.queryProjectList",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"index":$index,"projectListUseVertical":true}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("index", index)
+                put("projectListUseVertical", true)
+            }
         )
     }
 
@@ -438,7 +746,30 @@ object AntSportsRpcCall {
     suspend fun donate(donateCharityCoin: Int, projectId: String): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.charity.donate",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","donateCharityCoin":$donateCharityCoin,"features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"projectId":"$projectId"}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put("donateCharityCoin", donateCharityCoin)
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("projectId", projectId)
+            }
         )
     }
 
@@ -453,7 +784,29 @@ object AntSportsRpcCall {
     suspend fun queryWalkStep(): String {
         return RequestManager.requestString(
             "alipay.antsports.walk.user.queryWalkStep",
-            """[{"chInfo":"$CH_INFO","clientOS":"android","features":["DAILY_STEPS_RANK_V2","STEP_BATTLE","CLUB_HOME_CARD","NEW_HOME_PAGE_STATIC","CLOUD_SDK_AUTH","STAY_ON_COMPLETE","EXTRA_TREASURE_BOX","NEW_HOME_PAGE_STATIC","SUPPORT_TAB3","SUPPORT_FLYRABBIT","PROP","PROPV2","ASIAN_GAMES"],"timeZone":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("chInfo", CH_INFO)
+                put("clientOS", "android")
+                put(
+                    "features",
+                    JSONArray().apply {
+                        put("DAILY_STEPS_RANK_V2")
+                        put("STEP_BATTLE")
+                        put("CLUB_HOME_CARD")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("CLOUD_SDK_AUTH")
+                        put("STAY_ON_COMPLETE")
+                        put("EXTRA_TREASURE_BOX")
+                        put("NEW_HOME_PAGE_STATIC")
+                        put("SUPPORT_TAB3")
+                        put("SUPPORT_FLYRABBIT")
+                        put("PROP")
+                        put("PROPV2")
+                        put("ASIAN_GAMES")
+                    }
+                )
+                put("timeZone", TIME_ZONE)
+            }
         )
     }
 
@@ -470,7 +823,12 @@ object AntSportsRpcCall {
     suspend fun walkDonateSignInfo(count: Int): String {
         return RequestManager.requestString(
             "alipay.charity.mobile.donate.walk.walkDonateSignInfo",
-            """[{"needDonateAction":false,"source":"walkDonateHome","steps":$count,"timezoneId":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("needDonateAction", false)
+                put("source", "walkDonateHome")
+                put("steps", count)
+                put("timezoneId", TIME_ZONE)
+            }
         )
     }
 
@@ -487,7 +845,11 @@ object AntSportsRpcCall {
     suspend fun donateWalkHome(count: Int): String {
         return RequestManager.requestString(
             "alipay.charity.mobile.donate.walk.home",
-            """[{"module":"3","steps":$count,"timezoneId":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("module", "3")
+                put("steps", count)
+                put("timezoneId", TIME_ZONE)
+            }
         )
     }
 
@@ -506,7 +868,13 @@ object AntSportsRpcCall {
     suspend fun exchange(actId: String, count: Int, donateToken: String): String {
         return RequestManager.requestString(
             "alipay.charity.mobile.donate.walk.exchange",
-            """[{"actId":"$actId","count":$count,"donateToken":"$donateToken","timezoneId":"$TIME_ZONE","ver":0}]"""
+            RpcRequestData.array {
+                put("actId", actId)
+                put("count", count)
+                put("donateToken", donateToken)
+                put("timezoneId", TIME_ZONE)
+                put("ver", 0)
+            }
         )
     }
 
@@ -525,10 +893,17 @@ object AntSportsRpcCall {
      */
 
     suspend fun queryUser(): String {
-        // 补齐 mainPage 和 timeZone，直接一行搞定
-        val data = """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES,"mainPage":true,"timeZone":"$TIME_ZONE"}]"""
-
-        return RequestManager.requestString("com.alipay.sportsplay.biz.rpc.walk.queryUser", data)
+        return RequestManager.requestString(
+            "com.alipay.sportsplay.biz.rpc.walk.queryUser",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("mainPage", true)
+                put("timeZone", TIME_ZONE)
+            }
+        )
     }
 
     /**
@@ -543,7 +918,12 @@ object AntSportsRpcCall {
     suspend fun queryThemeList(): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.theme.queryThemeList",
-            """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES}]"""
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+            }
         )
     }
 
@@ -559,7 +939,13 @@ object AntSportsRpcCall {
     suspend fun queryWorldMap(themeId: String): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.queryWorldMap",
-            """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","features":$FEATURES,"themeId":"$themeId"}]"""
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("themeId", themeId)
+            }
         )
     }
 
@@ -575,7 +961,13 @@ object AntSportsRpcCall {
     suspend fun queryCityPath(cityId: String): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.queryCityPath",
-            """[{"apiVersion":"energy","chInfo":"ch_othertinyapp","cityId":"$cityId","clientOS":"android","features":$FEATURES}]"""
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "ch_othertinyapp")
+                put("cityId", cityId)
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+            }
         )
     }
 
@@ -592,7 +984,16 @@ object AntSportsRpcCall {
     suspend fun queryPath(date: String, pathId: String): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.queryPath",
-            """[{"apiVersion":"energy","chInfo":"medical_health","clientOS":"android","date":"$date","enableNewVersion":true,"features":$FEATURES,"pathId":"$pathId","timeZone":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "medical_health")
+                put("clientOS", "android")
+                put("date", date)
+                put("enableNewVersion", true)
+                put("features", JSONArray(FEATURES))
+                put("pathId", pathId)
+                put("timeZone", TIME_ZONE)
+            }
         )
     }
 
@@ -606,8 +1007,16 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportsplay.biz.rpc.walk.joinPath
      */
     suspend fun joinPath(pathId: String): String {
-        val requestBody = """[{"apiVersion":"energy","chInfo":"ch_othertinyapp","clientOS":"android","features":$FEATURES,"pathId":"$pathId"}]"""
-        return RequestManager.requestString("com.alipay.sportsplay.biz.rpc.walk.joinPath", requestBody)
+        return RequestManager.requestString(
+            "com.alipay.sportsplay.biz.rpc.walk.joinPath",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "ch_othertinyapp")
+                put("clientOS", "android")
+                put("features", JSONArray(FEATURES))
+                put("pathId", pathId)
+            }
+        )
     }
 
     /**
@@ -622,8 +1031,20 @@ object AntSportsRpcCall {
      * @remark 对应API：com.alipay.sportsplay.biz.rpc.walk.go
      */
     suspend fun walkGo(date: String, pathId: String, useStepCount: Int): String {
-        val requestBody = """[{"apiVersion":"energy","chInfo":"ch_othertinyapp","clientOS":"android","date":"$date","features":$FEATURES,"pathId":"$pathId","source":"ch_othertinyapp","timeZone":"$TIME_ZONE","useStepCount":$useStepCount}]"""
-        return RequestManager.requestString("com.alipay.sportsplay.biz.rpc.walk.go", requestBody)
+        return RequestManager.requestString(
+            "com.alipay.sportsplay.biz.rpc.walk.go",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "ch_othertinyapp")
+                put("clientOS", "android")
+                put("date", date)
+                put("features", JSONArray(FEATURES))
+                put("pathId", pathId)
+                put("source", "ch_othertinyapp")
+                put("timeZone", TIME_ZONE)
+                put("useStepCount", useStepCount)
+            }
+        )
     }
 
     /**
@@ -638,7 +1059,9 @@ object AntSportsRpcCall {
     suspend fun receiveEvent(eventBillNo: String): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.receiveEvent",
-            """[{"eventBillNo":"$eventBillNo"}]"""
+            RpcRequestData.array {
+                put("eventBillNo", eventBillNo)
+            }
         )
     }
 
@@ -655,7 +1078,11 @@ object AntSportsRpcCall {
     suspend fun queryPathReward(appId: String, pathId: String): String {
         return RequestManager.requestString(
             "com.alipay.sportsplay.biz.rpc.walk.queryPathReward",
-            """[{"appId":"$appId","pathId":"$pathId","source":"ch_appcenter__chsub_9patch"}]"""
+            RpcRequestData.array {
+                put("appId", appId)
+                put("pathId", pathId)
+                put("source", "ch_appcenter__chsub_9patch")
+            }
         )
     }
 
@@ -670,8 +1097,14 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.charity.mobile.donate.exchange.success
      */
     suspend fun exchangeSuccess(exchangeId: String): String {
-        val args1 = """[{"exchangeId":"$exchangeId","timezone":"GMT+08:00","version":"$VERSION"}]"""
-        return RequestManager.requestString("alipay.charity.mobile.donate.exchange.success", args1)
+        return RequestManager.requestString(
+            "alipay.charity.mobile.donate.exchange.success",
+            RpcRequestData.array {
+                put("exchangeId", exchangeId)
+                put("timezone", "GMT+08:00")
+                put("version", VERSION)
+            }
+        )
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -692,7 +1125,10 @@ object AntSportsRpcCall {
     suspend fun userTaskGroupQuery(groupId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.sports.userTaskGroup.query",
-            """[{"cityCode":"$CITY_CODE","groupId":"$groupId"}]"""
+            RpcRequestData.array {
+                put("cityCode", CITY_CODE)
+                put("groupId", groupId)
+            }
         )
     }
 
@@ -709,7 +1145,12 @@ object AntSportsRpcCall {
     suspend fun userTaskComplete(bizType: String, taskId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.sports.userTask.complete",
-            """[{"bizType":"$bizType","cityCode":"$CITY_CODE","completedTime":${System.currentTimeMillis()},"taskId":"$taskId"}]"""
+            RpcRequestData.array {
+                put("bizType", bizType)
+                put("cityCode", CITY_CODE)
+                put("completedTime", System.currentTimeMillis())
+                put("taskId", taskId)
+            }
         )
     }
 
@@ -726,7 +1167,10 @@ object AntSportsRpcCall {
     suspend fun userTaskRightsReceive(taskId: String, userTaskId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.sports.userTaskRights.receive",
-            """[{"taskId":"$taskId","userTaskId":"$userTaskId"}]"""
+            RpcRequestData.array {
+                put("taskId", taskId)
+                put("userTaskId", userTaskId)
+            }
         )
     }
 
@@ -740,7 +1184,9 @@ object AntSportsRpcCall {
     suspend fun queryAccount(): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.user.asset.query.account",
-            """[{"accountType":"TIYU_SEED"}]"""
+            RpcRequestData.array {
+                put("accountType", "TIYU_SEED")
+            }
         )
     }
 
@@ -754,7 +1200,7 @@ object AntSportsRpcCall {
     suspend fun queryRoundList(): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.wenti.walk.queryRoundList",
-            """[{}]"""
+            RpcRequestData.array { }
         )
     }
 
@@ -773,7 +1219,14 @@ object AntSportsRpcCall {
     suspend fun participate(bettingPoints: Int, instanceId: String, resultId: String, roundId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.wenti.walk.participate",
-            """[{"bettingPoints":$bettingPoints,"guessInstanceId":"$instanceId","guessResultId":"$resultId","newParticipant":false,"roundId":"$roundId","stepTimeZone":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("bettingPoints", bettingPoints)
+                put("guessInstanceId", instanceId)
+                put("guessResultId", resultId)
+                put("newParticipant", false)
+                put("roundId", roundId)
+                put("stepTimeZone", TIME_ZONE)
+            }
         )
     }
 
@@ -787,7 +1240,11 @@ object AntSportsRpcCall {
     suspend fun pathFeatureQuery(): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.feature.query",
-            """[{"appId":"$APP_ID","features":["USER_CURRENT_PATH_SIMPLE"],"sceneCode":"wenti_shijiebei"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("features", JSONArray().apply { put("USER_CURRENT_PATH_SIMPLE") })
+                put("sceneCode", "wenti_shijiebei")
+            }
         )
     }
 
@@ -803,7 +1260,10 @@ object AntSportsRpcCall {
     suspend fun pathMapJoin(pathId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.map.join",
-            """[{"appId":"$APP_ID","pathId":"$pathId"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("pathId", pathId)
+            }
         )
     }
 
@@ -819,7 +1279,10 @@ object AntSportsRpcCall {
     suspend fun pathMapHomepage(pathId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.map.homepage",
-            """[{"appId":"$APP_ID","pathId":"$pathId"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("pathId", pathId)
+            }
         )
     }
 
@@ -836,7 +1299,12 @@ object AntSportsRpcCall {
     suspend fun stepQuery(countDate: String, pathId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.map.step.query",
-            """[{"appId":"$APP_ID","countDate":"$countDate","pathId":"$pathId","timeZone":"$TIME_ZONE"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("countDate", countDate)
+                put("pathId", pathId)
+                put("timeZone", TIME_ZONE)
+            }
         )
     }
 
@@ -855,7 +1323,14 @@ object AntSportsRpcCall {
     suspend fun tiyubizGo(countDate: String, goStepCount: Int, pathId: String, userPathRecordId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.map.go",
-            """[{"appId":"$APP_ID","countDate":"$countDate","goStepCount":$goStepCount,"pathId":"$pathId","timeZone":"$TIME_ZONE","userPathRecordId":"$userPathRecordId"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("countDate", countDate)
+                put("goStepCount", goStepCount)
+                put("pathId", pathId)
+                put("timeZone", TIME_ZONE)
+                put("userPathRecordId", userPathRecordId)
+            }
         )
     }
 
@@ -872,7 +1347,11 @@ object AntSportsRpcCall {
     suspend fun rewardReceive(pathId: String, userPathRewardId: String): String {
         return RequestManager.requestString(
             "alipay.tiyubiz.path.map.reward.receive",
-            """[{"appId":"$APP_ID","pathId":"$pathId","userPathRewardId":"$userPathRewardId"}]"""
+            RpcRequestData.array {
+                put("appId", APP_ID)
+                put("pathId", pathId)
+                put("userPathRewardId", userPathRewardId)
+            }
         )
     }
 
@@ -890,8 +1369,14 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.home.queryClubHome
      */
     suspend fun queryClubHome(): String {
-        val args = """[{"apiVersion":"energy","chInfo":"healthstep","timeZone":"$TIME_ZONE"}]"""
-        return RequestManager.requestString("alipay.antsports.club.home.queryClubHome", args)
+        return RequestManager.requestString(
+            "alipay.antsports.club.home.queryClubHome",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "healthstep")
+                put("timeZone", TIME_ZONE)
+            }
+        )
     }
 
     /**
@@ -904,8 +1389,13 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.train.queryTrainItem
      */
     suspend fun queryTrainItem(): String {
-        val args = """[{"apiVersion":"energy","chInfo":"healthstep"}]"""
-        return RequestManager.requestString("alipay.antsports.club.train.queryTrainItem", args)
+        return RequestManager.requestString(
+            "alipay.antsports.club.train.queryTrainItem",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "healthstep")
+            }
+        )
     }
 
     /**
@@ -921,8 +1411,17 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.train.trainMember
      */
     suspend fun trainMember(bizId: String, itemType: String, memberId: String, originBossId: String): String {
-        val args = """[{"apiVersion":"energy","bizId":"$bizId","chInfo":"healthstep","itemType":"$itemType","memberId":"$memberId","originBossId":"$originBossId"}]"""
-        return RequestManager.requestString("alipay.antsports.club.train.trainMember", args)
+        return RequestManager.requestString(
+            "alipay.antsports.club.train.trainMember",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("bizId", bizId)
+                put("chInfo", "healthstep")
+                put("itemType", itemType)
+                put("memberId", memberId)
+                put("originBossId", originBossId)
+            }
+        )
     }
 
     /**
@@ -935,8 +1434,15 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.ranking.queryMemberPriceRanking
      */
     suspend fun queryMemberPriceRanking(coinBalance: Int): String {
-        val args = """[{"apiVersion":"energy","buyMember":true,"chInfo":"healthstep","coinBalance":$coinBalance}]"""
-        return RequestManager.requestString("alipay.antsports.club.ranking.queryMemberPriceRanking", args)
+        return RequestManager.requestString(
+            "alipay.antsports.club.ranking.queryMemberPriceRanking",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("buyMember", true)
+                put("chInfo", "healthstep")
+                put("coinBalance", coinBalance)
+            }
+        )
     }
 
     /**
@@ -950,8 +1456,15 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.trade.queryClubMember
      */
     suspend fun queryClubMember(memberId: String, originBossId: String): String {
-        val args = """[{"apiVersion":"energy","chInfo":"healthstep","memberId":"$memberId","originBossId":"$originBossId"}]"""
-        return RequestManager.requestString("alipay.antsports.club.trade.queryClubMember", args)
+        return RequestManager.requestString(
+            "alipay.antsports.club.trade.queryClubMember",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "healthstep")
+                put("memberId", memberId)
+                put("originBossId", originBossId)
+            }
+        )
     }
 
     /**
@@ -968,8 +1481,18 @@ object AntSportsRpcCall {
      * @remark 对应API：alipay.antsports.club.trade.buyMember
      */
     suspend fun buyMember(currentBossId: String, memberId: String, originBossId: String, priceInfo: String, roomId: String): String {
-        val requestData = """[{"apiVersion":"energy","chInfo":"healthstep","currentBossId":"$currentBossId","memberId":"$memberId","originBossId":"$originBossId","priceInfo":$priceInfo,"roomId":"$roomId"}]"""
-        return RequestManager.requestString("alipay.antsports.club.trade.buyMember", requestData)
+        return RequestManager.requestString(
+            "alipay.antsports.club.trade.buyMember",
+            RpcRequestData.array {
+                put("apiVersion", "energy")
+                put("chInfo", "healthstep")
+                put("currentBossId", currentBossId)
+                put("memberId", memberId)
+                put("originBossId", originBossId)
+                put("priceInfo", JSONObject(priceInfo))
+                put("roomId", roomId)
+            }
+        )
     }
 
     //━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -997,7 +1520,10 @@ object AntSportsRpcCall {
         suspend fun querySign(signType: Int, source: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.querySign",
-                """[{"signType":$signType,"source":"$source"}]"""
+                RpcRequestData.array {
+                    put("signType", signType)
+                    put("source", source)
+                }
             )
         }
 
@@ -1014,7 +1540,10 @@ object AntSportsRpcCall {
         suspend fun takeSign(signType: Int, source: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.takeSign",
-                """[{"signType":$signType,"source":"$source"}]"""
+                RpcRequestData.array {
+                    put("signType", signType)
+                    put("source", source)
+                }
             )
         }
 
@@ -1028,7 +1557,10 @@ object AntSportsRpcCall {
         suspend fun queryBubbleTask(): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryBubbleTask",
-                """[{"source":"jkdsportcard","sportsAuthed":true}]"""
+                RpcRequestData.array {
+                    put("source", "jkdsportcard")
+                    put("sportsAuthed", true)
+                }
             )
         }
 
@@ -1042,17 +1574,15 @@ object AntSportsRpcCall {
          * @remark 对应API：com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy
          */
         suspend fun pickBubbleTaskEnergy(ids: List<String>): String {
-            val obj = JSONObject().apply {
-                put("medEnergyBallInfoRecordIds", JSONArray().apply {
-                    ids.forEach { put(it) }
-                })
-                put("pickAllEnergyBall", true)
-                put("source", "jkdsportcard")
-            }
-            val arr = JSONArray().put(obj)
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.pickBubbleTaskEnergy",
-                arr.toString()
+                RpcRequestData.array {
+                    put("medEnergyBallInfoRecordIds", JSONArray().apply {
+                        ids.forEach { put(it) }
+                    })
+                    put("pickAllEnergyBall", true)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1068,7 +1598,13 @@ object AntSportsRpcCall {
         suspend fun queryTaskCenter(): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryTaskCenter",
-                """[{"apDid":"6b30jO17Z6Wbr2ggRytFxB09hZdhixfSekjytgi9Ytc=","cityCode":"","deviceLevel":"high","newGame":0,"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("apDid", "6b30jO17Z6Wbr2ggRytFxB09hZdhixfSekjytgi9Ytc=")
+                    put("cityCode", "")
+                    put("deviceLevel", "high")
+                    put("newGame", 0)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1085,7 +1621,10 @@ object AntSportsRpcCall {
         suspend fun queryTaskInfo(source: String, type: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryTaskInfo",
-                """[{"source":"$source","type":"$type"}]"""
+                RpcRequestData.array {
+                    put("source", source)
+                    put("type", type)
+                }
             )
         }
 
@@ -1102,19 +1641,17 @@ object AntSportsRpcCall {
          * @remark 对应API：com.alipay.neverland.biz.rpc.energyReceive
          */
         suspend fun energyReceive(encryptValue: String, energyNum: Int, type: String, lightTaskId: String?): String {
-            val obj = JSONObject().apply {
-                put("encryptValue", encryptValue)
-                put("energyNum", energyNum)
-                put("source", "jkdsportcard")
-                put("type", type)
-                if (!lightTaskId.isNullOrEmpty()) {
-                    put("lightTaskId", lightTaskId)
-                }
-            }
-            val arr = JSONArray().put(obj)
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.energyReceive",
-                arr.toString()
+                RpcRequestData.array {
+                    put("encryptValue", encryptValue)
+                    put("energyNum", energyNum)
+                    put("source", "jkdsportcard")
+                    put("type", type)
+                    if (!lightTaskId.isNullOrEmpty()) {
+                        put("lightTaskId", lightTaskId)
+                    }
+                }
             )
         }
 
@@ -1130,7 +1667,7 @@ object AntSportsRpcCall {
         suspend fun taskSend(taskObj: JSONObject): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.taskSend",
-                """[${taskObj}]"""
+                RpcRequestData.arrayOf(taskObj)
             )
         }
 
@@ -1146,7 +1683,7 @@ object AntSportsRpcCall {
         suspend fun taskReceive(taskObj: JSONObject): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.taskReceive",
-                """[${taskObj}]"""
+                RpcRequestData.arrayOf(taskObj)
             )
         }
 
@@ -1162,7 +1699,9 @@ object AntSportsRpcCall {
         suspend fun finish(bizId: String): String {
             return RequestManager.requestString(
                 "com.alipay.adtask.biz.mobilegw.service.task.finish",
-                """[{"bizId":"$bizId"}]"""
+                RpcRequestData.array {
+                    put("bizId", bizId)
+                }
             )
         }
 
@@ -1176,7 +1715,9 @@ object AntSportsRpcCall {
         suspend fun queryMapList(): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryMapList",
-                """[{"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1193,15 +1734,15 @@ object AntSportsRpcCall {
          */
         @Throws(JSONException::class)
         suspend fun queryMapInfo(mapId: String, branchId: String): String {
-            val obj = JSONObject()
-            obj.put("branchId", branchId)
-            obj.put("drilling", false)
-            obj.put("mapId", mapId)
-            obj.put("source", "jkdsportcard")
-
-            val arr = JSONArray()
-            arr.put(obj)
-            return RequestManager.requestString("com.alipay.neverland.biz.rpc.queryMapInfo", arr.toString())
+            return RequestManager.requestString(
+                "com.alipay.neverland.biz.rpc.queryMapInfo",
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("drilling", false)
+                    put("mapId", mapId)
+                    put("source", "jkdsportcard")
+                }
+            )
         }
 
         /**
@@ -1216,7 +1757,10 @@ object AntSportsRpcCall {
         suspend fun queryMapInfoNew(mapId: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryMapInfoNew",
-                """[{"mapId":"$mapId","source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("mapId", mapId)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1230,7 +1774,9 @@ object AntSportsRpcCall {
         suspend fun queryBaseinfo(): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryBaseinfo",
-                """[{"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1248,7 +1794,12 @@ object AntSportsRpcCall {
         suspend fun build(branchId: String, mapId: String, multiNum: Int): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.build",
-                """[{"branchId":"$branchId","mapId":"$mapId","multiNum":$multiNum,"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("mapId", mapId)
+                    put("multiNum", multiNum)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1264,7 +1815,10 @@ object AntSportsRpcCall {
         suspend fun queryMapDetail(mapId: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryMapDetail",
-                """[{"mapId":"$mapId","source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("mapId", mapId)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1282,7 +1836,12 @@ object AntSportsRpcCall {
         suspend fun mapStageReward(branchId: String, level: Int, mapId: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.mapStageReward",
-                """[{"branchId":"$branchId","level":$level,"mapId":"$mapId","source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("level", level)
+                    put("mapId", mapId)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1300,7 +1859,13 @@ object AntSportsRpcCall {
         suspend fun chooseReward(branchId: String, mapId: String, rewardId: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.mapChooseReward",
-                """[{"branchId":"$branchId","channel":"jkdsportcard","mapId":"$mapId","rewardId":"$rewardId","source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("channel", "jkdsportcard")
+                    put("mapId", mapId)
+                    put("rewardId", rewardId)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1317,7 +1882,11 @@ object AntSportsRpcCall {
         suspend fun chooseMap(branchId: String, mapId: String): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.mapChooseFree",
-                """[{"branchId":"$branchId","mapId":"$mapId","source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("mapId", mapId)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1335,7 +1904,12 @@ object AntSportsRpcCall {
         suspend fun walkGrid(branchId: String, mapId: String, drilling: Boolean): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.walkGrid",
-                """[{"branchId":"$branchId","mapId":"$mapId","drilling":$drilling,"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("branchId", branchId)
+                    put("mapId", mapId)
+                    put("drilling", drilling)
+                    put("source", "jkdsportcard")
+                }
             )
         }
 
@@ -1349,7 +1923,9 @@ object AntSportsRpcCall {
         suspend fun queryUserEnergy(): String {
             return RequestManager.requestString(
                 "com.alipay.neverland.biz.rpc.queryUserAccount",
-                """[{"source":"jkdsportcard"}]"""
+                RpcRequestData.array {
+                    put("source", "jkdsportcard")
+                }
             )
         }
     }

@@ -1,8 +1,10 @@
 package fansirsqi.xposed.sesame.task.greenFinance
 
 import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * 绿色经营Rpc请求类
@@ -20,7 +22,10 @@ object GreenFinanceRpcCall {
     suspend fun taskQuery(appletId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.task.taskQuery",
-            "[{\"appletId\":\"$appletId\",\"completedBottom\":true}]"
+            RpcRequestData.array {
+                put("appletId", appletId)
+                put("completedBottom", true)
+            }
         )
     }
 
@@ -36,7 +41,11 @@ object GreenFinanceRpcCall {
     suspend fun taskTrigger(appletId: String?, stageCode: String?, taskCenId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.task.taskTrigger",
-            "[{\"appletId\":\"$appletId\",\"stageCode\":\"$stageCode\",\"taskCenId\":\"$taskCenId\"}]"
+            RpcRequestData.array {
+                put("appletId", appletId)
+                put("stageCode", stageCode)
+                put("taskCenId", taskCenId)
+            }
         )
     }
 
@@ -44,7 +53,10 @@ object GreenFinanceRpcCall {
     suspend fun signInTrigger(sceneId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.signin.trigger",
-            "[{\"extInfo\":{},\"sceneId\":\"$sceneId\"}]"
+            RpcRequestData.array {
+                put("extInfo", JSONObject())
+                put("sceneId", sceneId)
+            }
         )
     }
 
@@ -57,7 +69,10 @@ object GreenFinanceRpcCall {
     suspend fun greenFinanceIndex(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinancePageQueryService.indexV2",
-            "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\"}]"
+            RpcRequestData.array {
+                put("clientVersion", "VERSION2")
+                put("custType", "MERCHANT")
+            }
         )
     }
 
@@ -71,7 +86,12 @@ object GreenFinanceRpcCall {
     suspend fun batchSelfCollect(bsnIds: JSONArray): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinancePointCollectService.batchSelfCollect",
-            "[{\"bsnIds\":$bsnIds,\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("bsnIds", bsnIds)
+                put("clientVersion", "VERSION2")
+                put("custType", "MERCHANT")
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -85,7 +105,13 @@ object GreenFinanceRpcCall {
     suspend fun signInQuery(sceneId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.signin.query",
-            "[{\"cycleCount\":7,\"cycleType\":\"d\",\"extInfo\":{},\"needContinuous\":1,\"sceneId\":\"$sceneId\"}]"
+            RpcRequestData.array {
+                put("cycleCount", 7)
+                put("cycleType", "d")
+                put("extInfo", JSONObject())
+                put("needContinuous", 1)
+                put("sceneId", sceneId)
+            }
         )
     }
 
@@ -99,7 +125,11 @@ object GreenFinanceRpcCall {
     suspend fun queryUserTickItem(firstBehaviorType: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceTickService.queryUserTickItem",
-            "[{\"custType\":\"MERCHANT\",\"firstBehaviorType\":\"$firstBehaviorType\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("firstBehaviorType", firstBehaviorType)
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -114,7 +144,12 @@ object GreenFinanceRpcCall {
     suspend fun submitTick(firstBehaviorType: String?, behaviorCode: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceTickService.submitTick",
-            "[{\"custType\":\"MERCHANT\",\"firstBehaviorType\":\"$firstBehaviorType\",\"uid\":\"${UserMap.currentUid}\",\"behaviorCode\":\"$behaviorCode\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("firstBehaviorType", firstBehaviorType)
+                put("uid", UserMap.currentUid)
+                put("behaviorCode", behaviorCode)
+            }
         )
     }
 
@@ -130,7 +165,12 @@ object GreenFinanceRpcCall {
         // 十天后
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinancePageQueryService.queryExpireMcaPoint",
-            "[{\"custType\":\"MERCHANT\",\"profitType\":\"MYBK_LOAN_DISCOUNT\",\"uid\":\"${UserMap.currentUid}\",\"expireDate\":\"${System.currentTimeMillis() + day * 24 * 60 * 60 * 1000}\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("profitType", "MYBK_LOAN_DISCOUNT")
+                put("uid", UserMap.currentUid)
+                put("expireDate", "${System.currentTimeMillis() + day * 24 * 60 * 60 * 1000}")
+            }
         )
     }
 
@@ -143,7 +183,11 @@ object GreenFinanceRpcCall {
     suspend fun queryAllDonationProjectNew(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceDonationService.queryAllDonationProjectNew",
-            "[{\"custType\":\"MERCHANT\",\"subjectType\":\"ALL_DONATION\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("subjectType", "ALL_DONATION")
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -159,7 +203,13 @@ object GreenFinanceRpcCall {
         // {"ariverRpcTraceId":"client`ZWBWO+Zb5kQDAHgksDyLs/tHP11fNHg_230398","result":{"amount":200,"bsnId":"202406231073250005003700277823650280","certificateId":"MBKO1043330320","custType":"MERCHANT","donateElectricityRatio":2,"donateTime":1719088281085,"gmtCreate":1652176865000,"gmtModify":32487667200000,"outBizNo":"1719088280762","projectId":"CLEAN_ENERGY_00001","projectName":"朝阳县光伏发电项目","showFlag":"Y","targetAmount":1162,"uid":"2088302146583284"},"resultView":"处理成功","success":true}
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceDonationService.donation",
-            "[{\"custType\":\"MERCHANT\",\"donationGold\":\"$amount\",\"uid\":\"${UserMap.currentUid}\",\"outbizNo\":\"${System.currentTimeMillis()}\",\"projectId\":\"$projectId\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("donationGold", amount)
+                put("uid", UserMap.currentUid)
+                put("outbizNo", "${System.currentTimeMillis()}")
+                put("projectId", projectId)
+            }
         )
     }
 
@@ -172,7 +222,10 @@ object GreenFinanceRpcCall {
     suspend fun consultProveTaskList(): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.consultProveTaskList",
-            "[{\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("custType", "MERCHANT")
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -186,7 +239,9 @@ object GreenFinanceRpcCall {
     suspend fun queryPrizes(campId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.camp.queryPrizes",
-            "[{\"campIds\":[\"$campId\"]}]"
+            RpcRequestData.array {
+                put("campIds", JSONArray().put(campId))
+            }
         )
     }
 
@@ -200,7 +255,9 @@ object GreenFinanceRpcCall {
     suspend fun campTrigger(campId: String?): String {
         return RequestManager.requestString(
             "com.alipay.loanpromoweb.promo.camp.trigger",
-            "[{\"campId\":\"$campId\"}]"
+            RpcRequestData.array {
+                put("campId", campId)
+            }
         )
     }
 
@@ -215,7 +272,12 @@ object GreenFinanceRpcCall {
     suspend fun proveTask(bizType: String?, imageUrl: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.proveTask",
-            "[{\"bizType\":\"$bizType\",\"custType\":\"MERCHANT\",\"imageUrl\":\"$imageUrl\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("bizType", bizType)
+                put("custType", "MERCHANT")
+                put("imageUrl", imageUrl)
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -229,7 +291,11 @@ object GreenFinanceRpcCall {
     suspend fun queryProveTaskStatus(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.newservice.GreenFinanceProveTaskService.queryProveTaskStatus",
-            "[{\"taskId\":\"$taskId\",\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("taskId", taskId)
+                put("custType", "MERCHANT")
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -242,9 +308,17 @@ object GreenFinanceRpcCall {
     suspend fun queryRankingList(startIndex: Int): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinanceUserInteractionQueryService.queryRankingList",
-            "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"includeMe\":true," +
-                    "\"onlyRealFriend\":true,\"pageLimit\":10,\"rankingScene\":\"FRIEND\"," +
-                    "\"rankingType\":\"OVERALL\",\"startIndex\":$startIndex,\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("clientVersion", "VERSION2")
+                put("custType", "MERCHANT")
+                put("includeMe", true)
+                put("onlyRealFriend", true)
+                put("pageLimit", 10)
+                put("rankingScene", "FRIEND")
+                put("rankingType", "OVERALL")
+                put("startIndex", startIndex)
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -257,7 +331,13 @@ object GreenFinanceRpcCall {
     suspend fun queryGuestIndexPoints(guestId: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinanceUserInteractionQueryService.queryGuestIndexPoints",
-            "[{\"clientVersion\":\"VERSION2\",\"custType\":\"MERCHANT\",\"guestCustType\":\"MERCHANT\",\"guestUid\":\"$guestId\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("clientVersion", "VERSION2")
+                put("custType", "MERCHANT")
+                put("guestCustType", "MERCHANT")
+                put("guestUid", guestId)
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 
@@ -265,8 +345,14 @@ object GreenFinanceRpcCall {
     suspend fun batchSteal(bsnIds: JSONArray, collectedUid: String?): String {
         return RequestManager.requestString(
             "com.alipay.mcaplatformunit.common.mobile.service.GreenFinancePointCollectService.batchSteal",
-            "[{\"bsnIds\":$bsnIds,\"clientVersion\":\"VERSION2\",\"collectedCustType\":\"MERCHANT\"," +
-                    "\"collectedUid\":\"$collectedUid\",\"custType\":\"MERCHANT\",\"uid\":\"${UserMap.currentUid}\"}]"
+            RpcRequestData.array {
+                put("bsnIds", bsnIds)
+                put("clientVersion", "VERSION2")
+                put("collectedCustType", "MERCHANT")
+                put("collectedUid", collectedUid)
+                put("custType", "MERCHANT")
+                put("uid", UserMap.currentUid)
+            }
         )
     }
 }

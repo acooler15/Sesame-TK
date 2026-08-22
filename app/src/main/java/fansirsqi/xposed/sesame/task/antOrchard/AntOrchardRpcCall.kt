@@ -1,14 +1,28 @@
 package fansirsqi.xposed.sesame.task.antOrchard
 
 import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcConst
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData.putStandard
+import org.json.JSONArray
+import org.json.JSONObject
 
 object AntOrchardRpcCall {
     private const val VERSION = "20251209.01"
 
     suspend fun orchardIndex(): String {
-        return RequestManager.requestString("com.alipay.antfarm.orchardIndex",
-            "[{\"inHomepage\":\"true\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\""
-                    + VERSION + "\"}]");
+        return RequestManager.requestString(
+            "com.alipay.antfarm.orchardIndex",
+            RpcRequestData.array {
+                put("inHomepage", "true")
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
+        )
     }
 
     /**
@@ -18,14 +32,33 @@ object AntOrchardRpcCall {
     suspend fun extraInfoGet(from: String = "entry"): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.extraInfoGet",
-            "[{\"from\":\"$from\",\"requestType\":\"NORMAL\",\"sceneCode\":\"FUGUO\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("from", from)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "FUGUO",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun extraInfoSet(): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.extraInfoSet",
-            "[{\"bizCode\":\"fertilizerPacket\",\"bizParam\":{\"action\":\"queryCollectFertilizerPacket\"},\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("bizCode", "fertilizerPacket")
+                put(
+                    "bizParam",
+                    JSONObject().apply { put("action", "queryCollectFertilizerPacket") })
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -33,21 +66,67 @@ object AntOrchardRpcCall {
     suspend fun querySubplotsActivity(treeLevel: String): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.querySubplotsActivity",
-            "[{\"activityType\":[\"WISH\",\"BATTLE\",\"HELP_FARMER\",\"DEFOLIATION\",\"CAMP_TAKEOVER\",\"LIMITED_TIME_CHALLENGE\",\"LOTTERY_PLUS\"],\"inHomepage\":false,\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"treeLevel\":\"$treeLevel\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put(
+                    "activityType",
+                    JSONArray(
+                        listOf(
+                            "WISH",
+                            "BATTLE",
+                            "HELP_FARMER",
+                            "DEFOLIATION",
+                            "CAMP_TAKEOVER",
+                            "LIMITED_TIME_CHALLENGE",
+                            "LOTTERY_PLUS"
+                        )
+                    )
+                )
+                put("inHomepage", false)
+                put("treeLevel", treeLevel)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
-    suspend fun triggerSubplotsActivity(activityId: String, activityType: String, optionKey: String): String {
+    suspend fun triggerSubplotsActivity(
+        activityId: String,
+        activityType: String,
+        optionKey: String
+    ): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.triggerSubplotsActivity",
-            "[{\"activityId\":\"$activityId\",\"activityType\":\"$activityType\",\"optionKey\":\"$optionKey\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("activityId", activityId)
+                put("activityType", activityType)
+                put("optionKey", optionKey)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun receiveOrchardRights(activityId: String, activityType: String): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.receiveOrchardRights",
-            "[{\"activityId\":\"$activityId\",\"activityType\":\"$activityType\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("activityId", activityId)
+                put("activityType", activityType)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -55,7 +134,15 @@ object AntOrchardRpcCall {
     suspend fun drawLottery(): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.drawLottery",
-            "[{\"lotteryScene\":\"receiveLotteryPlus\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("lotteryScene", "receiveLotteryPlus")
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -66,7 +153,15 @@ object AntOrchardRpcCall {
     suspend fun switchPlantScene(plantScene: String): String {
         return RequestManager.requestString(
             "com.alipay.antorchard.switchPlantScene",
-            "[{\"plantScene\":\"$plantScene\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("plantScene", plantScene)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -77,65 +172,116 @@ object AntOrchardRpcCall {
      * @param useBatchSpread 一键5次
      * @param plantScene 场景：main 或 yeb
      */
-    suspend fun orchardSpreadManure(wua: String, source: String, useBatchSpread: Boolean = false, plantScene: String = "main"): String {
+    suspend fun orchardSpreadManure(
+        wua: String,
+        source: String,
+        useBatchSpread: Boolean = false,
+        plantScene: String = "main"
+    ): String {
         return RequestManager.requestString(
             "com.alipay.antfarm.orchardSpreadManure",
-            "[{\"plantScene\":\"$plantScene\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"$source\",\"useBatchSpread\":$useBatchSpread,\"version\":\"$VERSION\",\"wua\":\"$wua\"}]"
+            RpcRequestData.array {
+                put("plantScene", plantScene)
+                put("source", source)
+                put("useBatchSpread", useBatchSpread)
+                put("wua", wua)
+                putStandard(RpcConst.Type.NORMAL, "ORCHARD", version = VERSION)
+            }
         )
     }
 
     suspend fun receiveTaskAward(sceneCode: String, taskType: String): String {
         return RequestManager.requestString(
             "com.alipay.antiep.receiveTaskAward",
-            "[{\"ignoreLimit\":true,\"requestType\":\"NORMAL\",\"sceneCode\":\"$sceneCode\",\"source\":\"ch_alipaysearch__chsub_normal\",\"taskType\":\"$taskType\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("ignoreLimit", true)
+                put("sceneCode", sceneCode)
+                put("taskType", taskType)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    source = "ch_alipaysearch__chsub_normal",
+                    version = VERSION
+                )
+            }
         )
     }
 
     suspend fun orchardListTask(): String {
         return RequestManager.requestString(
             "com.alipay.antfarm.orchardListTask",
-            "[{\"plantHiddenMMC\":\"false\",\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"zhifujianglizhitiao1000\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("plantHiddenMMC", "false")
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "zhifujianglizhitiao1000",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun orchardSign(): String {
         return RequestManager.requestString(
             "com.alipay.antfarm.orchardSign",
-            "[{\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"signScene\":\"ANTFARM_ORCHARD_SIGN_V2\",\"source\":\"ch_appcenter__chsub_9patch\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("signScene", "ANTFARM_ORCHARD_SIGN_V2")
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun finishTask(userId: String, sceneCode: String, taskType: String): String {
         return RequestManager.requestString(
             "com.alipay.antiep.finishTask",
-            "[{\"outBizNo\":\"${userId}${System.currentTimeMillis()}\",\"requestType\":\"NORMAL\",\"sceneCode\":\"$sceneCode\",\"source\":\"ch_appcenter__chsub_9patch\",\"taskType\":\"$taskType\",\"userId\":\"$userId\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("outBizNo", "$userId${System.currentTimeMillis()}")
+                put("sceneCode", sceneCode)
+                put("taskType", taskType)
+                put("userId", userId)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    source = "ch_appcenter__chsub_9patch",
+                    version = VERSION
+                )
+            }
         )
     }
 
     suspend fun triggerTbTask(taskId: String, taskPlantType: String): String {
         return RequestManager.requestString(
             "com.alipay.antfarm.triggerTbTask",
-            "[{\"requestType\":\"NORMAL\",\"sceneCode\":\"ORCHARD\",\"source\":\"ch_appcenter__chsub_9patch\",\"taskId\":\"$taskId\",\"taskPlantType\":\"$taskPlantType\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("taskId", taskId)
+                put("taskPlantType", taskPlantType)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     //砸蛋
     suspend fun smashedGoldenEgg(count: Int): String {
-        val jsonArgs = """
-        [
-            {
-                "batchSmashCount": $count,
-                "requestType": "NORMAL",
-                "sceneCode": "ORCHARD",
-                "source": "ch_appcenter__chsub_9patch",
-                "version": "$VERSION"
-            }
-        ]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.antorchard.smashedGoldenEgg",
-            jsonArgs
+            RpcRequestData.array {
+                put("batchSmashCount", count)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -149,60 +295,61 @@ object AntOrchardRpcCall {
         diversionSource: String,
         source: String
     ): String {
-        val requestParams = """
-        [{"diversionSource":"$diversionSource",
-          "requestType":"NORMAL",
-          "sceneCode":"ORCHARD",
-          "source":"$source",
-          "version":"$VERSION"}]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.antorchard.receiveOrchardVisitAward",
-            requestParams
+            RpcRequestData.array {
+                put("diversionSource", diversionSource)
+                put("source", source)
+                putStandard(RpcConst.Type.NORMAL, "ORCHARD", version = VERSION)
+            }
         )
     }
 
     suspend fun orchardSyncIndex(Wua: String): String {
-        val jsonArgs = """
-         [{
-             "requestType": "NORMAL",
-             "sceneCode": "ORCHARD",
-             "source": "ch_appcenter__chsub_9patch",
-             "syncIndexTypes": "LIMITED_TIME_CHALLENGE",
-             "useWua": true,
-             "version": "$VERSION",
-             "wua": "$Wua"
-         }]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.antorchard.orchardSyncIndex",
-            jsonArgs
+            RpcRequestData.array {
+                put("syncIndexTypes", "LIMITED_TIME_CHALLENGE")
+                put("useWua", true)
+                put("wua", Wua)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun noticeGame(appId: String): String {
-        val jsonArgs = """
-          [{
-             "appId": "2021004165643274",
-             "requestType": "NORMAL",
-             "sceneCode": "ORCHARD",
-             "source": "ch_appcenter__chsub_9patch",
-             "version": "$VERSION"
-         }]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.antorchard.noticeGame",
-            jsonArgs
+            RpcRequestData.array {
+                // 原请求体硬编码 appId（入参 appId 原代码即未使用），保持原样
+                put("appId", "2021004165643274")
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ORCHARD",
+                    "ch_appcenter__chsub_9patch",
+                    VERSION
+                )
+            }
         )
     }
 
     suspend fun achieveBeShareP2P(shareId: String): String {
         return RequestManager.requestString(
             "com.alipay.antiep.achieveBeShareP2P",
-            "[{\"requestType\":\"NORMAL\",\"sceneCode\":\"ANTFARM_ORCHARD_SHARE_P2P\",\"shareId\":\"$shareId\",\"source\":\"share\",\"version\":\"$VERSION\"}]"
+            RpcRequestData.array {
+                put("shareId", shareId)
+                putStandard(
+                    RpcConst.Type.NORMAL,
+                    "ANTFARM_ORCHARD_SHARE_P2P",
+                    "share",
+                    VERSION
+                )
+            }
         )
     }
 
@@ -210,7 +357,10 @@ object AntOrchardRpcCall {
     suspend fun moneyTreeTrigger(): String {
         return RequestManager.requestString(
             "com.alipay.yebbffweb.needle.yebHome.moneyTree.trigger",
-            "[{\"sceneType\":\"default\",\"type\":\"trigger\"}]"
+            RpcRequestData.array {
+                put("sceneType", "default")
+                put("type", "trigger")
+            }
         )
     }
 }

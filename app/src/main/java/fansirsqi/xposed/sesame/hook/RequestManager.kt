@@ -26,7 +26,7 @@ object RequestManager {
      * 核心执行函数 (内联优化)
      * 流程：离线检查 -> 获取 Bridge -> 执行请求 -> 结果校验 -> 错误计数/重置
      */
-    private suspend inline fun executeRpc(methodLog: String?, block: suspend (RpcBridge) -> String?): String {
+    private suspend inline fun executeRpc(methodLog: String?, data: String?, block: suspend (RpcBridge) -> String?): String {
         // 1. 【前置检查】如果已经离线，直接中断并尝试恢复
         if (ApplicationHook.offline) {
             Log.record(TAG, "当前处于离线状态，拦截请求: $methodLog")
@@ -38,7 +38,7 @@ object RequestManager {
         // 如果这里获取失败，也视为一次错误
         val bridge = getRpcBridge()
         if (bridge == null) {
-            handleFailure("Network/Bridge Unavailable", "网络或Bridge不可用")
+            handleFailure("Network/Bridge Unavailable", data, "网络或Bridge不可用")
             return ""
         }
 
@@ -46,14 +46,14 @@ object RequestManager {
         val result = try {
             block(bridge)
         } catch (e: Throwable) {
-            Log.printStackTrace(TAG, "RPC 执行异常: $methodLog", e)
+            Log.printStackTrace(TAG, "RPC 执行异常: $methodLog\n请求体: ${truncateLog(data)}", e)
             null // 异常视为 null，触发失败逻辑
         }
 
         // 4. 结果校验与状态维护
         if (result.isNullOrBlank()) {
             // 失败：增加计数，检查兜底
-            handleFailure(methodLog ?: "Unknown", "返回数据为空")
+            handleFailure(methodLog ?: "Unknown", data, "返回数据为空")
             return ""
         } else {
             // 成功：重置计数器
@@ -68,12 +68,12 @@ object RequestManager {
     /**
      * 处理失败逻辑：计数、报警、熔断
      */
-    private fun handleFailure(method: String, reason: String) {
+    private fun handleFailure(method: String, data: String?, reason: String) {
         val currentCount = errorCount.incrementAndGet()
         // 从全局配置读取异常次数阈值
         val maxCount = ApplicationHook.config.setMaxErrorCount.value
 
-        Log.error(TAG, "RPC 失败 ($currentCount/$maxCount) | Method: $method | Reason: $reason")
+        Log.error(TAG, "RPC 失败 ($currentCount/$maxCount) | Method: $method | Data: ${truncateLog(data)} | Reason: $reason")
 
         // 触发兜底阈值
         if (currentCount >= maxCount) {
@@ -88,6 +88,14 @@ object RequestManager {
             // 3. 立即尝试一次恢复
             handleOfflineRecovery()
         }
+    }
+
+    /**
+     * 日志内容截断，防止超长请求体/响应体刷屏
+     */
+    private fun truncateLog(s: String?, max: Int = 500): String {
+        if (s == null) return "null"
+        return if (s.length > max) s.substring(0, max) + "...(len=${s.length}, truncated)" else s
     }
 
     /**
@@ -132,28 +140,28 @@ object RequestManager {
 
     @JvmStatic
     suspend fun requestString(rpcEntity: RpcEntity): String {
-        return executeRpc(rpcEntity.methodName) { bridge ->
+        return executeRpc(rpcEntity.methodName, rpcEntity.requestData) { bridge ->
             bridge.requestString(rpcEntity, 3, 1200)
         }
     }
 
     @JvmStatic
     suspend fun requestString(rpcEntity: RpcEntity, tryCount: Int, retryInterval: Int): String {
-        return executeRpc(rpcEntity.methodName) { bridge ->
+        return executeRpc(rpcEntity.methodName, rpcEntity.requestData) { bridge ->
             bridge.requestString(rpcEntity, tryCount, retryInterval)
         }
     }
 
     @JvmStatic
     suspend fun requestString(method: String?, data: String?): String {
-        return executeRpc(method) { bridge ->
+        return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data)
         }
     }
 
     @JvmStatic
     suspend fun requestString(method: String?, data: String?, relation: String?): String {
-        return executeRpc(method) { bridge ->
+        return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data, relation)
         }
     }
@@ -166,14 +174,14 @@ object RequestManager {
         methodName: String?,
         facadeName: String?
     ): String {
-        return executeRpc(method) { bridge ->
+        return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data, appName, methodName, facadeName)
         }
     }
 
     @JvmStatic
     suspend fun requestString(method: String?, data: String?, tryCount: Int, retryInterval: Int): String {
-        return executeRpc(method) { bridge ->
+        return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data, tryCount, retryInterval)
         }
     }
@@ -186,7 +194,7 @@ object RequestManager {
         tryCount: Int,
         retryInterval: Int
     ): String {
-        return executeRpc(method) { bridge ->
+        return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data, relation, tryCount, retryInterval)
         }
     }
@@ -202,7 +210,7 @@ object RequestManager {
 
         val bridge = getRpcBridge()
         if (bridge == null) {
-            handleFailure("requestObject", "Bridge Unavailable")
+            handleFailure("requestObject", rpcEntity.requestData, "Bridge Unavailable")
             return null
         }
 
@@ -211,8 +219,8 @@ object RequestManager {
             errorCount.set(0)
             result  // ← 修复：返回结果而非丢弃
         } catch (e: Throwable) {
-            Log.printStackTrace(TAG, "requestObject 异常: ${rpcEntity.methodName}", e)
-            handleFailure(rpcEntity.methodName ?: "Unknown", "Exception")
+            Log.printStackTrace(TAG, "requestObject 异常: ${rpcEntity.methodName}\n请求体: ${truncateLog(rpcEntity.requestData)}", e)
+            handleFailure(rpcEntity.methodName ?: "Unknown", rpcEntity.requestData, "Exception")
             null
         }
     }

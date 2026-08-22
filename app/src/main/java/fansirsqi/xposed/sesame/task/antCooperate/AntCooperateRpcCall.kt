@@ -1,8 +1,8 @@
 package fansirsqi.xposed.sesame.task.antCooperate
 
-import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.util.RandomUtil
-import org.json.JSONArray
+import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import org.json.JSONException
 import org.json.JSONObject
 import java.util.Random
@@ -17,27 +17,31 @@ object AntCooperateRpcCall {
     suspend fun queryUserCooperatePlantList(): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryUserCooperatePlantList",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
     @JvmStatic
     suspend fun queryCooperatePlant(coopId: String): String {
-        val args1 = "[{\"cooperationId\":\"" + coopId + "\"}]"
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryCooperatePlant",
-            args1
+            RpcRequestData.array {
+                put("cooperationId", coopId)
+            }
         )
     }
 
     @JvmStatic
     suspend fun cooperateWater(uid: String?, coopId: String, count: Int): String {
-        val args = "[{\"bizNo\":\"" + uid + "_" + coopId + "_" + System.currentTimeMillis() +
-                "\",\"cooperationId\":\"" + coopId + "\",\"energyCount\":" + count +
-                ",\"source\":\"\",\"version\":\"" + VERSION + "\"}]"
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.cooperateWater",
-            args
+            RpcRequestData.array {
+                put("bizNo", "${uid}_${coopId}_${System.currentTimeMillis()}")
+                put("cooperationId", coopId)
+                put("energyCount", count)
+                put("source", "")
+                put("version", VERSION)
+            }
         )
     }
 
@@ -51,7 +55,12 @@ object AntCooperateRpcCall {
     suspend fun queryCooperateRank(bizType: String?, coopId: String?): String {
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.queryCooperateRank",
-            "[{\"bizType\":\"$bizType\",\"cooperationId\":\"$coopId\",\"source\":\"ch_appcenter__chsub_9patch\"}]"
+            RpcRequestData.array {
+                // 原为 "$bizType" 字符串模板，null 时输出字符串 "null"（非 JSON null），保持等价
+                put("bizType", bizType ?: "null")
+                put("cooperationId", coopId ?: "null")
+                put("source", "ch_appcenter__chsub_9patch")
+            }
         )
     }
 
@@ -80,14 +89,15 @@ object AntCooperateRpcCall {
     @JvmStatic
     suspend fun updateUserConfig(inTeam: Boolean): String {
         val inTeamValue = if (inTeam) "Y" else "N"
-        val args = "[{" +
-                "\"configMap\":{\"inTeam\":\"$inTeamValue\"}," +
-                "\"source\":\"chInfo_ch_appcenter__chsub_9patch\"" +
-                "}]"
 
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.updateUserConfig",
-            args
+            RpcRequestData.array {
+                put("configMap", JSONObject().apply {
+                    put("inTeam", inTeamValue)
+                })
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+            }
         )
     }
 
@@ -95,27 +105,25 @@ object AntCooperateRpcCall {
     @JvmStatic
     @Throws(JSONException::class)
     suspend fun sendCooperateBeckon(userId: String, cooperationId: String): String {
-        val jo = JSONObject().apply {
-            put("bizImage", "https://gw.alipayobjects.com/zos/rmsportal/gzYPfxdAxLrkzFUeVkiY.jpg")
-            put(
-                "link",
-                "lipays://platformapi/startapp?appId=66666886&url=%2Fwww%2Fcooperation%2Findex.htm%3FcooperationId%3D" +
-                        cooperationId + "%26sourceName%3Dcard"
-            )
-            put("midTitle", "快来给我们的树苗浇水，让它快快长大。")
-            put(
-                "noticeLink",
-                "alipays://platformapi/startapp?appId=60000002&url=https%3A%2F%2Frender.alipay.com%2Fp%2Fc%2F17ussbd8vtfg%2Fmessage.html%3FsourceName%3Dcard&showOptionMenu=NO&transparentTitle=NO"
-            )
-            put("topTitle", "树苗需要你的呵护")
-            put("source", "chInfo_ch_url-https://render.alipay.com/p/yuyan/180020010001247580/home.html")
-            put("cooperationId", cooperationId)
-            put("userId", userId)
-        }
-        val args = JSONArray().put(jo).toString()
         return RequestManager.requestString(
             "alipay.antmember.forest.h5.sendCooperateBeckon",
-            args
+            RpcRequestData.array {
+                put("bizImage", "https://gw.alipayobjects.com/zos/rmsportal/gzYPfxdAxLrkzFUeVkiY.jpg")
+                put(
+                    "link",
+                    "lipays://platformapi/startapp?appId=66666886&url=%2Fwww%2Fcooperation%2Findex.htm%3FcooperationId%3D" +
+                            cooperationId + "%26sourceName%3Dcard"
+                )
+                put("midTitle", "快来给我们的树苗浇水，让它快快长大。")
+                put(
+                    "noticeLink",
+                    "alipays://platformapi/startapp?appId=60000002&url=https%3A%2F%2Frender.alipay.com%2Fp%2Fc%2F17ussbd8vtfg%2Fmessage.html%3FsourceName%3Dcard&showOptionMenu=NO&transparentTitle=NO"
+                )
+                put("topTitle", "树苗需要你的呵护")
+                put("source", "chInfo_ch_url-https://render.alipay.com/p/yuyan/180020010001247580/home.html")
+                put("cooperationId", cooperationId)
+                put("userId", userId)
+            }
         )
     }
 
@@ -123,31 +131,40 @@ object AntCooperateRpcCall {
     suspend fun queryLoveHome(): String {
         val start = "20251022"
         val end = "20251217"
-        val args = "[{\"calenderEnd\":\"" + end +
-                "\",\"calenderStart\":\"" + start +
-                "\",\"source\":\"chInfo_ch_appcenter__chsub_9patch\"}]"
         return RequestManager.requestString(
             "alipay.greenmatrix.rpc.h5.love.loveHome",
-            args
+            RpcRequestData.array {
+                put("calenderEnd", end)
+                put("calenderStart", start)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+            }
         )
     }
 
     @JvmStatic
     suspend fun loveTeamWater(teamId: String, donateNum: Int): String {
-        val args = "[{\"donateNum\":" + donateNum +
-                ",\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"teamId\":\"" + teamId + "\"}]"
         return RequestManager.requestString(
             "alipay.greenmatrix.rpc.h5.love.teamWater",
-            args
+            RpcRequestData.array {
+                put("donateNum", donateNum)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("teamId", teamId)
+            }
         )
     }
 
     @JvmStatic
     suspend fun queryHomePage(): String {
-        val args = "[{\"configVersionMap\":{\"wateringBubbleConfig\":\"0\"},\"skipWhackMole\":false,\"source\":\"chInfo_ch_appcenter__chsub_9patch\",\"version\":\"20250818\"}]"
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryHomePage",
-            args
+            RpcRequestData.array {
+                put("configVersionMap", JSONObject().apply {
+                    put("wateringBubbleConfig", "0")
+                })
+                put("skipWhackMole", false)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("version", "20250818")
+            }
         )
     }
 
@@ -169,18 +186,16 @@ object AntCooperateRpcCall {
         // 3. 拼接 sToken：时间戳_8位数字字符
         val sToken = "${ts}_${rand}"
 
-        // 4. 构造参数 JSON 字符串（与 queryLoveHome 一致的写法）
-        val args = "[{" +
-                "\"energyCount\":$energyCount," +
-                "\"sToken\":\"$sToken\"," +
-                "\"source\":\"chInfo_ch_appcenter__chsub_9patch\"," +
-                "\"teamId\":\"$teamId\"" +
-                "}]"
-
+        // 4. 构造参数 JSON（与 queryLoveHome 一致的写法）
         // 5. RPC 调用
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.teamWater",
-            args
+            RpcRequestData.array {
+                put("energyCount", energyCount)
+                put("sToken", sToken)
+                put("source", "chInfo_ch_appcenter__chsub_9patch")
+                put("teamId", teamId)
+            }
         )
     }
 
@@ -202,18 +217,14 @@ object AntCooperateRpcCall {
     @JvmStatic
     suspend fun queryMiscInfo(queryBizType: String, Teamid: String): String {
         // 构造 H5 RPC 参数（森林所有 H5 RPC 都要求外层包一层数组）
-        val args = """
-        [{
-            "queryBizType":"$queryBizType",
-            "source":"SELF_HOME",
-            "targetUserId":"$Teamid",
-            "version":"20240201"
-        }]
-    """.trimIndent() // trimIndent 去除换行和缩进，保证 JSON 格式正确
-
         return RequestManager.requestString(
             "alipay.antforest.forest.h5.queryMiscInfo",
-            args
+            RpcRequestData.array {
+                put("queryBizType", queryBizType)
+                put("source", "SELF_HOME")
+                put("targetUserId", Teamid)
+                put("version", "20240201")
+            }
         )
     }
 
@@ -224,7 +235,7 @@ object AntCooperateRpcCall {
     suspend fun queryUserTag(): String {
         return RequestManager.requestString(
             "alipay.antmember.h5.queryUserTag",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 }

@@ -1,7 +1,7 @@
 package fansirsqi.xposed.sesame.task.antOrchard
 
 import fansirsqi.xposed.sesame.hook.RequestManager
-import org.json.JSONArray
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import org.json.JSONObject
 import java.net.URLDecoder
 
@@ -32,43 +32,34 @@ object XLightRpcCall {
     ): String {
         return try {
 
-            // positionRequest
-            val positionRequest = JSONObject().apply {
-                put("extMap", JSONObject())
-                put("referInfo", JSONObject())     // 空对象，与你的示例一致
-                put("searchInfo", JSONObject())
-                put("spaceCode", spaceCode)
-            }
-
-            // sdkPageInfo
-            val sdkPageInfo = JSONObject().apply {
-                put("adComponentType", AD_COMPONENT_TYPE)
-                put("adComponentVersion", AD_COMPONENT_VERSION)
-                put("enableFusion", ENABLE_FUSION)
-                put("networkType", NETWORK_TYPE)
-                put("pageFrom", pageFrom)
-                put("pageNo", PAGE_NO)
-                put("pageUrl", pageUrl)
-                put("session", session)
-                put("unionAppId", UNION_APP_ID)
-                put("usePlayLink", "true")
-                put("xlightRuntimeSDKversion", XLIGHT_RUNTIME_SDK_VERSION)
-                put("xlightSDKType", XLIGHT_SDK_TYPE)
-                put("xlightSDKVersion", XLIGHT_SDK_VERSION)
-            }
-
-            // 数组包装
-            val args = JSONArray().apply {
-                put(JSONObject().apply {
-                    put("positionRequest", positionRequest)
-                    put("sdkPageInfo", sdkPageInfo)
-                })
-            }
-
             // RPC 调用
             RequestManager.requestString(
                 "com.alipay.adexchange.ad.facade.xlightPlugin",
-                args.toString()
+                RpcRequestData.array {
+                    // positionRequest
+                    put("positionRequest", JSONObject().apply {
+                        put("extMap", JSONObject())
+                        put("referInfo", JSONObject())     // 空对象，与你的示例一致
+                        put("searchInfo", JSONObject())
+                        put("spaceCode", spaceCode)
+                    })
+                    // sdkPageInfo
+                    put("sdkPageInfo", JSONObject().apply {
+                        put("adComponentType", AD_COMPONENT_TYPE)
+                        put("adComponentVersion", AD_COMPONENT_VERSION)
+                        put("enableFusion", ENABLE_FUSION)
+                        put("networkType", NETWORK_TYPE)
+                        put("pageFrom", pageFrom)
+                        put("pageNo", PAGE_NO)
+                        put("pageUrl", pageUrl)
+                        put("session", session)
+                        put("unionAppId", UNION_APP_ID)
+                        put("usePlayLink", "true")
+                        put("xlightRuntimeSDKversion", XLIGHT_RUNTIME_SDK_VERSION)
+                        put("xlightSDKType", XLIGHT_SDK_TYPE)
+                        put("xlightSDKVersion", XLIGHT_SDK_VERSION)
+                    })
+                }
             )
 
         } catch (e: Exception) {
@@ -92,28 +83,19 @@ object XLightRpcCall {
     ): String {
         return try {
 
-            // extendInfo
-            val extendInfo = JSONObject().apply {
-                put("iepTaskSceneCode", iepTaskSceneCode)
-                put("iepTaskType", iepTaskType)
-            }
-
-            // 单条任务对象
-            val args = JSONObject().apply {
-                put("extendInfo", extendInfo)
-                put("playBizId", playBizId)
-                put("playEventInfo", playEventInfo)
-                put("source", "adx")   // 固定
-            }
-
-            // 最外层数组
-            val argsArray = JSONArray().apply {
-                put(args)
-            }
-
             RequestManager.requestString(
                 "com.alipay.adtask.biz.mobilegw.service.interaction.finish",
-                argsArray.toString()
+                RpcRequestData.array {
+                    // extendInfo
+                    put("extendInfo", JSONObject().apply {
+                        put("iepTaskSceneCode", iepTaskSceneCode)
+                        put("iepTaskType", iepTaskType)
+                    })
+                    // 单条任务对象
+                    put("playBizId", playBizId)
+                    put("playEventInfo", playEventInfo)
+                    put("source", "adx")   // 固定
+                }
             )
 
         } catch (e: Exception) {

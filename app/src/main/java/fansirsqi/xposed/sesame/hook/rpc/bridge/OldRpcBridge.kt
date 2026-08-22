@@ -174,7 +174,7 @@ class OldRpcBridge : RpcBridge {
      */
     private fun handleError(rpcEntity: RpcEntity, t: Throwable, method: String?, id: Int, args: String?) {
         rpcEntity.setError() // 设置为错误状态
-        Log.error(TAG, "旧 RPC 请求 | id: " + id + " | method: " + method + " err:")
+        Log.error(TAG, "旧 RPC 请求 | id: " + id + " | method: " + method + " | args: " + truncateLog(args) + " err:")
         Log.printStackTrace(t) // 打印堆栈跟踪
         if (t is InvocationTargetException) {
             handleInvocationException(rpcEntity, t, method) // 处理调用异常
@@ -262,5 +262,13 @@ class OldRpcBridge : RpcBridge {
 
     companion object {
         private val TAG = OldRpcBridge::class.java.simpleName
+
+        /**
+         * 日志内容截断，防止超长请求体/响应体刷屏
+         */
+        private fun truncateLog(s: String?, max: Int = 500): String {
+            if (s == null) return "null"
+            return if (s.length > max) s.substring(0, max) + "...(len=${s.length}, truncated)" else s
+        }
     }
 }

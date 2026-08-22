@@ -63,7 +63,7 @@ class NewRpcBridge : RpcBridge {
     private fun logNullResponse(rpcEntity: RpcEntity?, reason: String?, count: Int) {
         val methodName = if (rpcEntity != null) rpcEntity.requestMethod else "unknown"
         if (shouldShowErrorLog(methodName)) {
-            Log.error(TAG, "RPC返回null | 方法: $methodName | 原因: $reason | 重试: $count")
+            Log.error(TAG, "RPC返回null | 方法: $methodName | 原因: $reason | 重试: $count\n请求体: ${truncateLog(rpcEntity?.requestData)}\n响应体: ${truncateLog(rpcEntity?.responseString)}")
         }
     }
 
@@ -257,13 +257,13 @@ class NewRpcBridge : RpcBridge {
                                                             rpcEntity.setError()
                                                             if (shouldShowErrorLog(rpcEntity.requestMethod)) {
                                                                 Log.error(TAG, "new rpc response1 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + "\n " +
-                                                                        "args: " + rpcEntity.requestData + " |\n data: " + rpcEntity.responseString)
+                                                                        "args: " + truncateLog(rpcEntity.requestData) + " |\n data: " + truncateLog(rpcEntity.responseString))
                                                             }
                                                         }
                                                     } catch (e: Exception) {
                                                         rpcEntity.setError()
                                                         Log.printStackTrace(TAG,"new rpc response2 | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod +
-                                                                " err:",e)
+                                                                "\n请求体: " + truncateLog(rpcEntity.requestData) + " err:",e)
                                                     }
                                                 }
                                                 null
@@ -349,7 +349,8 @@ class NewRpcBridge : RpcBridge {
                         }
                     }
                 } catch (t: Throwable) {
-                    Log.error(TAG, "new rpc request | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod + " err:")
+                    Log.error(TAG, "new rpc request | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod +
+                            "\n请求体: " + truncateLog(rpcEntity.requestData) + " err:")
                     Log.printStackTrace(t)
                     if (retryInterval < 0) {
                         delay((600 + RandomUtil.delay()).toLong())
@@ -370,6 +371,14 @@ class NewRpcBridge : RpcBridge {
     companion object {
         private val TAG = NewRpcBridge::class.java.simpleName
         private const val ALIPAY_START_DEBOUNCE_TIME = 8000L // 目标应用启动防抖时间：8秒
+
+        /**
+         * 日志内容截断，防止超长请求体/响应体刷屏
+         */
+        private fun truncateLog(s: String?, max: Int = 500): String {
+            if (s == null) return "null"
+            return if (s.length > max) s.substring(0, max) + "...(len=${s.length}, truncated)" else s
+        }
 
         @Volatile
         private var lastAlipayStartTime = 0L // 上次启动目标应用的时间戳

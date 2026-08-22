@@ -5,6 +5,7 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.util.UUID
 import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 
@@ -16,21 +17,34 @@ object AntMemberRpcCall {
     /* ant member point */
     @JvmStatic
     suspend fun queryPointCert(page: Int, pageSize: Int): String {
-        val args1 = "[{\"page\":$page,\"pageSize\":$pageSize}]"
-        return RequestManager.requestString("alipay.antmember.biz.rpc.member.h5.queryPointCert", args1)
+        return RequestManager.requestString(
+            "alipay.antmember.biz.rpc.member.h5.queryPointCert",
+            RpcRequestData.array {
+                put("page", page)
+                put("pageSize", pageSize)
+            }
+        )
     }
 
     @JvmStatic
     suspend fun receivePointByUser(certId: String?): String {
-        val args1 = "[{\"certId\":$certId}]"
-        return RequestManager.requestString("alipay.antmember.biz.rpc.member.h5.receivePointByUser", args1)
+        return RequestManager.requestString(
+            "alipay.antmember.biz.rpc.member.h5.receivePointByUser",
+            RpcRequestData.array {
+                put("certId", certId?.toBigDecimalOrNull() ?: JSONObject.NULL)
+            }
+        )
     }
 
     @JvmStatic
     suspend fun queryMemberSigninCalendar(): String {
         return RequestManager.requestString(
             "com.alipay.amic.biz.rpc.signin.h5.queryMemberSigninCalendar",
-            "[{\"autoSignIn\":true,\"invitorUserId\":\"\",\"sceneCode\":\"QUERY\"}]"
+            RpcRequestData.array {
+                put("autoSignIn", true)
+                put("invitorUserId", "")
+                put("sceneCode", "QUERY")
+            }
         )
     }
 
@@ -39,7 +53,9 @@ object AntMemberRpcCall {
     suspend fun signIn(activityNo: String?): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.signIn",
-            "[{\"activityNo\":\"$activityNo\"}]"
+            RpcRequestData.array {
+                put("activityNo", activityNo ?: "null")
+            }
         )
     }
 
@@ -47,7 +63,9 @@ object AntMemberRpcCall {
     suspend fun signUp(activityNo: String?): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.signUp",
-            "[{\"activityNo\":\"$activityNo\"}]"
+            RpcRequestData.array {
+                put("activityNo", activityNo ?: "null")
+            }
         )
     }
 
@@ -56,7 +74,7 @@ object AntMemberRpcCall {
     suspend fun transcodeCheck(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchbusiness.sign.transcode.check",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -64,7 +82,7 @@ object AntMemberRpcCall {
     suspend fun merchantSign(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchpoint.sqyj.homepage.signin.v1",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -72,7 +90,10 @@ object AntMemberRpcCall {
     suspend fun taskListQuery(): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.task.more.query",
-            "[{\"paramMap\":{\"platform\":\"Android\"},\"taskItemCode\":\"\"}]"
+            RpcRequestData.array {
+                put("paramMap", JSONObject().apply { put("platform", "Android") })
+                put("taskItemCode", "")
+            }
         )
     }
 
@@ -80,7 +101,9 @@ object AntMemberRpcCall {
     suspend fun queryActivity(): String {
         return RequestManager.requestString(
             "alipay.merchant.kmdk.query.activity",
-            "[{\"scene\":\"activityCenter\"}]"
+            RpcRequestData.array {
+                put("scene", "activityCenter")
+            }
         )
     }
 
@@ -89,7 +112,9 @@ object AntMemberRpcCall {
     suspend fun taskFinish(bizId: String?): String {
         return RequestManager.requestString(
             "com.alipay.adtask.biz.mobilegw.service.task.finish",
-            "[{\"bizId\":\"$bizId\"}]"
+            RpcRequestData.array {
+                put("bizId", bizId ?: "null")
+            }
         )
     }
 
@@ -97,7 +122,10 @@ object AntMemberRpcCall {
     suspend fun taskReceive(taskCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.sqyj.task.receive",
-            "[{\"compId\":\"ZTS_TASK_RECEIVE\",\"extInfo\":{\"taskCode\":\"$taskCode\"}}]"
+            RpcRequestData.array {
+                put("compId", "ZTS_TASK_RECEIVE")
+                put("extInfo", JSONObject().apply { put("taskCode", taskCode ?: "null") })
+            }
         )
     }
 
@@ -105,7 +133,9 @@ object AntMemberRpcCall {
     suspend fun actioncode(actionCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.task.query.by.actioncode",
-            "[{\"actionCode\":\"$actionCode\"}]"
+            RpcRequestData.array {
+                put("actionCode", actionCode ?: "null")
+            }
         )
     }
 
@@ -113,7 +143,9 @@ object AntMemberRpcCall {
     suspend fun produce(actionCode: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.biz.task.action.produce",
-            "[{\"actionCode\":\"$actionCode\"}]"
+            RpcRequestData.array {
+                put("actionCode", actionCode ?: "null")
+            }
         )
     }
 
@@ -121,7 +153,11 @@ object AntMemberRpcCall {
     suspend fun ballReceive(ballIds: String?): String {
         return RequestManager.requestString(
             "alipay.mrchservbase.mrchpoint.ball.receive",
-            "[{\"ballIds\":[\"$ballIds\"],\"channel\":\"MRCH_SELF\",\"outBizNo\":\"${getUniqueId()}\"}]"
+            RpcRequestData.array {
+                put("ballIds", JSONArray().put(ballIds ?: "null"))
+                put("channel", "MRCH_SELF")
+                put("outBizNo", getUniqueId())
+            }
         )
     }
 
@@ -129,7 +165,19 @@ object AntMemberRpcCall {
     suspend fun executeTask(bizParam: String?, bizSubType: String?, bizType: String?, taskConfigId: Long?): String {
         return RequestManager.requestString(
             "alipay.antmember.biz.rpc.membertask.h5.executeTask",
-            "[{\"bizOutNo\":\"${TimeUtil.getFormatDate().replace("-", "")}\",\"bizParam\":\"$bizParam\",\"bizSubType\":\"$bizSubType\",\"bizType\":\"$bizType\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"myTab\",\"unid\":\"\"},\"syncProcess\":true,\"taskConfigId\":\"$taskConfigId\"}]"
+            RpcRequestData.array {
+                put("bizOutNo", TimeUtil.getFormatDate().replace("-", ""))
+                put("bizParam", bizParam ?: "null")
+                put("bizSubType", bizSubType ?: "null")
+                put("bizType", bizType ?: "null")
+                put("sourcePassMap", JSONObject().apply {
+                    put("innerSource", "")
+                    put("source", "myTab")
+                    put("unid", "")
+                })
+                put("syncProcess", true)
+                put("taskConfigId", taskConfigId?.toString() ?: "null")
+            }
         )
     }
 
@@ -137,7 +185,14 @@ object AntMemberRpcCall {
     suspend fun queryAllStatusTaskList(): String {
         return RequestManager.requestString(
             "alipay.antmember.biz.rpc.membertask.h5.queryAllStatusTaskList",
-            "[{\"sourceBusiness\":\"signInAd\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"myTab\",\"unid\":\"\"}}]"
+            RpcRequestData.array {
+                put("sourceBusiness", "signInAd")
+                put("sourcePassMap", JSONObject().apply {
+                    put("innerSource", "")
+                    put("source", "myTab")
+                    put("unid", "")
+                })
+            }
         )
     }
 
@@ -149,7 +204,9 @@ object AntMemberRpcCall {
     suspend fun querySignInBall(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.querySignInBall",
-            "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
+            RpcRequestData.array {
+                put("source", "ch_alipaysearch__chsub_normal")
+            }
         )
     }
 
@@ -161,7 +218,11 @@ object AntMemberRpcCall {
     suspend fun continueSignIn(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.continueSignIn",
-            "[{\"sceneId\":\"GAME_CENTER\",\"signType\":\"NORMAL_SIGN\",\"source\":\"ch_alipaysearch__chsub_normal\"}]"
+            RpcRequestData.array {
+                put("sceneId", "GAME_CENTER")
+                put("signType", "NORMAL_SIGN")
+                put("source", "ch_alipaysearch__chsub_normal")
+            }
         )
     }
 
@@ -173,7 +234,9 @@ object AntMemberRpcCall {
     suspend fun queryGameCenterTaskList(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v4.queryTaskList",
-            "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
+            RpcRequestData.array {
+                put("source", "ch_alipaysearch__chsub_normal")
+            }
         )
     }
 
@@ -185,7 +248,9 @@ object AntMemberRpcCall {
     suspend fun queryPointBallList(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.queryPointBallList",
-            "[{\"source\":\"ch_alipaysearch__chsub_normal\"}]"
+            RpcRequestData.array {
+                put("source", "ch_alipaysearch__chsub_normal")
+            }
         )
     }
 
@@ -197,7 +262,7 @@ object AntMemberRpcCall {
     suspend fun batchReceivePointBall(): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.batchReceivePointBall",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -209,7 +274,9 @@ object AntMemberRpcCall {
     suspend fun doTaskSend(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSend",
-            "[{\"taskId\":\"$taskId\"}]"
+            RpcRequestData.array {
+                put("taskId", taskId ?: "null")
+            }
         )
     }
 
@@ -221,7 +288,10 @@ object AntMemberRpcCall {
     suspend fun doTaskSignup(taskId: String?): String {
         return RequestManager.requestString(
             "com.alipay.gamecenteruprod.biz.rpc.v3.doTaskSignup",
-            "[{\"source\":\"ch_alipaysearch__chsub_normal\",\"taskId\":\"$taskId\"}]"
+            RpcRequestData.array {
+                put("source", "ch_alipaysearch__chsub_normal")
+                put("taskId", taskId ?: "null")
+            }
         )
     }
 
@@ -232,7 +302,11 @@ object AntMemberRpcCall {
     suspend fun queryHome(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryHome",
-            "[{\"invokeSource\":\"zmHome\",\"miniZmGrayInside\":\"\",\"version\":\"week\"}]"
+            RpcRequestData.array {
+                put("invokeSource", "zmHome")
+                put("miniZmGrayInside", "")
+                put("version", "week")
+            }
         )
     }
 
@@ -244,7 +318,7 @@ object AntMemberRpcCall {
     suspend fun queryServiceCard(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryServiceCard",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -258,7 +332,10 @@ object AntMemberRpcCall {
     suspend fun zmCheckInCompleteTask(checkInDate: String?, sceneCode: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.CheckInTaskRpcManager.completeTask",
-            "[{\"checkInDate\":\"$checkInDate\",\"sceneCode\":\"$sceneCode\"}]"
+            RpcRequestData.array {
+                put("checkInDate", checkInDate ?: "null")
+                put("sceneCode", sceneCode ?: "null")
+            }
         )
     }
 
@@ -269,7 +346,7 @@ object AntMemberRpcCall {
     suspend fun queryAvailableSesameTask(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.queryListV3",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -280,7 +357,11 @@ object AntMemberRpcCall {
     suspend fun joinSesameTask(taskTemplateId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.promise.PromiseRpcManager.joinActivity",
-            "[{\"chInfo\":\"seasameList\",\"joinFromOuter\":false,\"templateId\":\"$taskTemplateId\"}]"
+            RpcRequestData.array {
+                put("chInfo", "seasameList")
+                put("joinFromOuter", false)
+                put("templateId", taskTemplateId ?: "null")
+            }
         )
     }
 
@@ -291,7 +372,10 @@ object AntMemberRpcCall {
     suspend fun feedBackSesameTask(taskTemplateId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.taskFeedback",
-            "[{\"actionType\":\"TO_COMPLETE\",\"templateId\":\"$taskTemplateId\"}]",
+            RpcRequestData.array {
+                put("actionType", "TO_COMPLETE")
+                put("templateId", taskTemplateId ?: "null")
+            },
             "zmmemberop", "taskFeedback", "CreditAccumulateStrategyRpcManager"
         )
     }
@@ -303,7 +387,9 @@ object AntMemberRpcCall {
     suspend fun finishSesameTask(recordId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.promise.PromiseRpcManager.pushActivity",
-            "[{\"recordId\":\"$recordId\"}]"
+            RpcRequestData.array {
+                put("recordId", recordId ?: "null")
+            }
         )
     }
 
@@ -314,7 +400,11 @@ object AntMemberRpcCall {
     suspend fun queryCreditFeedback(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.queryCreditFeedback",
-            "[{\"queryPotential\":false,\"size\":20,\"status\":\"UNCLAIMED\"}]"
+            RpcRequestData.array {
+                put("queryPotential", false)
+                put("size", 20)
+                put("status", "UNCLAIMED")
+            }
         )
     }
 
@@ -325,7 +415,10 @@ object AntMemberRpcCall {
     suspend fun collectAllCreditFeedback(): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.collectCreditFeedback",
-            "[{\"collectAll\":true,\"status\":\"UNCLAIMED\"}]"
+            RpcRequestData.array {
+                put("collectAll", true)
+                put("status", "UNCLAIMED")
+            }
         )
     }
 
@@ -338,7 +431,11 @@ object AntMemberRpcCall {
     suspend fun collectCreditFeedback(creditFeedbackId: String?): String {
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmcustprod.biz.rpc.home.creditaccumulate.api.CreditAccumulateRpcManager.collectCreditFeedback",
-            "[{\"collectAll\":false,\"creditFeedbackId\":\"$creditFeedbackId\",\"status\":\"UNCLAIMED\"}]"
+            RpcRequestData.array {
+                put("collectAll", false)
+                put("creditFeedbackId", creditFeedbackId ?: "null")
+                put("status", "UNCLAIMED")
+            }
         )
     }
 
@@ -349,7 +446,20 @@ object AntMemberRpcCall {
     suspend fun queryAvailableCollectInsuredGold(): String {
         return RequestManager.requestString(
             "com.alipay.insgiftbff.insgiftMain.queryMultiSceneWaitToGainList",
-            "[{\"entrance\":\"wealth_entry\",\"eventToWaitParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"helpChildParamDTO\":{\"giftProdCode\":\"GIFT_HEALTH_GOLD_CHILD\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"priorityChannelParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]},\"signInParamDTO\":{\"giftProdCode\":\"GIFT_UNIVERSAL_COVERAGE\",\"rightNoList\":[\"UNIVERSAL_ACCIDENT\",\"UNIVERSAL_HOSPITAL\",\"UNIVERSAL_OUTPATIENT\",\"UNIVERSAL_SERIOUSNESS\",\"UNIVERSAL_WEALTH\",\"UNIVERSAL_TRANS\",\"UNIVERSAL_FRAUD_LIABILITY\"]}}]",
+            RpcRequestData.array {
+                put("entrance", "wealth_entry")
+                val rights = listOf("UNIVERSAL_ACCIDENT", "UNIVERSAL_HOSPITAL", "UNIVERSAL_OUTPATIENT", "UNIVERSAL_SERIOUSNESS", "UNIVERSAL_WEALTH", "UNIVERSAL_TRANS", "UNIVERSAL_FRAUD_LIABILITY")
+                val dto: (String, List<String>) -> JSONObject = { giftProdCode, rightNoList ->
+                    JSONObject().apply {
+                        put("giftProdCode", giftProdCode)
+                        put("rightNoList", JSONArray().apply { rightNoList.forEach { put(it) } })
+                    }
+                }
+                put("eventToWaitParamDTO", dto("GIFT_UNIVERSAL_COVERAGE", rights))
+                put("helpChildParamDTO", dto("GIFT_HEALTH_GOLD_CHILD", rights))
+                put("priorityChannelParamDTO", dto("GIFT_UNIVERSAL_COVERAGE", rights))
+                put("signInParamDTO", dto("GIFT_UNIVERSAL_COVERAGE", rights))
+            },
             "insgiftbff", "queryMultiSceneWaitToGainList", "insgiftMain"
         )
     }
@@ -362,7 +472,7 @@ object AntMemberRpcCall {
     suspend fun collectInsuredGold(goldBallObj: JSONObject): String {
         return RequestManager.requestString(
             "com.alipay.insgiftbff.insgiftMain.gainMyAndFamilySumInsured",
-            JSONArray().put(goldBallObj).toString(), "insgiftbff", "gainMyAndFamilySumInsured", "insgiftMain"
+            RpcRequestData.arrayOf(goldBallObj), "insgiftbff", "gainMyAndFamilySumInsured", "insgiftMain"
         )
     }
 
@@ -371,7 +481,10 @@ object AntMemberRpcCall {
     suspend fun querySignInProcess(appletId: String?, scene: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.bean.querySignInProcess",
-            "[{\"appletId\":\"$appletId\",\"scene\":\"$scene\"}]"
+            RpcRequestData.array {
+                put("appletId", appletId ?: "null")
+                put("scene", scene ?: "null")
+            }
         )
     }
 
@@ -379,7 +492,10 @@ object AntMemberRpcCall {
     suspend fun signInTrigger(appletId: String?, scene: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.bean.signInTrigger",
-            "[{\"appletId\":\"$appletId\",\"scene\":\"$scene\"}]"
+            RpcRequestData.array {
+                put("appletId", appletId ?: "null")
+                put("scene", scene ?: "null")
+            }
         )
     }
 
@@ -387,7 +503,11 @@ object AntMemberRpcCall {
     suspend fun beanExchangeDetail(itemId: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.onestop.planTrigger",
-            "[{\"extParams\":{\"itemId\":\"$itemId\"},\"planCode\":\"bluebean_onestop\",\"planOperateCode\":\"exchangeDetail\"}]"
+            RpcRequestData.array {
+                put("extParams", JSONObject().apply { put("itemId", itemId ?: "null") })
+                put("planCode", "bluebean_onestop")
+                put("planOperateCode", "exchangeDetail")
+            }
         )
     }
 
@@ -395,7 +515,14 @@ object AntMemberRpcCall {
     suspend fun beanExchange(itemId: String?, pointAmount: Int): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.onestop.planTrigger",
-            "[{\"extParams\":{\"itemId\":\"$itemId\",\"pointAmount\":\"$pointAmount\"},\"planCode\":\"bluebean_onestop\",\"planOperateCode\":\"exchange\"}]"
+            RpcRequestData.array {
+                put("extParams", JSONObject().apply {
+                    put("itemId", itemId ?: "null")
+                    put("pointAmount", pointAmount.toString())
+                })
+                put("planCode", "bluebean_onestop")
+                put("planOperateCode", "exchange")
+            }
         )
     }
 
@@ -403,7 +530,11 @@ object AntMemberRpcCall {
     suspend fun queryUserAccountInfo(pointProdCode: String?): String {
         return RequestManager.requestString(
             "com.alipay.insmarketingbff.point.queryUserAccountInfo",
-            "[{\"channel\":\"HiChat\",\"pointProdCode\":\"$pointProdCode\",\"pointUnitType\":\"COUNT\"}]"
+            RpcRequestData.array {
+                put("channel", "HiChat")
+                put("pointProdCode", pointProdCode ?: "null")
+                put("pointUnitType", "COUNT")
+            }
         )
     }
 
@@ -412,8 +543,21 @@ object AntMemberRpcCall {
      */
     @JvmStatic
     suspend fun queryMemberInfo(): String {
-        val data = "[{\"needExpirePoint\":true,\"needGrade\":true,\"needPoint\":true,\"queryScene\":\"POINT_EXCHANGE_SCENE\",\"source\":\"POINT_EXCHANGE_SCENE\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"\",\"unid\":\"\"}}]"
-        return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.member.h5.queryMemberInfo", data)
+        return RequestManager.requestString(
+            "com.alipay.alipaymember.biz.rpc.member.h5.queryMemberInfo",
+            RpcRequestData.array {
+                put("needExpirePoint", true)
+                put("needGrade", true)
+                put("needPoint", true)
+                put("queryScene", "POINT_EXCHANGE_SCENE")
+                put("source", "POINT_EXCHANGE_SCENE")
+                put("sourcePassMap", JSONObject().apply {
+                    put("innerSource", "")
+                    put("source", "")
+                    put("unid", "")
+                })
+            }
+        )
     }
 
     /**
@@ -425,44 +569,62 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun queryShandieEntityList(userId: String?, pointBalance: String?): String {
         val uniqueId = "${System.currentTimeMillis()}$userId" + "94000SR202501061144200394000SR2025010611458003"
-        val data = "[{\"blackIds\":[],\"deliveryIdList\":[\"94000SR2025010611442003\",\"94000SR2025010611458003\"],\"filterCityCode\":false,\"filterPointNoEnough\":false,\"filterStockNoEnough\":false,\"pageNum\":1,\"pageSize\":18,\"point\":$pointBalance,\"previewCopyDbId\":\"\",\"queryType\":\"DELIVERY_ID_LIST\",\"source\":\"member_day\",\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"0yuandui\",\"unid\":\"\"},\"topIds\":[],\"uniqueId\":\"$uniqueId\"}]"
-        return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.config.h5.queryShandieEntityList", data)
+        return RequestManager.requestString(
+            "com.alipay.alipaymember.biz.rpc.config.h5.queryShandieEntityList",
+            RpcRequestData.array {
+                put("blackIds", JSONArray())
+                put("deliveryIdList", JSONArray().apply {
+                    put("94000SR2025010611442003")
+                    put("94000SR2025010611458003")
+                })
+                put("filterCityCode", false)
+                put("filterPointNoEnough", false)
+                put("filterStockNoEnough", false)
+                put("pageNum", 1)
+                put("pageSize", 18)
+                put("point", pointBalance?.toBigDecimalOrNull() ?: JSONObject.NULL)
+                put("previewCopyDbId", "")
+                put("queryType", "DELIVERY_ID_LIST")
+                put("source", "member_day")
+                put("sourcePassMap", JSONObject().apply {
+                    put("innerSource", "")
+                    put("source", "0yuandui")
+                    put("unid", "")
+                })
+                put("topIds", JSONArray())
+                put("uniqueId", uniqueId)
+            }
+        )
     }
 
     @JvmStatic
     suspend fun queryDeliveryZoneDetail(deliveryIdList: List<String>, pageNum: Int, pageSize: Int): String {
         // 1. 处理 uniqueId 的拼接逻辑
         // 固定前缀：17665547901390and99999999INTELLIGENT_SORT92524974
-        val idsJoined = deliveryIdList.joinToString(",")
-        val uniqueId = "17665547901390and99999999INTELLIGENT_SORT92524974" + idsJoined
+        val uniqueId = "17665547901390and99999999INTELLIGENT_SORT92524974" + deliveryIdList.joinToString(",")
 
-        // 2. 将 deliveryIdList 转换为 JSON 数组字符串格式
-        // 这里为了简单直观使用 String.format，如果项目中有 Fastjson/Gson 建议使用序列化
-        val deliveryIdListJson = StringBuilder("[")
-        for (i in deliveryIdList.indices) {
-            deliveryIdListJson.append("\"").append(deliveryIdList[i]).append("\"")
-            if (i < deliveryIdList.size - 1) {
-                deliveryIdListJson.append(",")
+        // 2. 构造完整的请求 Data
+        return RequestManager.requestString(
+            "com.alipay.alipaymember.biz.rpc.config.h5.queryDeliveryZoneDetail",
+            RpcRequestData.array {
+                put("deliveryIdList", JSONArray().apply { deliveryIdList.forEach { put(it) } })
+                put("lowerPoint", 0)
+                put("pageNum", pageNum)
+                put("pageSize", pageSize)
+                put("queryNoReserve", true)
+                put("resourceCardChannel", "ZERO_EXCHANGE_CHANNEL")
+                put("sourcePassMap", JSONObject().apply {
+                    put("innerSource", "")
+                    put("source", "")
+                    put("unid", "")
+                })
+                put("startPageFirstQuery", false)
+                put("topIdList", JSONArray().put("202412231259661040"))
+                put("uniqueId", uniqueId)
+                put("upperPoint", 99999999)
+                put("withPointRange", false)
             }
-        }
-        deliveryIdListJson.append("]")
-
-        // 3. 构造完整的请求 Data 字符串
-        val data = "[{" +
-                "\"deliveryIdList\":$deliveryIdListJson," +
-                "\"lowerPoint\":0," +
-                "\"pageNum\":$pageNum," +
-                "\"pageSize\":$pageSize," +
-                "\"queryNoReserve\":true," +
-                "\"resourceCardChannel\":\"ZERO_EXCHANGE_CHANNEL\"," +
-                "\"sourcePassMap\":{\"innerSource\":\"\",\"source\":\"\",\"unid\":\"\"}," +
-                "\"startPageFirstQuery\":false," +
-                "\"topIdList\":[\"202412231259661040\"]," +
-                "\"uniqueId\":\"$uniqueId\"," +
-                "\"upperPoint\":99999999," +
-                "\"withPointRange\":false" +
-                "}]"
-        return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.config.h5.queryDeliveryZoneDetail", data)
+        )
     }
 
     /*
@@ -503,41 +665,31 @@ object AntMemberRpcCall {
 
         // 5. 构建符合最新结构的 JSON 数据
         // 注意：增加了 itemId, cityCode, miniAppId 等字段
-        val data = String.format(
-            "[" +
-                    "{" +
-                    "\"benefitId\":\"%s\"," +
-                    "\"cityCode\":\"\"," +
-                    "\"exchangeType\":\"POINT_PAY\"," +
-                    "\"itemId\":\"%s\"," +
-                    "\"miniAppId\":\"\"," +
-                    "\"orderSource\":\"\"," +
-                    "\"requestId\":\"%s\"," +
-                    "\"requestSourceInfo\":\"%s\"," +
-                    "\"sourcePassMap\":{" +
-                    "\"alipayClientVersion\":\"10.7.80.8000\"," +
-                    "\"bid\":\"\"," +
-                    "\"feedsIndex\":\"0\"," +
-                    "\"innerSource\":\"a159.b52659\"," +
-                    "\"isCpc\":\"\"," +
-                    "\"mobileOsType\":\"Android\"," +
-                    "\"source\":\"\"," +
-                    "\"unid\":\"%s\"," +
-                    "\"uniqueId\":\"%s\"" +
-                    "}," +
-                    "\"userOutAccount\":\"\"" +
-                    "}" +
-                    "]",
-            benefitId,
-            itemId,
-            requestId,
-            requestSourceInfo,
-            unid,
-            uniqueId
+        return RequestManager.requestString(
+            "com.alipay.alipaymember.biz.rpc.exchange.h5.exchangeBenefit",
+            RpcRequestData.array {
+                put("benefitId", benefitId ?: "null")
+                put("cityCode", "")
+                put("exchangeType", "POINT_PAY")
+                put("itemId", itemId ?: "null")
+                put("miniAppId", "")
+                put("orderSource", "")
+                put("requestId", requestId)
+                put("requestSourceInfo", requestSourceInfo)
+                put("sourcePassMap", JSONObject().apply {
+                    put("alipayClientVersion", "10.7.80.8000")
+                    put("bid", "")
+                    put("feedsIndex", "0")
+                    put("innerSource", "a159.b52659")
+                    put("isCpc", "")
+                    put("mobileOsType", "Android")
+                    put("source", "")
+                    put("unid", unid)
+                    put("uniqueId", uniqueId)
+                })
+                put("userOutAccount", "")
+            }
         )
-
-        // 6. 发起接口请求
-        return RequestManager.requestString("com.alipay.alipaymember.biz.rpc.exchange.h5.exchangeBenefit", data)
     }
 
     /**
@@ -550,10 +702,16 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun queryExchangeList(page: Int, pageSize: Int): String {
         // 参数构造参考抓包: [{"currentPage":1,"formDelivery":"false","pageSize":20,"privilegeSource":"","privilegeTab":"","tabList":[]}]
-        val args = "[{\"currentPage\":$page,\"formDelivery\":\"false\",\"pageSize\":$pageSize,\"privilegeSource\":\"\",\"privilegeTab\":\"\",\"tabList\":[]}]"
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.award.AwardRpcManager.queryListV2",
-            args
+            RpcRequestData.array {
+                put("currentPage", page)
+                put("formDelivery", "false")
+                put("pageSize", pageSize)
+                put("privilegeSource", "")
+                put("privilegeTab", "")
+                put("tabList", JSONArray())
+            }
         )
     }
 
@@ -566,10 +724,11 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun obtainAward(templateId: String?): String {
         // 参数构造参考抓包: [{"awardTemplateId":"245213012"}]
-        val args = "[{\"awardTemplateId\":\"$templateId\"}]"
         return RequestManager.requestString(
             "com.antgroup.zmxy.zmmemberop.biz.rpc.award.AwardRpcManager.obtainAward",
-            args
+            RpcRequestData.array {
+                put("awardTemplateId", templateId ?: "null")
+            }
         )
     }
 
@@ -616,7 +775,7 @@ object AntMemberRpcCall {
             body.put("source", ANNUAL_REVIEW_QUERY_COMPONENT)
             return RequestManager.requestString(
                 "alipay.imasp.program.programInvoke",
-                JSONArray().put(body).toString()
+                RpcRequestData.arrayOf(body)
             )
         } catch (e: Throwable) {
             return null
@@ -645,7 +804,7 @@ object AntMemberRpcCall {
             body.put("source", ANNUAL_REVIEW_APPLY_COMPONENT)
             return RequestManager.requestString(
                 "alipay.imasp.program.programInvoke",
-                JSONArray().put(body).toString()
+                RpcRequestData.arrayOf(body)
             )
         } catch (e: Throwable) {
             return null
@@ -673,7 +832,7 @@ object AntMemberRpcCall {
             body.put("source", ANNUAL_REVIEW_PROCESS_COMPONENT)
             return RequestManager.requestString(
                 "alipay.imasp.program.programInvoke",
-                JSONArray().put(body).toString()
+                RpcRequestData.arrayOf(body)
             )
         } catch (e: Throwable) {
             return null
@@ -702,7 +861,7 @@ object AntMemberRpcCall {
             body.put("source", ANNUAL_REVIEW_GET_REWARD_COMPONENT)
             return RequestManager.requestString(
                 "alipay.imasp.program.programInvoke",
-                JSONArray().put(body).toString()
+                RpcRequestData.arrayOf(body)
             )
         } catch (e: Throwable) {
             return null
@@ -719,14 +878,14 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun zhimaTreeHomePage(): String? {
         try {
-            val args = JSONObject()
-            args.put("operation", "ZHIMA_TREE_HOME_PAGE")
-            args.put("playInfo", ZHIMATREE_PLAY_INFO)
-            args.put("refer", ZHIMATREE_REFER)
-            args.put("extInfo", JSONObject())
             return RequestManager.requestString(
                 "alipay.promoprod.play.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("operation", "ZHIMA_TREE_HOME_PAGE")
+                    put("playInfo", ZHIMATREE_PLAY_INFO)
+                    put("refer", ZHIMATREE_REFER)
+                    put("extInfo", JSONObject())
+                }
             )
         } catch (e: Exception) {
             return null
@@ -739,18 +898,17 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun zhimaTreeCleanAndPush(treeCode: String?): String? {
         try {
-            val args = JSONObject()
-            args.put("operation", "ZHIMA_TREE_CLEAN_AND_PUSH")
-            args.put("playInfo", ZHIMATREE_PLAY_INFO)
-            args.put("refer", ZHIMATREE_REFER)
-
-            val extInfo = JSONObject()
-            extInfo.put("clickNum", "1")
-            extInfo.put("treeCode", treeCode)
-            args.put("extInfo", extInfo)
             return RequestManager.requestString(
                 "alipay.promoprod.play.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("operation", "ZHIMA_TREE_CLEAN_AND_PUSH")
+                    put("playInfo", ZHIMATREE_PLAY_INFO)
+                    put("refer", ZHIMATREE_REFER)
+                    put("extInfo", JSONObject().apply {
+                        put("clickNum", "1")
+                        put("treeCode", treeCode)
+                    })
+                }
             )
         } catch (e: Exception) {
             return null
@@ -763,18 +921,17 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun queryRentGreenTaskList(): String? {
         try {
-            val args = JSONObject()
-            args.put("operation", "RENT_GREEN_TASK_LIST_QUERY")
-            args.put("playInfo", ZHIMATREE_PLAY_INFO)
-            args.put("refer", ZHIMATREE_REFER)
-
-            val extInfo = JSONObject()
-            extInfo.put("chInfo", "ch_share__chsub_ALPContact")
-            extInfo.put("batchId", "")
-            args.put("extInfo", extInfo)
             return RequestManager.requestString(
                 "alipay.promoprod.play.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("operation", "RENT_GREEN_TASK_LIST_QUERY")
+                    put("playInfo", ZHIMATREE_PLAY_INFO)
+                    put("refer", ZHIMATREE_REFER)
+                    put("extInfo", JSONObject().apply {
+                        put("chInfo", "ch_share__chsub_ALPContact")
+                        put("batchId", "")
+                    })
+                }
             )
         } catch (e: Exception) {
             return null
@@ -788,19 +945,18 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun rentGreenTaskFinish(taskId: String?, stageCode: String?): String? {
         try {
-            val args = JSONObject()
-            args.put("operation", "RENT_GREEN_TASK_FINISH")
-            args.put("playInfo", ZHIMATREE_PLAY_INFO)
-            args.put("refer", ZHIMATREE_REFER)
-
-            val extInfo = JSONObject()
-            extInfo.put("chInfo", "ch_share__chsub_ALPContact")
-            extInfo.put("taskId", taskId)
-            extInfo.put("stageCode", stageCode)
-            args.put("extInfo", extInfo)
             return RequestManager.requestString(
                 "alipay.promoprod.play.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("operation", "RENT_GREEN_TASK_FINISH")
+                    put("playInfo", ZHIMATREE_PLAY_INFO)
+                    put("refer", ZHIMATREE_REFER)
+                    put("extInfo", JSONObject().apply {
+                        put("chInfo", "ch_share__chsub_ALPContact")
+                        put("taskId", taskId)
+                        put("stageCode", stageCode)
+                    })
+                }
             )
         } catch (e: Exception) {
             return null
@@ -813,12 +969,11 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun queryWelfareHome(): String? {
         try {
-            val args = JSONObject()
-            args.put("isResume", true)
-            // 接口: com.alipay.finaggexpbff.needle.welfareCenter.index
             return RequestManager.requestString(
                 "com.alipay.finaggexpbff.needle.welfareCenter.index",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("isResume", true)
+                }
             )
         } catch (e: Exception) {
             return null
@@ -831,14 +986,12 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun taskQueryPush(taskId: String?): String? {
         try {
-            val args = JSONObject()
-            args.put("mode", 1) // 固定参数
-            args.put("taskId", taskId)
-
-            // 接口: com.alipay.wealthgoldtwa.needle.taskQueryPush
             return RequestManager.requestString(
                 "com.alipay.wealthgoldtwa.needle.taskQueryPush",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("mode", 1) // 固定参数
+                    put("taskId", taskId)
+                }
             )
         } catch (e: Exception) {
             return null
@@ -852,11 +1005,11 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun welfareCenterTrigger(type: String?): String? {
         try {
-            val args = JSONObject()
-            args.put("type", type)
             return RequestManager.requestString(
                 "com.alipay.finaggexpbff.needle.welfareCenter.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("type", type)
+                }
             )
         } catch (e: Exception) {
             return null
@@ -869,11 +1022,11 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun goldBillTaskTrigger(taskId: String?): String? {
         try {
-            val args = JSONObject()
-            args.put("taskId", taskId)
             return RequestManager.requestString(
                 "com.alipay.wealthgoldtwa.goldbill.v4.task.trigger",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("taskId", taskId)
+                }
             )
         } catch (e: Exception) {
             return null
@@ -887,13 +1040,12 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun queryConsumeHome(): String? {
         try {
-            val args = JSONObject()
-            args.put("tabBubbleDeliverParam", JSONObject())
-            args.put("tabTypeDeliverParam", JSONObject())
-            // 接口: com.alipay.wealthgoldtwa.needle.consume.query
             return RequestManager.requestString(
                 "com.alipay.wealthgoldtwa.needle.consume.query",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("tabBubbleDeliverParam", JSONObject())
+                    put("tabTypeDeliverParam", JSONObject())
+                }
             )
         } catch (e: Exception) {
             return null
@@ -909,17 +1061,16 @@ object AntMemberRpcCall {
     @JvmStatic
     suspend fun submitConsume(amount: Int, productId: String?, bonusAmount: Int): String? {
         try {
-            val args = JSONObject()
-            args.put("exchangeAmount", amount)
-            // 计算金额：100份 = 0.10元。公式：份数 / 1000.0
-            args.put("exchangeMoney", String.format("%.2f", amount / 1000.0))
-            args.put("prizeType", "GOLD") // 固定为黄金
-            args.put("productId", productId)
-            args.put("bonusAmount", bonusAmount)
-            // 接口: com.alipay.wealthgoldtwa.needle.consume.submit
             return RequestManager.requestString(
                 "com.alipay.wealthgoldtwa.needle.consume.submit",
-                JSONArray().put(args).toString()
+                RpcRequestData.array {
+                    put("exchangeAmount", amount)
+                    // 计算金额：100份 = 0.10元。公式：份数 / 1000.0
+                    put("exchangeMoney", String.format("%.2f", amount / 1000.0))
+                    put("prizeType", "GOLD") // 固定为黄金
+                    put("productId", productId)
+                    put("bonusAmount", bonusAmount)
+                }
             )
         } catch (e: Exception) {
             return null
@@ -933,13 +1084,15 @@ object AntMemberRpcCall {
      */
     @JvmStatic
     suspend fun queryStickerCanReceive(year: String?, month: String?): String {
-        val data = "[{" +
-                "\"isFirstShow\":\"false\"," +
-                "\"month\":\"$month\"," +
-                "\"scene\":\"\"," +
-                "\"year\":\"$year\"" +
-                "}]"
-        return RequestManager.requestString("alipay.memberasset.sticker.queryStickerCanReceive", data)
+        return RequestManager.requestString(
+            "alipay.memberasset.sticker.queryStickerCanReceive",
+            RpcRequestData.array {
+                put("isFirstShow", "false")
+                put("month", month ?: "null")
+                put("scene", "")
+                put("year", year ?: "null")
+            }
+        )
     }
 
     /**
@@ -950,16 +1103,14 @@ object AntMemberRpcCall {
     suspend fun receiveSticker(year: String?, month: String?, stickerIds: List<String>?): String? {
         if (stickerIds.isNullOrEmpty()) return null
 
-        // 构建 stickerIds 的 JSON 数组字符串
-        val sb = StringBuilder("[")
-        for (i in stickerIds.indices) {
-            sb.append("\"").append(stickerIds[i]).append("\"")
-            if (i < stickerIds.size - 1) sb.append(",")
-        }
-        sb.append("]")
-
-        val data = "[{\"month\":\"$month\",\"stickerIds\":$sb,\"year\":\"$year\"}]"
-        return RequestManager.requestString("alipay.memberasset.sticker.receiveSticker", data)
+        return RequestManager.requestString(
+            "alipay.memberasset.sticker.receiveSticker",
+            RpcRequestData.array {
+                put("month", month ?: "null")
+                put("stickerIds", JSONArray().apply { stickerIds.forEach { put(it) } })
+                put("year", year ?: "null")
+            }
+        )
     }
 
     //芝麻信誉 部分
@@ -996,14 +1147,13 @@ object AntMemberRpcCall {
                 // 默认使用抓包中观察到的版本号，避免服务端按版本做限流/灰度
                 invokeVersion = "1.0.2025.10.27"
             }
-            val data = "[{" +
-                    "\"guideBehaviorId\":\"$guideBehaviorId\"," +
-                    "\"invokeVersion\":\"$invokeVersion\"," +
-                    "\"switchNewPage\":true" +
-                    "}]"
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthbehavior.apiGrowthBehaviorRpcManager.queryToDoList",
-                data
+                RpcRequestData.array {
+                    put("guideBehaviorId", guideBehaviorId)
+                    put("invokeVersion", invokeVersion)
+                    put("switchNewPage", true)
+                }
             )
         }
 
@@ -1019,10 +1169,11 @@ object AntMemberRpcCall {
          */
         @JvmStatic
         suspend fun openBehaviorCollect(behaviorId: String?): String {
-            val data = "[{\"behaviorId\":\"$behaviorId\"}]"
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthbehavior.apiGrowthBehaviorRpcManager.openBehaviorCollect",
-                data
+                RpcRequestData.array {
+                    put("behaviorId", behaviorId ?: "null")
+                }
             )
         }
 
@@ -1037,10 +1188,11 @@ object AntMemberRpcCall {
          */
         @JvmStatic
         suspend fun queryDailyQuiz(behaviorId: String?): String {
-            val data = "[{\"behaviorId\":\"$behaviorId\"}]"
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthtask.api.GrowthTaskRpcManager.queryDailyQuiz",
-                data
+                RpcRequestData.array {
+                    put("behaviorId", behaviorId ?: "null")
+                }
             )
         }
 
@@ -1075,20 +1227,17 @@ object AntMemberRpcCall {
             if (answerStatus.isNullOrEmpty()) {
                 answerStatus = "RIGHT"
             }
-            val sb = StringBuilder()
-            sb.append("[{\"behaviorId\":\"")
-                .append(behaviorId)
-                .append("\",\"bizDate\":")
-                .append(bizDate)
-                .append(",\"extInfo\":{")
-                .append("\"answerId\":\"").append(answerId).append("\",")
-                .append("\"answerStatus\":\"").append(answerStatus).append("\",")
-                .append("\"questionId\":\"").append(questionId).append("\"")
-                .append("}}]")
-            val data = sb.toString()
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthtask.api.GrowthTaskRpcManager.pushDailyTask",
-                data
+                RpcRequestData.array {
+                    put("behaviorId", behaviorId ?: "null")
+                    put("bizDate", bizDate)
+                    put("extInfo", JSONObject().apply {
+                        put("answerId", answerId ?: "null")
+                        put("answerStatus", answerStatus)
+                        put("questionId", questionId ?: "null")
+                    })
+                }
             )
         }
 
@@ -1126,21 +1275,17 @@ object AntMemberRpcCall {
                 answerStatus = "RIGHT"
             }
 
-            val sb = StringBuilder()
-            sb.append("[{")
-                .append("\"behaviorId\":\"shipingwenda\",")
-                .append("\"bizDate\":").append(bizDate).append(',')
-                .append("\"extInfo\":{")
-                .append("\"answerId\":\"").append(answerId).append("\",")
-                .append("\"answerStatus\":\"").append(answerStatus).append("\",")
-                .append("\"questionId\":\"").append(questionId).append("\"")
-                .append("}")
-                .append("}]")
-
-            val data = sb.toString()
             return RequestManager.requestString(
                 "com.antgroup.zmxy.zmcustprod.biz.rpc.growthtask.api.GrowthTaskRpcManager.pushDailyTask",
-                data
+                RpcRequestData.array {
+                    put("behaviorId", "shipingwenda")
+                    put("bizDate", bizDate)
+                    put("extInfo", JSONObject().apply {
+                        put("answerId", answerId ?: "null")
+                        put("answerStatus", answerStatus)
+                        put("questionId", questionId ?: "null")
+                    })
+                }
             )
         }
 
@@ -1151,13 +1296,13 @@ object AntMemberRpcCall {
         @JvmStatic
         suspend fun queryScoreProgress(): String? {
             try {
-                val args = JSONObject()
-                args.put("needTotalProcess", "TRUE")
-                args.put("queryGuideInfo", true)
-                args.put("switchNewPage", true)
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmcustprod.biz.rpc.home.api.HomeV8RpcManager.queryScoreProgress",
-                    JSONArray().put(args).toString()
+                    RpcRequestData.array {
+                        put("needTotalProcess", "TRUE")
+                        put("queryGuideInfo", true)
+                        put("switchNewPage", true)
+                    }
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -1172,11 +1317,11 @@ object AntMemberRpcCall {
         @JvmStatic
         suspend fun collectProgressBall(ballIdList: JSONArray?): String? {
             try {
-                val args = JSONObject()
-                args.put("ballIdList", ballIdList) // 直接用 JSONArray
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmcustprod.biz.rpc.growthbehavior.apiGrowthBehaviorRpcManager.collectProgressBall",
-                    JSONArray().put(args).toString()
+                    RpcRequestData.array {
+                        put("ballIdList", ballIdList) // 直接用 JSONArray
+                    }
                 )
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -1192,7 +1337,7 @@ object AntMemberRpcCall {
             suspend fun alchemyQueryHome(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.queryHome",
-                    "[{}]"
+                    RpcRequestData.array { }
                 )
             }
 
@@ -1204,7 +1349,7 @@ object AntMemberRpcCall {
             @JvmStatic
             suspend fun alchemyExecute(): String {
                 // 日志中 requestData 为 [null]
-                return RequestManager.requestString("com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.alchemy", "[{}]")
+                return RequestManager.requestString("com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.alchemy", RpcRequestData.array { })
             }
 
             /**
@@ -1220,7 +1365,10 @@ object AntMemberRpcCall {
             suspend fun alchemyQueryCheckIn(scenecode: String?): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.CheckInTaskRpcManager.queryTaskLists",
-                    "[{\"sceneCode\":\"$scenecode\",\"version\":\"$Version\"}]"
+                    RpcRequestData.array {
+                        put("sceneCode", scenecode ?: "null")
+                        put("version", Version)
+                    }
                 )
             }
 
@@ -1232,7 +1380,7 @@ object AntMemberRpcCall {
             suspend fun alchemyQueryTimeLimitedTask(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.TimeLimitedTaskRpcManager.queryTask",
-                    "[{}]"
+                    RpcRequestData.array { }
                 )
             }
 
@@ -1261,12 +1409,11 @@ object AntMemberRpcCall {
              */
             @JvmStatic
             suspend fun alchemyCompleteTimeLimitedTask(templateId: String?): String {
-                val body = "[{\n" +
-                        "    \"templateId\": \"$templateId\"\n" +
-                        "}]"
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.pointtask.TimeLimitedTaskRpcManager.completeTask",
-                    body
+                    RpcRequestData.array {
+                        put("templateId", templateId ?: "null")
+                    }
                 )
             }
 
@@ -1278,7 +1425,13 @@ object AntMemberRpcCall {
             suspend fun alchemyQueryListV3(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.creditaccumulate.CreditAccumulateStrategyRpcManager.queryListV3",
-                    "[{\"chInfo\":\"\",\"deliverStatus\":\"\",\"deliveryTemplateId\":\"\",\"searchSubscribeTask\":true,\"version\":\"alchemy\"}]"
+                    RpcRequestData.array {
+                        put("chInfo", "")
+                        put("deliverStatus", "")
+                        put("deliveryTemplateId", "")
+                        put("searchSubscribeTask", true)
+                        put("version", "alchemy")
+                    }
                 )
             }
 
@@ -1291,7 +1444,7 @@ object AntMemberRpcCall {
             suspend fun claimAward(): String {
                 return RequestManager.requestString(
                     "com.antgroup.zmxy.zmmemberop.biz.rpc.AlchemyRpcManager.claimAward",
-                    "[{}]"
+                    RpcRequestData.array { }
                 )
             }
         }

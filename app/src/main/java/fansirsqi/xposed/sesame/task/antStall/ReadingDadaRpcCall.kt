@@ -1,7 +1,8 @@
 package fansirsqi.xposed.sesame.task.antStall
 
-import fansirsqi.xposed.sesame.hook.RequestManager
 import fansirsqi.xposed.sesame.core.util.StringUtil
+import fansirsqi.xposed.sesame.hook.RequestManager
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 
 /**
  * @file ReadingDadaRpcCall.kt
@@ -26,16 +27,18 @@ object ReadingDadaRpcCall {
         questionId: String,
         answer: String
     ): String {
-        val outBizIdParam = if (StringUtil.isEmpty(outBizId)) {
-            ""
-        } else {
-            "\"outBizId\":\"$outBizId\","
-        }
-
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.submitAnswer",
-            "[{\"activityId\":\"$activityId\",\"answer\":\"$answer\",\"dadaVersion\":\"1.3.0\"," +
-                    "$outBizIdParam\"questionId\":\"$questionId\",\"version\":$VERSION}]"
+            RpcRequestData.array {
+                put("activityId", activityId)
+                put("answer", answer)
+                put("dadaVersion", "1.3.0")
+                if (!StringUtil.isEmpty(outBizId)) {
+                    put("outBizId", outBizId)
+                }
+                put("questionId", questionId)
+                put("version", VERSION)
+            }
         )
     }
 
@@ -47,7 +50,11 @@ object ReadingDadaRpcCall {
     suspend fun getQuestion(activityId: String): String {
         return RequestManager.requestString(
             "com.alipay.reading.game.dada.openDailyAnswer.getQuestion",
-            "[{\"activityId\":\"$activityId\",\"dadaVersion\":\"1.3.0\",\"version\":$VERSION}]"
+            RpcRequestData.array {
+                put("activityId", activityId)
+                put("dadaVersion", "1.3.0")
+                put("version", VERSION)
+            }
         )
     }
 }

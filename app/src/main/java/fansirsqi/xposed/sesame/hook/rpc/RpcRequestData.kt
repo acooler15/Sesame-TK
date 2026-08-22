@@ -38,3 +38,24 @@ object RpcRequestData {
         if (!version.isNullOrEmpty()) put("version", version)
     }
 }
+
+/**
+ * RPC 标准字段常量（与 [RpcRequestData] 同文件）。
+ *
+ * 注意：requestType 为【开放集合】，以下仅为已抓包确认的取值，新增前先核对，不要当成穷举。
+ */
+object RpcConst {
+    /** requestType 取值（开放集合，非穷举） */
+    object Type {
+        const val RPC = "RPC"
+        const val RPC_L = "rpc"      // antiep 系列用小写，已见于 AntForest
+        const val NORMAL = "NORMAL"
+        const val H5 = "H5"          // 与 Src.H5 同值，但此处是 requestType 槽位
+    }
+
+    /** source 取值 */
+    object Src {
+        const val H5 = "H5"
+        // 其余 source 值随抓包补充
+    }
+}

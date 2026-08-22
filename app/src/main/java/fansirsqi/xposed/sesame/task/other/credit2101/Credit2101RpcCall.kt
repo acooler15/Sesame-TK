@@ -1,79 +1,69 @@
 package fansirsqi.xposed.sesame.task.other.credit2101
 
 import fansirsqi.xposed.sesame.hook.RequestManager
-import org.json.JSONArray
+import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import org.json.JSONObject
 
 object Credit2101RpcCall {
 
     /** 查询账户资产：包含信用印记、碎片、体力、宝箱等 */
     suspend fun queryAccountAsset(): String {
-        val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryAccountAsset",
-            data
+            RpcRequestData.array { }
         )
     }
 
     /** 开宝箱（触发收益） */
     suspend fun triggerBenefit(): String {
-        val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.triggerBenefit",
-            data
+            RpcRequestData.array { }
         )
     }
 
     /** 查询签到数据 */
     suspend fun querySignInData(): String {
-        val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.querySignInData",
-            data
+            RpcRequestData.array { }
         )
     }
 
     /** 执行签到，day 为 totalLoginDays */
     suspend fun userSignIn(day: Int): String {
-        val data = "[{\"day\":$day}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.userSignIn",
-            data
+            RpcRequestData.array {
+                put("day", day)
+            }
         )
     }
 
     /** 查询当前坐标附近事件 */
     suspend fun queryGridEvent(cityCode: String, latitude: Double, longitude: Double, guideState: Boolean = false): String {
-        val data = """[
-                {
-                  "extParams": {
-                    "cityCode": "$cityCode",
-                    "latitude": "$latitude",
-                    "longitude": "$longitude"
-                  },
-                  "guideState": $guideState
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryGridEvent",
-            data
+            RpcRequestData.array {
+                put("extParams", JSONObject().apply {
+                    put("cityCode", cityCode)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                })
+                put("guideState", guideState)
+            }
         )
     }
 
     /** 小游戏开始：MINI_GAME_ELIMINATE / MINI_GAME_COLLECTYJ 通用 */
     suspend fun eventGameStart(batchNo: String, eventId: String, miniGameStageId: String): String {
-        val data = """[
-                {
-                  "batchNo": "$batchNo",
-                  "eventId": "$eventId",
-                  "miniGameStageId": "$miniGameStageId"
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.eventGameStart",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("miniGameStageId", miniGameStageId)
+            }
         )
     }
 
@@ -92,27 +82,18 @@ object Credit2101RpcCall {
         miniGameStageId: String,
         collectedYJ: Int // 明确要求传入 Int 类型
     ): String {
-
-        val extParams = JSONObject().apply {
-            put("collectedYJ", collectedYJ) // JSONObject 存入 Int 时不会带引号
-        }
-
-        val requestObj = JSONObject().apply {
-            put("batchNo", batchNo)
-            put("eventId", eventId)
-            put("extParams", extParams)
-            put("miniGameStageId", miniGameStageId)
-            put("passed", 1) // 保持为数字 1
-        }
-
-        // 包装成数组 [ {...} ]
-        val data = JSONArray().apply {
-            put(requestObj)
-        }.toString()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.eventGameComplete",
-            data
+            RpcRequestData.array {
+                val extParams = JSONObject().apply {
+                    put("collectedYJ", collectedYJ) // JSONObject 存入 Int 时不会带引号
+                }
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("extParams", extParams)
+                put("miniGameStageId", miniGameStageId)
+                put("passed", 1) // 保持为数字 1
+            }
         )
     }
 
@@ -133,24 +114,19 @@ object Credit2101RpcCall {
         miniGameStageId: String,
         extParams: JSONObject?
     ): String {
-
-        val extParamsStr = extParams?.toString() ?: "null"
-
-        val data = """
-        [
-          {
-            "batchNo": "$batchNo",
-            "eventId": "$eventId",
-            "miniGameStageId": "$miniGameStageId",
-            "passed": 1,
-            "extParams": $extParamsStr
-          }
-        ]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.eventGameComplete",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("miniGameStageId", miniGameStageId)
+                put("passed", 1)
+                if (extParams != null) {
+                    put("extParams", extParams)
+                } else {
+                    put("extParams", JSONObject.NULL)
+                }
+            }
         )
     }
 
@@ -160,18 +136,14 @@ object Credit2101RpcCall {
         eventId: String,
         miniGameStageId: String
     ): String {
-        val data = """[
-                {
-                  "batchNo": "$batchNo",
-                  "eventId": "$eventId",
-                  "miniGameStageId": "$miniGameStageId",
-                  "passed": 1
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.eventGameComplete",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("miniGameStageId", miniGameStageId)
+                put("passed", 1)
+            }
         )
     }
 
@@ -183,117 +155,92 @@ object Credit2101RpcCall {
         latitude: Double,
         longitude: Double
     ): String {
-        val data = """[
-                {
-                  "batchNo": "$batchNo",
-                  "eventId": "$eventId",
-                  "extParams": {
-                    "cityCode": "$cityCode",
-                    "latitude": $latitude,
-                    "longitude": $longitude
-                  }
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.collectCredit",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("extParams", JSONObject().apply {
+                    put("cityCode", cityCode)
+                    put("latitude", latitude)
+                    put("longitude", longitude)
+                })
+            }
         )
     }
 
     /** 查询黑色印记事件详情 */
     suspend fun queryBlackMarkEvent(eventId: String): String {
-        val data = "[{\"eventId\":\"$eventId\"}]"
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryBlackMarkEvent",
-            data
+            RpcRequestData.array {
+                put("eventId", eventId)
+            }
         )
     }
 
     /** 加入黑色印记事件（最低 10 点能量） */
     suspend fun joinBlackMarkEvent(creditEnergy: Int, eventId: String): String {
-        val data = """[
-                {
-                  "creditEnergy": $creditEnergy,
-                  "eventId": "$eventId"
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.joinBlackMarkEvent",
-            data
+            RpcRequestData.array {
+                put("creditEnergy", creditEnergy)
+                put("eventId", eventId)
+            }
         )
     }
 
     /** 黑色印记事件注能 */
     suspend fun chargeBlackMarkEvent(creditEnergy: Int, eventId: String): String {
-        val data = """[
-                {
-                  "creditEnergy": $creditEnergy,
-                  "eventId": "$eventId"
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.chargeBlackMarkEvent",
-            data
+            RpcRequestData.array {
+                put("creditEnergy", creditEnergy)
+                put("eventId", eventId)
+            }
         )
     }
 
     /** 探测事件（消耗探索次数） */
     suspend fun exploreGridEvent(cityCode: String, latitude: Double, longitude: Double): String {
-        val data = """[
-                {
-                  "extParams": {
-                    "cityCode": "$cityCode",
-                    "latitude": "$latitude",
-                    "longitude": "$longitude"
-                  }
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.exploreGridEvent",
-            data
+            RpcRequestData.array {
+                put("extParams", JSONObject().apply {
+                    put("cityCode", cityCode)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                })
+            }
         )
     }
 
     /** 查询每日任务列表 */
     suspend fun queryUserTask(): String {
-        val data = "[{}]"
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryUserTask",
-            data
+            RpcRequestData.array { }
         )
     }
 
     /** 任务操作：例如 TASK_CLAIM */
     suspend fun operateTask(taskAction: String, taskConfigId: String): String {
-        val data = """[
-                {
-                  "taskAction": "$taskAction",
-                  "taskConfigId": "$taskConfigId"
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.operateTask",
-            data
+            RpcRequestData.array {
+                put("taskAction", taskAction)
+                put("taskConfigId", taskConfigId)
+            }
         )
     }
 
     /** 领取任务奖励 */
     suspend fun awardTask(taskConfigId: String): String {
-        val data = """[
-                {
-                  "taskConfigId": "$taskConfigId"
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.awardTask",
-            data
+            RpcRequestData.array {
+                put("taskConfigId", taskConfigId)
+            }
         )
     }
 
@@ -305,21 +252,17 @@ object Credit2101RpcCall {
         latitude: Double,
         longitude: Double
     ): String {
-        val data = """[
-                {
-                  "batchNo": "$batchNo",
-                  "eventId": "$eventId",
-                  "extParams": {
-                    "cityCode": "$cityCode",
-                    "latitude": "$latitude",
-                    "longitude": "$longitude"
-                  }
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryEventGate",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("extParams", JSONObject().apply {
+                    put("cityCode", cityCode)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                })
+            }
         )
     }
 
@@ -332,22 +275,18 @@ object Credit2101RpcCall {
         longitude: Double,
         storyId: String
     ): String {
-        val data = """[
-                {
-                  "batchNo": "$batchNo",
-                  "eventId": "$eventId",
-                  "extParams": {
-                    "cityCode": "$cityCode",
-                    "latitude": "$latitude",
-                    "longitude": "$longitude",
-                    "storyId": "$storyId"
-                  }
-                }
-            ]""".trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.completeEventGate",
-            data
+            RpcRequestData.array {
+                put("batchNo", batchNo)
+                put("eventId", eventId)
+                put("extParams", JSONObject().apply {
+                    put("cityCode", cityCode)
+                    put("latitude", latitude.toString())
+                    put("longitude", longitude.toString())
+                    put("storyId", storyId)
+                })
+            }
         )
     }
 
@@ -401,17 +340,11 @@ object Credit2101RpcCall {
      * @return RPC 返回的原始 JSON 字符串
      */
     suspend fun queryPopupView(popupId: String = "1"): String {
-        val data = """
-        [
-          {
-            "popupId": "$popupId"
-          }
-        ]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryPopupView",
-            data
+            RpcRequestData.array {
+                put("popupId", popupId)
+            }
         )
     }
 
@@ -429,11 +362,9 @@ object Credit2101RpcCall {
      * }
      */
     suspend fun queryChapterProgress(): String {
-        val data = "[{}]"
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryChapterProgress",
-            data
+            RpcRequestData.array { }
         )
     }
 
@@ -449,18 +380,12 @@ object Credit2101RpcCall {
      * 领奖响应示例：{"success":true, "gainByCollectedAll":{"awardAmount":"1200","awardType":"YJ_PRIZE"}}
      */
     suspend fun completeChapterAction(action: String, chapter: String): String {
-        val data = """
-        [
-          {
-            "action": "$action",
-            "chapter": "$chapter"
-          }
-        ]
-    """.trimIndent()
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.completeChapterAction",
-            data
+            RpcRequestData.array {
+                put("action", action)
+                put("chapter", chapter)
+            }
         )
     }
 
@@ -468,7 +393,7 @@ object Credit2101RpcCall {
     suspend fun queryRelationTalent(): String {
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryRelationTalent",
-            "[{}]"
+            RpcRequestData.array { }
         )
     }
 
@@ -478,43 +403,30 @@ object Credit2101RpcCall {
         treeType: String,
         targetLevel: Int
     ): String {
-        val requestObj = JSONObject().apply {
-            put("roleId", "")
-            put("talentAttributeType", attrType)
-            put("talentTreeType", treeType)
-            put("targetAttributeLevel", targetLevel.toString()) // 严格对齐抓包：字符串类型
-        }
-
-        val requestArray = JSONArray().apply {
-            put(requestObj)
-        }
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.upgradeTalentAttribute",
-            requestArray.toString()
+            RpcRequestData.array {
+                put("roleId", "")
+                put("talentAttributeType", attrType)
+                put("talentTreeType", treeType)
+                put("targetAttributeLevel", targetLevel.toString()) // 严格对齐抓包：字符串类型
+            }
         )
     }
 
     /** 查询修复列表 (黑色印记列表) */
     suspend fun queryGuardMarkList(): String {
-        // 构造查询参数，通常为 [{}]
-        val data = "[{}]"
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.queryGuardMarkList",
-            data
+            RpcRequestData.array { }
         )
     }
 
     /** 领取修复列表奖励 */
     suspend fun claimGuardMarkAward(): String {
-
-        val data = "[{}]"
-
-
         return RequestManager.requestString(
             "com.alipay.innovationprod.biz.rpc.claimGuardMarkAward",
-            data
+            RpcRequestData.array { }
         )
     }
 

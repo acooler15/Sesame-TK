@@ -333,6 +333,11 @@ internal class SportsExchangeManager(private val sports: AntSports) {
                 val cityId = cityObj.optString("cityId")
                 val cityStatus = cityObj.optString("status")
 
+                // 🚫 跳过无效城市 ID（空串或全 0，如聚合城市 "000000" 会被 queryCityPath 判为非法参数）
+                if (cityId.isBlank() || cityId.all { it == '0' }) {
+                    continue
+                }
+
                 // 🚫 非 ONLINE 城市直接跳过
                 if (cityStatus != "ONLINE") {
                     // Log.record(TAG, "⛔ 城市[$cityId] 状态=$cityStatus，跳过")

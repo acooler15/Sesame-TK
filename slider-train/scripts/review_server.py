@@ -1,8 +1,8 @@
 """人工复核 Web 服务 — 可视化核对/修正缺口(gap)预标注。
 
 用法:
-    uv run review_server.py data/raw/             # 默认端口 8901
-    uv run review_server.py data/raw/ --port 8902
+    uv run review_server.py                 # 默认目录 data/labeled/、端口 8901
+    uv run review_server.py data/labeled/ --port 8902
 
 浏览器打开 http://localhost:8901 :
     - 红框 gap（captcha-recognizer 预标注）、绿框 block、蓝框 refresh
@@ -10,7 +10,7 @@
     - 快捷键: A=通过并下一张, R=剔除, ←/→=翻页
 
 复核结果写回 <name>_prelabeled.json（reviewed=true + reviewStatus=approved/rejected
-+ 修正后的 gapimg），collect_to_dataset.py --only-reviewed 只消费 approved 样本。
++ 修正后的 gapimg），collect_to_dataset.py 默认只消费 approved 样本（--all 才含未复核）。
 
 仅依赖 Python 标准库。
 """
@@ -88,6 +88,8 @@ class Store:
             data["slotimg"] = payload["slotimg"]
         if payload.get("refreshButton"):
             data["refreshButton"] = payload["refreshButton"]
+        if payload.get("feedbackButton"):
+            data["feedbackButton"] = payload["feedbackButton"]
         data["reviewed"] = True
         data["reviewStatus"] = payload.get("reviewStatus", "approved")
         data["reviewedAt"] = payload.get("reviewedAt")
@@ -168,13 +170,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    ROOT = pathlib.Path(__file__).resolve().parent.parent
     parser = argparse.ArgumentParser(description="滑块样本人工复核 Web 服务")
-    parser.add_argument("dir", help="采集目录（含 *.png 与 *_prelabeled.json）")
+    parser.add_argument("dir", nargs="?",
+                        help="标注工作目录（默认 data/labeled/）")
     parser.add_argument("--port", type=int, default=8901, help="监听端口，默认 8901")
     parser.add_argument("--host", default="127.0.0.1", help="监听地址，默认 127.0.0.1")
     args = parser.parse_args()
 
-    Handler.store = Store(pathlib.Path(args.dir))
+    work_dir = pathlib.Path(args.dir) if args.dir else ROOT / "data" / "labeled"
+    if not work_dir.is_absolute():
+        work_dir = ROOT / work_dir
+    Handler.store = Store(work_dir)
     samples = Handler.store.list_samples()
     pending = sum(1 for s in samples if s["prelabeled"] and not s["reviewed"])
     print(f"样本目录: {Handler.store.root}")

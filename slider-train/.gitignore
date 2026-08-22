@@ -7,9 +7,11 @@ __pycache__/
 collect/.chrome-profile/
 
 # 数据集与训练产物（可由脚本重新生成）
-data/raw/
+data/captured/
+data/labeled/
 data/datasets/
 data/runs/
+data/test_out/
 
 # 模型权重（可从 YOLO 官方下载）
 weights/*.pt

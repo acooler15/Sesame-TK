@@ -21,30 +21,29 @@ import java.util.*
 import kotlin.math.*
 
 /**
- * 新版滑块验证码检测模型封装（yolo detect，三类 gap/block/refresh）。
+ * 新版滑块验证码检测模型封装（YOLO26 detect，四类 gap/block/refresh/feedback）。
  *
- * 与旧版（分割模型，37 通道 + proto mask）的关键差异：
+ * 关键特性：
  * - 输入为 **NCHW** `[1, 3, 640, 640]`（LiteRT 新版导出布局）；
- * - 输出为单张 `[1, 7, 8400]`（4 框 + 3 类分数），**坐标为归一化值（0~1）**，
- *   需先乘以 INPUT_SIZE 还原为 letterbox 像素坐标，再按 `(v - pad) / ratio` 还原到原图；
- * - 滑块/缺口/刷新按钮由 classId 直接区分，不再依赖"最左=滑块"几何规则。
+ * - 输出为单张 `[1, 300, 6]`（e2e 一对一头，每行 x1,y1,x2,y2,conf,classId），
+ *   **无 NMS**（模型已内置端到端筛选）；坐标按 `(v - pad) / ratio` 还原到原图；
+ * - 滑块/缺口/刷新按钮/反馈按钮由 classId 直接区分。
  */
 class SliderTFLite(val context: Context) {
 
     companion object {
         private const val TAG = "SliderTFLite"
         private const val CONF_THRESHOLD = 0.5f
-        private const val IOU_THRESHOLD = 0.8f
-        private const val Y_IOU_THRESHOLD = 0.85f
         private const val INPUT_SIZE = 640
         private const val INPUT_CHANNELS = 3
-        private const val NUM_ANCHORS = 8400
-        private const val NUM_CLASSES = 3
+        private const val MAX_DET = 300
+        private const val NUM_CLASSES = 4
 
         // 类别索引（与 config/slider.yaml 一致，勿改动顺序）
         const val CLASS_GAP = 0
         const val CLASS_BLOCK = 1
         const val CLASS_REFRESH = 2
+        const val CLASS_FEEDBACK = 3
 
         private const val MODEL_IDLE_TIMEOUT_MS = 60 * 60 * 1000L
 
@@ -88,8 +87,7 @@ class SliderTFLite(val context: Context) {
         suspend fun identifyShared(
             context: Context,
             bitmap: Bitmap,
-            conf: Float = CONF_THRESHOLD,
-            iou: Float = IOU_THRESHOLD
+            conf: Float = CONF_THRESHOLD
         ): SlideRecognitionResult? {
             val detector = obtainSharedModel(context.applicationContext, "inference")
             val callerThread = Thread.currentThread().name
@@ -101,7 +99,7 @@ class SliderTFLite(val context: Context) {
                     "[模型推理开始] callerThread=$callerThread, callerIsMain=$callerIsMain, workerThread=${Thread.currentThread().name}, isMain=${isMainThread()}, size=${bitmap.width}x${bitmap.height}"
                 )
                 try {
-                    detector.identifySlideRecognition(bitmap, conf, iou)
+                    detector.identifySlideRecognition(bitmap, conf)
                 } finally {
                     touchSharedModelLocked()
                     Log.record(
@@ -240,10 +238,9 @@ class SliderTFLite(val context: Context) {
 
     fun identifyOffset(
         bitmap: Bitmap,
-        conf: Float = CONF_THRESHOLD,
-        iou: Float = IOU_THRESHOLD
+        conf: Float = CONF_THRESHOLD
     ): Pair<Int, Float> {
-        val result = identifySlideRecognition(bitmap, conf, iou)
+        val result = identifySlideRecognition(bitmap, conf)
         return if (result != null) {
             Pair(result.targetX.toInt(), result.confidence)
         } else {
@@ -258,10 +255,9 @@ class SliderTFLite(val context: Context) {
      */
     fun identifySlideRecognition(
         bitmap: Bitmap,
-        conf: Float = CONF_THRESHOLD,
-        iou: Float = IOU_THRESHOLD
+        conf: Float = CONF_THRESHOLD
     ): SlideRecognitionResult? {
-        val results = predict(bitmap, conf, iou)
+        val results = predict(bitmap, conf)
 
         Log.record(TAG, "识别候选框数量: ${results.size}")
         results.forEachIndexed { index, result ->
@@ -330,8 +326,7 @@ class SliderTFLite(val context: Context) {
 
     private fun predict(
         img: Bitmap,
-        confThreshold: Float,
-        iouThreshold: Float
+        confThreshold: Float
     ): List<DetectionResult> {
         val model = sliderModel ?: return emptyList()
 
@@ -350,7 +345,7 @@ class SliderTFLite(val context: Context) {
         // 3. 执行推理
         val outputs = model.process(inputFeature0)
 
-        // 4. 获取扁平化的输出数组（[1, 7, 8400]）
+        // 4. 获取扁平化的输出数组（[1, 300, 6] = MAX_DET * 6）
         val predsFlat = outputs.outputFeature0AsTensorBuffer.floatArray
 
         return postprocess(
@@ -359,8 +354,7 @@ class SliderTFLite(val context: Context) {
             img.height,
             ratio,
             padding,
-            confThreshold,
-            iouThreshold
+            confThreshold
         )
     }
 
@@ -393,92 +387,41 @@ class SliderTFLite(val context: Context) {
     }
 
     /**
-     * 后处理：解析 [1, 7, 8400] 输出。
-     * 坐标归一化(0~1) -> letterbox 像素(×640) -> 还原到原图 ((v - pad)/ratio)。
-     * 通道：0-3=cx,cy,w,h；4=gap 分数；5=block 分数；6=refresh 分数。
+     * 后处理：解析 [1, 300, 6] e2e 输出（无 NMS）。
+     * 每行 [x1, y1, x2, y2, confidence, classId]，坐标为 letterbox 640 空间像素，
+     * 按 `(v - pad) / ratio` 还原到原图。
      */
     private fun postprocess(
-        preds: FloatArray,  // Flat: [7 * 8400]
+        preds: FloatArray,  // Flat: [MAX_DET * 6] = [300 * 6]
         orgW: Int, orgH: Int,
         ratio: Float, padding: Pair<Int, Int>,
-        confThreshold: Float, iouThreshold: Float
+        confThreshold: Float
     ): List<DetectionResult> {
-        val proposals = ArrayList<DetectionResult>()
-
-        for (i in 0 until NUM_ANCHORS) {
-            // 取该 anchor 三个类分数最大值及类别
-            var maxScore = -1f
-            var maxClass = -1
-            for (c in 0 until NUM_CLASSES) {
-                val s = preds[(4 + c) * NUM_ANCHORS + i]
-                if (s > maxScore) {
-                    maxScore = s
-                    maxClass = c
-                }
-            }
-            if (maxScore < confThreshold) continue
-
-            val cx = preds[0 * NUM_ANCHORS + i]
-            val cy = preds[1 * NUM_ANCHORS + i]
-            val w = preds[2 * NUM_ANCHORS + i]
-            val h = preds[3 * NUM_ANCHORS + i]
-
-            val x1 = cx - w / 2
-            val y1 = cy - h / 2
-            val x2 = cx + w / 2
-            val y2 = cy + h / 2
-
-            proposals.add(DetectionResult(x1, y1, x2, y2, maxScore, maxClass))
-        }
-
-        // 类内 NMS（不同类别可重叠，需分类别抑制）
-        val nmsResults = classAwareNms(proposals, iouThreshold)
-
         val finalResults = ArrayList<DetectionResult>()
-        for (res in nmsResults) {
-            // 坐标还原：归一化 → letterbox 像素 → 原图
-            val rX1 = ((res.x1 * INPUT_SIZE - padding.first) / ratio).coerceIn(0f, orgW.toFloat())
-            val rY1 = ((res.y1 * INPUT_SIZE - padding.second) / ratio).coerceIn(0f, orgH.toFloat())
-            val rX2 = ((res.x2 * INPUT_SIZE - padding.first) / ratio).coerceIn(0f, orgW.toFloat())
-            val rY2 = ((res.y2 * INPUT_SIZE - padding.second) / ratio).coerceIn(0f, orgH.toFloat())
+        val numDet = preds.size / 6
+        for (i in 0 until numDet) {
+            val off = i * 6
+            val x1 = preds[off + 0]
+            val y1 = preds[off + 1]
+            val x2 = preds[off + 2]
+            val y2 = preds[off + 3]
+            val score = preds[off + 4]
+            val classId = preds[off + 5].toInt()
+
+            if (score < confThreshold) continue
+            if (classId < 0 || classId >= NUM_CLASSES) continue
+
+            // 坐标还原：letterbox 像素 → 原图
+            val rX1 = ((x1 - padding.first) / ratio).coerceIn(0f, orgW.toFloat())
+            val rY1 = ((y1 - padding.second) / ratio).coerceIn(0f, orgH.toFloat())
+            val rX2 = ((x2 - padding.first) / ratio).coerceIn(0f, orgW.toFloat())
+            val rY2 = ((y2 - padding.second) / ratio).coerceIn(0f, orgH.toFloat())
             finalResults.add(
-                DetectionResult(rX1, rY1, rX2, rY2, res.score, res.classId)
+                DetectionResult(rX1, rY1, rX2, rY2, score, classId)
             )
         }
 
         return finalResults
-    }
-
-    /** 分类别执行 NMS：同类间抑制，异类互不干扰 */
-    private fun classAwareNms(boxes: List<DetectionResult>, threshold: Float): List<DetectionResult> {
-        val selected = ArrayList<DetectionResult>()
-        // 按分数降序
-        val remaining = boxes.sortedByDescending { it.score }.toMutableList()
-        while (remaining.isNotEmpty()) {
-            val first = remaining.removeAt(0)
-            selected.add(first)
-            val iter = remaining.iterator()
-            while (iter.hasNext()) {
-                val next = iter.next()
-                if (next.classId == first.classId && iou(first, next) >= threshold) {
-                    iter.remove()
-                }
-            }
-        }
-        return selected
-    }
-
-    private fun iou(a: DetectionResult, b: DetectionResult): Float {
-        val areaA = (a.x2 - a.x1) * (a.y2 - a.y1)
-        val areaB = (b.x2 - b.x1) * (b.y2 - b.y1)
-        val left = max(a.x1, b.x1)
-        val right = min(a.x2, b.x2)
-        val top = max(a.y1, b.y1)
-        val bottom = min(a.y2, b.y2)
-        val w = max(0f, right - left)
-        val h = max(0f, bottom - top)
-        val inter = w * h
-        return inter / (areaA + areaB - inter)
     }
 
     private fun letterbox(img: Bitmap): Triple<Bitmap, Float, Pair<Int, Int>> {

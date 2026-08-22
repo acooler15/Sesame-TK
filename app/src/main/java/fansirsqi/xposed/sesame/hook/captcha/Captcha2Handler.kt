@@ -120,6 +120,23 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         /** 手柄宽高比合法区间 */
         private const val HANDLE_ASPECT_RATIO_MIN = 0.75f
         private const val HANDLE_ASPECT_RATIO_MAX = 1.35f
+
+        // ---- 拼图卡片边界反推（训练集 484/484 样本恒定几何，卡片内部坐标系） ----
+        // 训练图为 puzzleContainer 区域截图（288×270），模型推理输入应与该分布一致：
+        // 旧逻辑"以手柄为中心横带"带入标题/装饰/轨道等训练外元素，是 gap/refresh 识别率低的主因。
+
+        /** 手柄宽 / 卡片宽 = 41.92 / 288.2 */
+        private const val HANDLE_WIDTH_TO_CARD_WIDTH = 0.1455f
+
+        /** 卡片宽 / 卡片高 = 288.2 / 269.5 */
+        private const val CARD_WIDTH_TO_HEIGHT = 1.0694f
+
+        /** 手柄 top 距卡片顶部 / 卡片高 = 204.57 / 269.5 */
+        private const val HANDLE_TOP_TO_CARD_HEIGHT = 0.7595f
+
+        /** 反推卡片宽合法区间（相对屏宽）：验证码卡片几乎满宽，显著偏离视为布局变体 */
+        private const val CARD_WIDTH_RATIO_MIN = 0.7f
+        private const val CARD_WIDTH_RATIO_MAX = 1.05f
     }
 
     /** 新版验证码提示文案是否在屏（WebView H5 虚拟树无障碍探测，单轮快速探测不重试） */
@@ -704,10 +721,14 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
     }
 
     /**
-     * 计算模型识别用裁剪带（验证码所在横带）的上下边界。
+     * 计算模型识别用裁剪带（拼图卡片整体）的上下边界。
      *
-     * 有手柄：以手柄为基准，上方扩展覆盖缺口区、下方少量余量，且裁剪带不小于 22% 屏高；
-     * 无手柄或扩展后过窄：回退到屏高 28%~88% 的固定带。
+     * 主路径（有手柄）：按训练集恒定几何（484/484 样本一致）从手柄包围盒反推拼图卡片边界——
+     * 卡宽 = 手柄宽 / [HANDLE_WIDTH_TO_CARD_WIDTH]，卡片 top = 手柄 top - 0.7595×卡高。
+     * 裁出完整卡片使推理输入与训练图（puzzleContainer 截图，288×270）分布一致，
+     * 卡片内的 gap/block/refresh（含刷新按钮）均完整落入裁剪带。
+     * 反推不合理（卡宽显著偏离屏宽，布局变体）时回退旧逻辑。
+     * 无手柄：回退到屏高 28%~88% 的固定带。
      */
     private fun buildCaptchaCropBounds(fullBitmap: Bitmap, sliderHandle: SliderHandleDetection?): Pair<Int, Int> {
         val fallbackTop = (fullBitmap.height * 28 / 100).coerceIn(0, fullBitmap.height - 1)
@@ -716,7 +737,28 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
             return fallbackTop to fallbackBottom
         }
 
-        // 手柄上方 42% 屏高覆盖缺口区，下方 8% 屏高余量
+        val handleWidth = (sliderHandle.right - sliderHandle.left).toFloat()
+        if (handleWidth > 0f) {
+            val cardWidth = handleWidth / HANDLE_WIDTH_TO_CARD_WIDTH
+            val cardHeight = cardWidth / CARD_WIDTH_TO_HEIGHT
+            val cardTop = sliderHandle.top - cardHeight * HANDLE_TOP_TO_CARD_HEIGHT
+            // 合理性校验：卡片几乎满屏宽；反推明显偏离（布局变体/手柄误检）时回退旧逻辑
+            if (cardWidth in fullBitmap.width * CARD_WIDTH_RATIO_MIN..fullBitmap.width * CARD_WIDTH_RATIO_MAX && cardTop >= 0f) {
+                val cropTop = cardTop.toInt().coerceIn(0, fullBitmap.height - 1)
+                val cropBottom = (cardTop + cardHeight).toInt().coerceIn(cropTop + 1, fullBitmap.height)
+                Log.record(
+                    TAG,
+                    "[卡片反推] handleW=$handleWidth -> card=${cardWidth.toInt()}x${cardHeight.toInt()}, cropTop=$cropTop, cropBottom=$cropBottom"
+                )
+                return cropTop to cropBottom
+            }
+            Log.record(
+                TAG,
+                "[卡片反推] 结果不合理: cardWidth=$cardWidth, screenW=${fullBitmap.width}, cardTop=$cardTop -> 回退旧裁剪逻辑"
+            )
+        }
+
+        // 旧逻辑回退：手柄上方 42% 屏高覆盖缺口区，下方 8% 屏高余量
         val cropTop = maxOf(0, sliderHandle.top - fullBitmap.height * 42 / 100)
         val cropBottom = minOf(fullBitmap.height, sliderHandle.bottom + fullBitmap.height * 8 / 100)
         return if (cropBottom - cropTop >= fullBitmap.height * 22 / 100) {

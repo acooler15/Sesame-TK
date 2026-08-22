@@ -5,7 +5,7 @@
 <title>滑块样本复核</title>
 <style>
   :root { --bg:#1e1f24; --panel:#27282f; --line:#3a3b44; --txt:#e8e8ec; --dim:#9a9ba6;
-          --gap:#ff4d4f; --block:#52c41a; --refresh:#1677ff; --ok:#52c41a; --bad:#ff4d4f; --warn:#faad14; }
+          --gap:#ff4d4f; --block:#52c41a; --refresh:#1677ff; --feedback:#c800ff; --ok:#52c41a; --bad:#ff4d4f; --warn:#faad14; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { background:var(--bg); color:var(--txt); font:14px/1.5 system-ui, "Microsoft YaHei", sans-serif;
          height:100vh; display:flex; flex-direction:column; overflow:hidden; }
@@ -60,6 +60,7 @@
     <span><i style="background:var(--gap)"></i>gap <kbd>1</kbd></span>
     <span><i style="background:var(--block)"></i>block <kbd>2</kbd></span>
     <span><i style="background:var(--refresh)"></i>refresh <kbd>3</kbd></span>
+    <span><i style="background:var(--feedback)"></i>feedback <kbd>4</kbd></span>
   </div>
 </header>
 <main>
@@ -75,15 +76,16 @@
       <button class="tagbtn" id="btnGap" title="1">缺口 (1)</button>
       <button class="tagbtn" id="btnBlock" title="2">滑块 (2)</button>
       <button class="tagbtn" id="btnRefresh" title="3">刷新 (3)</button>
+      <button class="tagbtn" id="btnFeedback" title="4">反馈 (4)</button>
       <span id="curName"></span>
     </div>
-    <div id="hint">点击框=选中并拖动；空白处拖拽=重画当前框；1/2/3 或按钮切换编辑目标（缺口/滑块/刷新）；A 通过、R 剔除、←/→ 翻页。手改随审批自动保存。</div>
+    <div id="hint">点击框=选中并拖动；空白处拖拽=重画当前框；1/2/3/4 或按钮切换编辑目标（缺口/滑块/刷新/反馈）；A 通过、R 剔除、←/→ 翻页。手改随审批自动保存。</div>
   </section>
 </main>
 
 <script>
 'use strict';
-const COLORS = { gap:'#ff4d4f', block:'#52c41a', refresh:'#1677ff' };
+const COLORS = { gap:'#ff4d4f', block:'#52c41a', refresh:'#1677ff', feedback:'#c800ff' };
 let samples = [];          // /api/list 结果
 let idx = -1;              // 当前样本下标
 let data = null;           // 当前 *_prelabeled.json 内容
@@ -92,10 +94,11 @@ let scale = 1;             // 画布缩放（画布px / 图像px）
 let gap = null;            // {x,y,width,height} 图像坐标
 let drag = null;           // {mode:'move'|'draw', startX,startY, orig}
 let savedGapJson = null;   // 进入本张时的 gap 快照（判断是否手改）
-// 三种可编辑目标：key -> 字段名。block 存 slotimg、refresh 存 refreshButton（无则 refreshImg）
-const BOX_FIELDS = { gap:'gapimg', block:'slotimg', refresh:null };
-let editing = 'gap';       // 当前编辑目标: 'gap' | 'block' | 'refresh'
-let boxes = {};            // { gap, block, refresh } 图像坐标，编辑时的统一工作副本
+// 四种可编辑目标：key -> 字段名。block 存 slotimg、refresh 存 refreshButton（无则 refreshImg）、
+// feedback 存 feedbackButton（无则 feedbackImg）
+const BOX_FIELDS = { gap:'gapimg', block:'slotimg', refresh:null, feedback:null };
+let editing = 'gap';       // 当前编辑目标: 'gap' | 'block' | 'refresh' | 'feedback'
+let boxes = {};            // { gap, block, refresh, feedback } 图像坐标，编辑时的统一工作副本
 let savedBoxesJson = {};   // 进入本张时各框快照（判断是否手改）
 
 const $ = (id) => document.getElementById(id);
@@ -128,14 +131,16 @@ async function loadSample(i) {
   img = new Image();
   img.onload = () => {
     const rf = data.refreshButton && data.refreshButton.width ? data.refreshButton : data.refreshImg;
+    const fb = data.feedbackButton && data.feedbackButton.width ? data.feedbackButton : data.feedbackImg;
     boxes = {
       gap: data.gapimg ? { ...data.gapimg } : null,
       block: data.slotimg ? { ...data.slotimg } : null,
       refresh: rf && rf.width ? { ...rf } : null,
+      feedback: fb && fb.width ? { ...fb } : null,
     };
     gap = boxes.gap ? { ...boxes.gap } : null;
     savedBoxesJson = {};
-    for (const k of ['gap','block','refresh'])
+    for (const k of ['gap','block','refresh','feedback'])
       savedBoxesJson[k] = boxes[k] ? JSON.stringify(boxes[k]) : null;
     savedGapJson = savedBoxesJson.gap;
     fitCanvas(); render();
@@ -168,7 +173,7 @@ function render() {
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
   ctx.drawImage(img, 0, 0, c.width, c.height);
-  for (const key of ['block', 'refresh', 'gap']) {
+  for (const key of ['block', 'refresh', 'feedback', 'gap']) {
     const r = boxes[key];
     if (!r) continue;
     const conf = key === 'gap' ? data.gapConfidence : null;
@@ -197,7 +202,7 @@ function drawRect(ctx, r, color, label, conf, active) {
 // ---------- 交互 ----------
 function boxAt(p) {
   // 返回点 p 命中的框 key；优先点击已有框以选中它
-  for (const key of ['gap', 'block', 'refresh']) {
+  for (const key of ['gap', 'block', 'refresh', 'feedback']) {
     const r = boxes[key];
     if (r && p.x >= r.x && p.x <= r.x + r.width && p.y >= r.y && p.y <= r.y + r.height) return key;
   }
@@ -258,7 +263,7 @@ function clampRect(x, y, w, h) {
 // ---------- 审批 ----------
 function setEditing(key) {
   editing = key;
-  for (const k of ['gap', 'block', 'refresh'])
+  for (const k of ['gap', 'block', 'refresh', 'feedback'])
     editBtns[k].classList.toggle('active', k === key);
   render();
 }
@@ -283,6 +288,8 @@ async function review(status) {
     if (b) payload.slotimg = { x: b.x, y: b.y, width: b.width, height: b.height };
     const rf = boxToPayload('refresh');
     if (rf) payload.refreshButton = { x: rf.x, y: rf.y, width: rf.width, height: rf.height };
+    const fb = boxToPayload('feedback');
+    if (fb) payload.feedbackButton = { x: fb.x, y: fb.y, width: fb.width, height: fb.height };
   }
   await fetch('/api/save/' + encodeURIComponent(s.name), {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -302,7 +309,7 @@ function refreshCurName() {
   const g = boxes.gap;
   const gapTxt = (g && savedBoxesJson.gap !== JSON.stringify(norm(g))) ? '手改' :
     (data && data.gapConfidence != null ? data.gapConfidence.toFixed(2) : '—');
-  const edited = ['gap','block','refresh'].some(k =>
+  const edited = ['gap','block','refresh','feedback'].some(k =>
     boxes[k] && savedBoxesJson[k] !== JSON.stringify(norm(boxes[k])));
   $('curName').textContent = `${s.name} — gap 置信度 ${gapTxt} · 编辑:${editing}` +
     (edited ? ' · 有手改' : '');
@@ -321,6 +328,9 @@ function renderSidebar() {
   }).join('');
   $('sidebar').querySelectorAll('.item').forEach(el =>
     el.onclick = () => loadSample(+el.dataset.i));
+  // 当前项滚动到列表中间（到底/顶时自动 clamp 到边界）
+  const cur = $('sidebar').querySelector('.item.active');
+  if (cur) cur.scrollIntoView({ block: 'center' });
 }
 function renderStats() {
   const n = samples.length;
@@ -335,10 +345,11 @@ $('btnApprove').onclick = () => review('approved');
 $('btnReject').onclick = () => review('rejected');
 $('btnPrev').onclick = () => idx > 0 && loadSample(idx - 1);
 $('btnNext').onclick = () => idx + 1 < samples.length && loadSample(idx + 1);
-const editBtns = { gap: $('btnGap'), block: $('btnBlock'), refresh: $('btnRefresh') };
+const editBtns = { gap: $('btnGap'), block: $('btnBlock'), refresh: $('btnRefresh'), feedback: $('btnFeedback') };
 editBtns.gap.onclick = () => setEditing('gap');
 editBtns.block.onclick = () => setEditing('block');
 editBtns.refresh.onclick = () => setEditing('refresh');
+editBtns.feedback.onclick = () => setEditing('feedback');
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT') return;
   if (e.key === 'a' || e.key === 'A') review('approved');
@@ -346,6 +357,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.key === '1') setEditing('gap');
   else if (e.key === '2') setEditing('block');
   else if (e.key === '3') setEditing('refresh');
+  else if (e.key === '4') setEditing('feedback');
   else if (e.key === 'ArrowLeft') $('btnPrev').click();
   else if (e.key === 'ArrowRight') $('btnNext').click();
 });

@@ -989,6 +989,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "captcha-recognizer" },
+    { name = "pyyaml" },
     { name = "torch" },
     { name = "ultralytics" },
 ]
@@ -996,6 +997,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "captcha-recognizer", specifier = ">=1.0.2" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "torch", specifier = ">=2.6.0" },
     { name = "ultralytics", specifier = ">=8.4.121" },
 ]

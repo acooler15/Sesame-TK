@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "captcha-recognizer>=1.0.2",
+    "pyyaml>=6.0.3",
     "torch>=2.6.0",
     "ultralytics>=8.4.121",
 ]

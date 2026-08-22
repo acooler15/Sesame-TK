@@ -1,7 +1,7 @@
 """把已复核的预标注图片复制到数据集目录，并按约 10% 随机划分 train/val。
 
 标签已由 collect_to_dataset.py 生成到 data/datasets/slider/labels/train/*_prelabeled.txt，
-本脚本只负责把 data/raw/ 里对应的 png 复制成 *_prelabeled.png，并划分 val。
+本脚本只负责把 data/labeled/ 里对应的 png 复制成 *_prelabeled.png，并划分 val。
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 BASE = ROOT / "data" / "datasets" / "slider"
 IMG = BASE / "images"
 LAB = BASE / "labels"
-SRC = ROOT / "data" / "raw"  # 采集源图（原 captures）
+SRC = ROOT / "data" / "labeled"  # 标注工作区源图（prelabel_gap 已复制 png 到此）
 SEED = 42
 VAL_RATIO = 0.1
 

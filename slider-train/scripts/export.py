@@ -1,11 +1,13 @@
 """导出训练好的检测模型为 TFLite（供 Android 端 SliderTFLite.kt 使用）。
 
 用法:
-    uv run export.py runs/slider/weights/best.pt
+    uv run export.py                          # 默认自动取最近训练的 best.pt
+    uv run export.py data/runs/slider/weights/best.pt   # 或显式指定权重
 
 说明:
     - 不启用 int8 量化（端侧使用 FLOAT32 TensorBuffer）。
-      n 档 detect float32 约 6MB，已远小于旧 seg 模型（38.6MB）。
+    - yolo26n 默认走一对一(e2e)头，输出 [1, 300, 6]
+      （x1,y1,x2,y2,conf,classId），端侧无需 NMS。
     - 导出后自动加载 tflite 打印输入/输出 shape，与 ANDROID_INTEGRATION.md
       中的预期规格核对；不符则需同步修改端侧解析代码。
 """
@@ -42,14 +44,27 @@ def print_shapes(tflite_path: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="导出 YOLO 检测模型为 TFLite")
-    parser.add_argument("weights", help="训练好的 .pt 权重路径（相对工程根，如 data/runs/slider/weights/best.pt）")
+    parser.add_argument("weights", nargs="?",
+                        help="训练好的 .pt 权重路径（默认自动找最近的 data/runs/*/weights/best.pt）")
     parser.add_argument("--imgsz", type=int, default=640, help="输入尺寸")
     args = parser.parse_args()
 
     # 工程根 = scripts/ 的上一级；相对路径解析到工程根
     ROOT = pathlib.Path(__file__).resolve().parent.parent
-    wpath = pathlib.Path(args.weights)
-    weights = str(wpath if wpath.is_absolute() else ROOT / wpath)
+    if args.weights:
+        wpath = pathlib.Path(args.weights)
+        weights = str(wpath if wpath.is_absolute() else ROOT / wpath)
+    else:
+        # 默认取最近修改的 best.pt
+        candidates = sorted(
+            (p for p in (ROOT / "data" / "runs").glob("*/weights/best.pt")),
+            key=lambda p: p.stat().st_mtime,
+        )
+        if not candidates:
+            print("未找到 best.pt，请先训练（uv run scripts/train.py）或显式传入权重路径")
+            return
+        weights = str(candidates[-1])
+        print(f"[默认] 使用最近权重: {weights}")
 
     model = YOLO(weights)
     out = model.export(format="tflite", imgsz=args.imgsz)

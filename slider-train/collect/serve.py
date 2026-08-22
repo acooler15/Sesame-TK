@@ -17,13 +17,13 @@
 功能:
     1. 静态服务 captcha-page/ 目录；
     2. 服务 index.html 时自动注入 collect-auto.js（免控制台粘贴）；
-    3. POST /api/sample  — 纯采集：合成截图落盘 captures/；
+    3. POST /api/sample  — 纯采集：合成截图落盘 data/captured/；
     4. POST /api/predict — 识别验证采集：合成截图 + captcha-recognizer 识别缺口，
-       计算拖动距离，样本先落盘 captures/review/；
+       计算拖动距离，样本先落盘 data/captured/review/；
     5. POST /api/outcome — 浏览器上报滑动结果：
-       成功 → 归档 captures/verified/（写成 *_prelabeled.json，reviewStatus=approved，
+       成功 → 归档 data/captured/verified/（写成 *_prelabeled.json，reviewStatus=approved，
               gapSource=auto-verified，可直接进数据集）；
-       失败 → 留在 captures/review/（标记 slide-failed，走人工预标注+复核流程）；
+       失败 → 留在 data/captured/review/（标记 slide-failed，走人工预标注+复核流程）；
     6. POST /api/drag — 把拖拽/点击事件序列经 CDP Input.dispatchMouseEvent 派发为
        浏览器原生输入（isTrusted=true）。事件含 dt（距上一事件毫秒），服务端按
        绝对时间对齐控速——SDK 读的是事件真实 timeStamp，节奏必须逐点控制。
@@ -48,18 +48,19 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 HERE = Path(__file__).resolve().parent
-# 采集产物统一落到工程 data/raw/（slider-train/data/raw）
-# 子目录：data/raw/ 根=普通采集，data/raw/review=识别验证待复核，data/raw/verified=自动验证通过
-ROOT = HERE.parent / "data" / "raw"
+# 采集产物统一落到工程 data/captured/（slider-train/data/captured）
+# 子目录：captured/ 根=普通采集，captured/review=识别验证待复核，captured/verified=自动验证通过
+ROOT = HERE.parent / "data" / "captured"
 DIR_CAPTURE = ROOT
 DIR_REVIEW = ROOT / "review"
 DIR_VERIFIED = ROOT / "verified"
-INJECT_TAG = b'<script src="/collect-auto.js"></script></body>'
+INJECT_TAG = b'<script src="/collect-auto.js?v={v}"></script></body>'
 UA = ("Mozilla/5.0 (Linux; Android 16) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/139 Mobile Safari/537.36")
 
 # 与 prelabel_gap.py 保持一致：需从视口坐标换算到截图坐标的 DOM rect 字段
-VIEWPORT_RECT_FIELDS = ("slotimg", "refreshButton", "refreshImg", "handler", "sliderContainer")
+VIEWPORT_RECT_FIELDS = ("slotimg", "refreshButton", "refreshImg", "feedbackButton",
+                        "feedbackImg", "handler", "sliderContainer")
 
 _slider = None
 _slider_lock = threading.Lock()
@@ -262,6 +263,25 @@ def api_drag(data: dict) -> dict:
     return {"ok": True, "dispatched": len(events)}
 
 
+def api_reload(data: dict) -> dict:
+    """重载采集页（经 CDP Page.reload，ignoreCache=True）。
+
+    供采集器在验证码会话过期（等不到新图/找不到刷新按钮）时自动调用，
+    实现无人值守：重载后由 collect-auto.js 靠 localStorage 标志自动续采。
+    """
+    if not _cdp["page"]:
+        raise RuntimeError("CDP 通道未启用（serve.py 需带 --cdp-port 启动）")
+    with _cdp_lock:
+        page: CdpPage = _cdp["page"]
+        page.send("Page.reload", {"ignoreCache": True})
+    return {"ok": True, "reloaded": True}
+
+
+def api_status(data: dict) -> dict:
+    """返回累计已采集样本总数（扫描 data/captured/ 目录，落盘即权威）。"""
+    return {"ok": True, "collected": total_collected()}
+
+
 def shift_rect(rect_obj: dict, ox: float, oy: float) -> dict:
     """视口坐标 rect -> 截图坐标（减去容器原点），保留 cx/cy 派生量。"""
     if not rect_obj:
@@ -282,7 +302,7 @@ def ensure_dirs() -> None:
 
 
 def next_index() -> int:
-    """跨 captures/ review/ verified/ 的全局自增编号，防止跨目录重名。"""
+    """跨 data/captured/ review/ verified/ 的全局自增编号，防止跨目录重名。"""
     ensure_dirs()
     nums = []
     for d in (DIR_CAPTURE, DIR_REVIEW, DIR_VERIFIED):
@@ -291,6 +311,20 @@ def next_index() -> int:
             if m:
                 nums.append(int(m.group(1)))
     return max(nums, default=0) + 1
+
+
+def total_collected() -> int:
+    """累计已采集样本总数 = data/captured/ 根目录下普通样本 json 数。
+
+    只统计根目录（DIR_CAPTURE）下的 *.json，排除 _prelabeled 后缀与
+    review/verified 子目录（那些是后续流程归档，不属于采集计数）。
+    """
+    ensure_dirs()
+    n = 0
+    for p in DIR_CAPTURE.glob("*.json"):
+        if re.match(r"^\d+\.json$", p.name):
+            n += 1
+    return n
 
 
 def compose_png(rects: dict, urls: dict) -> bytes:
@@ -313,6 +347,7 @@ def compose_png(rects: dict, urls: dict) -> bytes:
     paste(urls.get("backimg"), rects.get("backimg"))
     paste(urls.get("slotimg"), rects.get("slotimg"))
     paste(urls.get("refreshIcon"), rects.get("refreshButton") or rects.get("refreshImg"))
+    paste(urls.get("feedbackIcon"), rects.get("feedbackButton") or rects.get("feedbackImg"))
 
     draw = ImageDraw.Draw(canvas)
     sc = rects.get("sliderContainer")
@@ -429,11 +464,17 @@ class CollectHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(HERE), **kwargs)
 
+    def end_headers(self):
+        # 禁用缓存：确保 collect-auto.js / index.html 改动后浏览器总是拉最新版
+        self.send_header("Cache-Control", "no-store")
+        super().end_headers()
+
     def do_GET(self):
         if self.path in ("/", "/index.html"):
             html = (HERE / "index.html").read_bytes()
             if b"</body>" in html:
-                html = html.replace(b"</body>", INJECT_TAG, 1)
+                tag = INJECT_TAG.replace(b"{v}", str(int(time.time())).encode())
+                html = html.replace(b"</body>", tag, 1)
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(html)))
@@ -451,6 +492,10 @@ class CollectHandler(SimpleHTTPRequestHandler):
             handler = api_outcome
         elif self.path == "/api/drag":
             handler = api_drag
+        elif self.path == "/api/reload":
+            handler = api_reload
+        elif self.path == "/api/status":
+            handler = api_status
         else:
             self.send_error(404)
             return
@@ -468,8 +513,9 @@ class CollectHandler(SimpleHTTPRequestHandler):
         (DIR_CAPTURE / f"{name}.png").write_bytes(png)
         (DIR_CAPTURE / f"{name}.json").write_text(
             json.dumps(rects, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"[collect] {name}.png 已保存", flush=True)
-        return {"ok": True, "name": name}
+        collected = total_collected()
+        print(f"[collect] {name}.png 已保存 (累计 {collected} 张)", flush=True)
+        return {"ok": True, "name": name, "collected": collected}
 
     def _json(self, obj, status=200):
         body = json.dumps(obj).encode("utf-8")

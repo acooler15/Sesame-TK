@@ -1,16 +1,17 @@
-# 滑块验证码检测模型训练数据配置（YOLO detect，三类）
+# 滑块验证码检测模型训练数据配置（YOLO detect，四类）
 #
-# 目标：识别验证码拼图区域中的「缺口」「滑块块」「刷新按钮」。
-# 相比旧单类 seg 模型：分类显式化（端侧不再靠"最左=滑块"猜测），
-# 且新增刷新按钮识别，供识别失败时自动刷新重试。
+# 目标：识别验证码拼图区域中的「缺口」「滑块块」「刷新按钮」「反馈按钮」。
+# 刷新按钮供识别失败时自动刷新重试；反馈按钮用于和刷新按钮区分，避免误判。
 #
-# paths: 支持相对于本文件（config/）所在目录的相对路径
-# 数据集位于 data/datasets/slider（即从 config/ 向上再进 data/datasets/slider）
-path: ../data/datasets/slider
+# paths: train.py 会先把 path 解析为「相对工程根」的绝对路径再交给 Ultralytics，
+# 因此这里的 path 以工程根（slider-train/）为基准填写即可。
+# 数据集位于 data/datasets/slider
+path: data/datasets/slider
 train: images/train
 val: images/val
 
 names:
   0: gap      # 缺口（背景图上被挖的洞，滑动目标）
   1: block    # 滑块拼图块（初始最左，可拖动）
-  2: refresh  # 刷新按钮（拼图区右上角）
+  2: refresh  # 刷新按钮（拼图区右上角，最右）
+  3: feedback # 反馈按钮（拼图区右上角，刷新按钮左侧）

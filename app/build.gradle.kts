@@ -1,9 +1,9 @@
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Properties
 import java.util.TimeZone
-import com.android.build.api.variant.FilterConfiguration
-import com.android.build.api.variant.impl.VariantOutputImpl
 
 plugins {
     alias(libs.plugins.android.application)
@@ -14,6 +14,32 @@ var isCIBuild: Boolean = System.getenv("CI").toBoolean()
 //isCIBuild = true // 没有c++源码时开启CI构建, push前关闭
 
 val appVersionName = "0.9.9"
+
+// ============ 构建物签名配置 ============
+// 签名信息来源（优先级从高到低）：
+//   1. 环境变量（CI 构建传入 secrets：ANDROID_KEYSTORE_PATH / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD）
+//   2. keystore.properties（本地开发，不入库，放项目根目录）
+//   3. 项目根目录下的 keystore.jks（若存在）
+// 缺少完整签名信息时 release 自动回退到 debug 签名，保证构建不中断。
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+
+fun signingSecret(envName: String, propName: String): String? =
+    System.getenv(envName) ?: keystoreProperties.getProperty(propName)
+
+val keystoreFile: File? = signingSecret("ANDROID_KEYSTORE_PATH", "storeFile")?.let { path ->
+    val f = File(path)
+    if (f.isAbsolute) f else rootProject.file(path)
+} ?: rootProject.file("keystore.jks").takeIf { it.isFile }
+
+val hasReleaseSigning = keystoreFile != null &&
+    !signingSecret("ANDROID_KEYSTORE_PASSWORD", "storePassword").isNullOrBlank() &&
+    !signingSecret("ANDROID_KEY_ALIAS", "keyAlias").isNullOrBlank() &&
+    !signingSecret("ANDROID_KEY_PASSWORD", "keyPassword").isNullOrBlank()
 
 android {
     namespace = "fansirsqi.xposed.sesame"
@@ -87,14 +113,21 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlin {
-        compilerOptions {
-            jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-        }
-    }
 
     signingConfigs {
         getByName("debug") {
+        }
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = requireNotNull(keystoreFile) { "keystore 文件未找到" }
+                storePassword = signingSecret("ANDROID_KEYSTORE_PASSWORD", "storePassword")
+                keyAlias = signingSecret("ANDROID_KEY_ALIAS", "keyAlias")
+                keyPassword = signingSecret("ANDROID_KEY_PASSWORD", "keyPassword")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
         }
     }
 
@@ -102,17 +135,26 @@ android {
         getByName("debug") {
             isDebuggable = true
             versionNameSuffix = "-debug"
-            isShrinkResources = false
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            // debug 与 release 使用同一正式签名，便于互相覆盖安装；无签名配置时回退默认 debug 签名
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         getByName("release") {
             isDebuggable = false
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
+            // 有正式签名配置时使用 release 签名，否则回退 debug 签名
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
@@ -133,14 +175,20 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
-            val outputImpl = output as VariantOutputImpl
             val abiName = output.filters
-                .firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }
+                .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
                 ?.identifier ?: "universal"
-            outputImpl.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}-${variant.name}.apk")
+            // 只设置文件名（不含路径分隔符），产物会输出到默认的 build/outputs/apk/<variant>/ 目录
+            output.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}-${variant.name}.apk")
         }
     }
 }
@@ -182,7 +230,7 @@ dependencies {
     // 仅编译时依赖 - Xposed 相关
     compileOnly(files("libs/api-82.jar"))          // Xposed API 82（legacy 后端编译需要，运行时由旧框架提供）
     compileOnly(libs.libxposed.api)                // libxposed API 102（框架运行时提供）
-    implementation(libs.libxposed.`interface`)    // Binder 接口 https://github.com/libxposed/service
+    implementation(libs.libxposed.binder)         // Binder 接口 https://github.com/libxposed/service
     implementation(libs.libxposed.service)         // 服务客户端实现 https://github.com/libxposed/service
 
     // 代码生成和工具库

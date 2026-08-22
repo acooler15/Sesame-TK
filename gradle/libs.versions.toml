@@ -54,7 +54,7 @@ androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-f
 # libxposed 新版 API（compileOnly，框架运行时提供）
 libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposedApi" }
 # Binder 接口（service 的 POM 仅以 runtime scope 引用它，编译期需要须显式声明）
-libxposed-interface = { module = "io.github.libxposed:interface", version.ref = "libxposed" }
+libxposed-binder = { module = "io.github.libxposed:interface", version.ref = "libxposed" }
 # 服务客户端实现（XposedService/XposedServiceHelper/RemotePreferences）
 libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposed" }
 

@@ -41,7 +41,15 @@ jobs:
         run: chmod +x gradlew
 
       - name: 🔥 Build with Gradle
-        run: ./gradlew assembleRelease -Pversion=${{ github.ref_name }}
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/sesame-tk.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # 解码签名密钥为 keystore 文件，Gradle 在构建中直接签名
+          echo "${{ secrets.ANDROID_SIGNING_KEY }}" | base64 -d > "${{ runner.temp }}/sesame-tk.jks"
+          ./gradlew assembleRelease -Pversion=${{ github.ref_name }}
 
       - name: 📊 Locate APKs and Set Outputs
         id: locate_apks
@@ -58,82 +66,44 @@ jobs:
           echo "x86_64_apk=$x86_64_apk" >> $GITHUB_OUTPUT
           echo "universal_apk=$universal_apk" >> $GITHUB_OUTPUT
 
-      - name: ⏳ Copy APKs to staging for signing
-        run: |
-          mkdir -p app/build/outputs/apk/all
-          cp "${{ steps.locate_apks.outputs.arm64_apk }}" app/build/outputs/apk/all/
-          cp "${{ steps.locate_apks.outputs.armv7_apk }}" app/build/outputs/apk/all/
-          cp "${{ steps.locate_apks.outputs.x86_apk }}" app/build/outputs/apk/all/
-          cp "${{ steps.locate_apks.outputs.x86_64_apk }}" app/build/outputs/apk/all/
-          cp "${{ steps.locate_apks.outputs.universal_apk }}" app/build/outputs/apk/all/
-
-      - name: 🔐 Sign APKs
-        id: sign_apks
-        uses: ilharp/sign-android-release@v2
-        with:
-          releaseDir: app/build/outputs/apk/all
-          signingKey: ${{ secrets.ANDROID_SIGNING_KEY }}
-          keyAlias: ${{ secrets.ANDROID_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          buildToolsVersion: 36.0.0
-
-      - name: 📦 Extract Signed APK Paths
-        id: extract_apks
-        run: |
-          IFS=':' read -r -a files <<< "${{ steps.sign_apks.outputs.signedFiles }}"
-          for file in "${files[@]}"; do
-            if [[ "$file" == *arm64-v8a* ]]; then
-              echo "signed_arm64=$file" >> $GITHUB_OUTPUT
-            elif [[ "$file" == *armeabi-v7a* ]]; then
-              echo "signed_armv7=$file" >> $GITHUB_OUTPUT
-            elif [[ "$file" == *x86_64* ]]; then
-              echo "signed_x86_64=$file" >> $GITHUB_OUTPUT
-            elif [[ "$file" == *x86* ]]; then
-              echo "signed_x86=$file" >> $GITHUB_OUTPUT
-            elif [[ "$file" == *universal* ]]; then
-              echo "signed_universal=$file" >> $GITHUB_OUTPUT
-            fi
-          done
-
       - name: 🚀 Upload APK - arm64-v8a
         uses: actions/upload-artifact@v4
         with:
           name: apk-arm64-v8a
-          path: ${{ steps.extract_apks.outputs.signed_arm64 }}
+          path: ${{ steps.locate_apks.outputs.arm64_apk }}
 
       - name: 🚀 Upload APK - armeabi-v7a
         uses: actions/upload-artifact@v4
         with:
           name: apk-armeabi-v7a
-          path: ${{ steps.extract_apks.outputs.signed_armv7 }}
+          path: ${{ steps.locate_apks.outputs.armv7_apk }}
 
       - name: 🚀 Upload APK - x86
         uses: actions/upload-artifact@v4
         with:
           name: apk-x86
-          path: ${{ steps.extract_apks.outputs.signed_x86 }}
+          path: ${{ steps.locate_apks.outputs.x86_apk }}
 
       - name: 🚀 Upload APK - x86_64
         uses: actions/upload-artifact@v4
         with:
           name: apk-x86_64
-          path: ${{ steps.extract_apks.outputs.signed_x86_64 }}
+          path: ${{ steps.locate_apks.outputs.x86_64_apk }}
 
       - name: 🚀 Upload APK - universal
         uses: actions/upload-artifact@v4
         with:
           name: apk-universal
-          path: ${{ steps.extract_apks.outputs.signed_universal }}
+          path: ${{ steps.locate_apks.outputs.universal_apk }}
 
       - name: 🛠️ Extract file names and version
         id: extract_info
         run: |
-          arm64_file=$(basename "${{ steps.extract_apks.outputs.signed_arm64 }}")
-          armv7_file=$(basename "${{ steps.extract_apks.outputs.signed_armv7 }}")
-          x86_file=$(basename "${{ steps.extract_apks.outputs.signed_x86 }}")
-          x86_64_file=$(basename "${{ steps.extract_apks.outputs.signed_x86_64 }}")
-          universal_file=$(basename "${{ steps.extract_apks.outputs.signed_universal }}")
+          arm64_file=$(basename "${{ steps.locate_apks.outputs.arm64_apk }}")
+          armv7_file=$(basename "${{ steps.locate_apks.outputs.armv7_apk }}")
+          x86_file=$(basename "${{ steps.locate_apks.outputs.x86_apk }}")
+          x86_64_file=$(basename "${{ steps.locate_apks.outputs.x86_64_apk }}")
+          universal_file=$(basename "${{ steps.locate_apks.outputs.universal_apk }}")
           version="${{ github.ref_name }}"
           echo "arm64_file=$arm64_file" >> $GITHUB_OUTPUT
           echo "armv7_file=$armv7_file" >> $GITHUB_OUTPUT
@@ -144,11 +114,11 @@ jobs:
 
       - name: 🎨 Generate APKS Checksum
         run: |
-          sha256sum ${{ steps.extract_apks.outputs.signed_arm64 }} > CHECKSUMS-Sesame-arm64-v8a-${{ steps.extract_info.outputs.version }}.apk.sha256
-          sha256sum ${{ steps.extract_apks.outputs.signed_armv7 }} > CHECKSUMS-Sesame-armeabi-v7a-${{ steps.extract_info.outputs.version }}.apk.sha256
-          sha256sum ${{ steps.extract_apks.outputs.signed_x86 }} > CHECKSUMS-Sesame-x86-${{ steps.extract_info.outputs.version }}.apk.sha256
-          sha256sum ${{ steps.extract_apks.outputs.signed_x86_64 }} > CHECKSUMS-Sesame-x86_64-${{ steps.extract_info.outputs.version }}.apk.sha256
-          sha256sum ${{ steps.extract_apks.outputs.signed_universal }} > CHECKSUMS-Sesame-universal-${{ steps.extract_info.outputs.version }}.apk.sha256
+          sha256sum ${{ steps.locate_apks.outputs.arm64_apk }} > CHECKSUMS-Sesame-arm64-v8a-${{ steps.extract_info.outputs.version }}.apk.sha256
+          sha256sum ${{ steps.locate_apks.outputs.armv7_apk }} > CHECKSUMS-Sesame-armeabi-v7a-${{ steps.extract_info.outputs.version }}.apk.sha256
+          sha256sum ${{ steps.locate_apks.outputs.x86_apk }} > CHECKSUMS-Sesame-x86-${{ steps.extract_info.outputs.version }}.apk.sha256
+          sha256sum ${{ steps.locate_apks.outputs.x86_64_apk }} > CHECKSUMS-Sesame-x86_64-${{ steps.extract_info.outputs.version }}.apk.sha256
+          sha256sum ${{ steps.locate_apks.outputs.universal_apk }} > CHECKSUMS-Sesame-universal-${{ steps.extract_info.outputs.version }}.apk.sha256
 
       - name: 📝 Generate Dynamic Message
         id: commit_info
@@ -199,11 +169,11 @@ jobs:
         with:
           name: ${{ github.event.release.tag_name || steps.extract_info.outputs.version }}
           files: |
-            ${{ steps.extract_apks.outputs.signed_arm64 }}
-            ${{ steps.extract_apks.outputs.signed_armv7 }}
-            ${{ steps.extract_apks.outputs.signed_x86 }}
-            ${{ steps.extract_apks.outputs.signed_x86_64 }}
-            ${{ steps.extract_apks.outputs.signed_universal }}
+            ${{ steps.locate_apks.outputs.arm64_apk }}
+            ${{ steps.locate_apks.outputs.armv7_apk }}
+            ${{ steps.locate_apks.outputs.x86_apk }}
+            ${{ steps.locate_apks.outputs.x86_64_apk }}
+            ${{ steps.locate_apks.outputs.universal_apk }}
             CHECKSUMS-Sesame-arm64-v8a-${{ steps.extract_info.outputs.version }}.apk.sha256
             CHECKSUMS-Sesame-armeabi-v7a-${{ steps.extract_info.outputs.version }}.apk.sha256
             CHECKSUMS-Sesame-x86-${{ steps.extract_info.outputs.version }}.apk.sha256
@@ -239,11 +209,11 @@ jobs:
           repository: Xposed-Modules-Repo/fansirsqi.xposed.sesame # 目标仓库的拥有者和仓库名称
           name: ${{ github.event.release.tag_name || steps.extract_info.outputs.version }} # 发布的名称。默认为标签名称
           files: |
-            ${{ steps.extract_apks.outputs.signed_arm64 }}
-            ${{ steps.extract_apks.outputs.signed_armv7 }}
-            ${{ steps.extract_apks.outputs.signed_x86 }}
-            ${{ steps.extract_apks.outputs.signed_x86_64 }}
-            ${{ steps.extract_apks.outputs.signed_universal }}
+            ${{ steps.locate_apks.outputs.arm64_apk }}
+            ${{ steps.locate_apks.outputs.armv7_apk }}
+            ${{ steps.locate_apks.outputs.x86_apk }}
+            ${{ steps.locate_apks.outputs.x86_64_apk }}
+            ${{ steps.locate_apks.outputs.universal_apk }}
             CHECKSUMS-Sesame-arm64-v8a-${{ steps.extract_info.outputs.version }}.apk.sha256
             CHECKSUMS-Sesame-armeabi-v7a-${{ steps.extract_info.outputs.version }}.apk.sha256
             CHECKSUMS-Sesame-x86-${{ steps.extract_info.outputs.version }}.apk.sha256

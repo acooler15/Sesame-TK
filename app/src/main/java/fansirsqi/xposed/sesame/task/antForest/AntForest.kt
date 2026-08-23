@@ -1069,8 +1069,8 @@ class AntForest : ModelTask(), EnergyCollectCallback {
 
     internal fun notifyMain() {
         if (taskCount.decrementAndGet() < 1) {
-            synchronized(this@AntForest) {
-                (this@AntForest as Object).notifyAll()
+            synchronized<Unit>(this@AntForest) {
+                (this@AntForest as java.lang.Object).notifyAll()
             }
         }
     }
@@ -1933,7 +1933,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             if (!jo.has("taskTriggerPlayInfo")) {
                 return
             }
-            val taskTriggerPlayInfo = jo.optJSONObject("taskTriggerPlayInfo")
+            val taskTriggerPlayInfo = jo.optJSONObject("taskTriggerPlayInfo") ?: return
             if (!taskTriggerPlayInfo.has("taskList")) {
                 return
             }

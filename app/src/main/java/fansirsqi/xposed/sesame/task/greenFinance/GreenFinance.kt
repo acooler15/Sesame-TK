@@ -319,7 +319,7 @@ class GreenFinance : ModelTask() {
                     jsonObject = prizes.getJSONObject(i)
                     val bizTime = jsonObject.getString("bizTime")
                     val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-                    val dateTime = formatter.parse(bizTime)
+                    val dateTime = formatter.parse(bizTime)!!
                     if (TimeUtil.getWeekNumber(dateTime) == TimeUtil.getWeekNumber(Date())) {
                         Status.greenFinancePrizesMap()
                         return

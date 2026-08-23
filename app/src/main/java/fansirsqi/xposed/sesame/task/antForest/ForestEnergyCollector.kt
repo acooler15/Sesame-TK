@@ -1104,7 +1104,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
             for (i in 0..<friendList.length()) {
                 val friendObj = friendList.getJSONObject(i)
                 val userId = friendObj.optString("userId", "")
-                val displayName = friendObj.optString("displayName", UserMap.getMaskName(userId))
+                val displayName = friendObj.optString("displayName", UserMap.getMaskName(userId) ?: "")
                 friendNames.add(displayName)
             }
 
@@ -1161,7 +1161,7 @@ internal class ForestEnergyCollector(private val task: AntForest) {
         if (ForestUtil.isUserInFrequencyCooldown(userId)) {
             return  // 跳过处理
         }
-        var userName = obj.optString("displayName", UserMap.getMaskName(userId))
+        var userName = obj.optString("displayName", UserMap.getMaskName(userId) ?: "")
         if (emptyForestCache.containsKey(userId)) { //本轮已知为空的树林
             return
         }

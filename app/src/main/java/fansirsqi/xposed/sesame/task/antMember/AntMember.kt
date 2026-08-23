@@ -986,11 +986,12 @@ class AntMember : ModelTask() {
                                 val completeJo = JSONObject(completeRes)
                                 if (ResChecker.checkRes(TAG, completeJo)) {
                                     val prize = completeJo.optJSONObject("data")
-                                    val num = prize?.optInt(
-                                        "zmlNum", if (prize.optJSONObject("prize") != null) Objects.requireNonNull(
-                                            prize.optJSONObject("prize")
-                                        ).optInt("num", 0) else 0
-                                    ) ?: 0
+                                    val num = if (prize != null) {
+                                        val prizeObj = prize.optJSONObject("prize")
+                                        prize.optInt(
+                                            "zmlNum", prizeObj?.optInt("num", 0) ?: 0
+                                        )
+                                    } else 0
                                     Log.other("芝麻炼金⚗️[每日签到成功]#获得" + num + "粒")
                                 } else {
                                     Log.error("$TAG.doSesameAlchemy", "炼金签到失败:$completeRes")
@@ -1196,6 +1197,10 @@ class AntMember : ModelTask() {
                     record("黄金票🎫[准备签到]")
                     // 调用新接口进行签到
                     val signRes = AntMemberRpcCall.welfareCenterTrigger("SIGN")
+                    if (signRes.isNullOrEmpty()) {
+                        record("黄金票🎫[签到失败]")
+                        return
+                    }
                     val signJson = JSONObject(signRes)
 
                     if (ResChecker.checkRes(TAG, signJson)) {
@@ -1271,7 +1276,7 @@ class AntMember : ModelTask() {
                 val submitJson = JSONObject(submitRes)
                 if (ResChecker.checkRes(TAG, submitJson)) {
                     val submitResult = submitJson.optJSONObject("result")
-                    val writeOffNo = if (submitResult != null) submitResult.optString("writeOffNo") else ""
+                    val writeOffNo = submitResult?.optString("writeOffNo") ?: ""
 
                     if (!writeOffNo.isEmpty()) {
                         Log.other("黄金票🎫[提取成功]#消耗: $extractAmount 份")
@@ -2281,6 +2286,10 @@ class AntMember : ModelTask() {
 
             // 2. 领取阶段
             val collectResp = AntMemberRpcCall.receiveSticker(year, month, allStickerIds)
+            if (collectResp.isNullOrEmpty()) {
+                Log.error(TAG, "领取贴纸失败：响应为空")
+                return
+            }
 
             val collectJson = JSONObject(collectResp)
             if (!ResChecker.checkRes(TAG, collectJson)) {

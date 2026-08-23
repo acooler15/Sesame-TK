@@ -259,6 +259,7 @@ val unspecified_scheme = ColorFamily(
 )
 
 @Composable
+@Suppress("DEPRECATION") // statusBarColor/navigationBarColor 在 API 35+ 弃用，但 minSdk 26 下仍需显式设置以实现沉浸式
 fun AppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+

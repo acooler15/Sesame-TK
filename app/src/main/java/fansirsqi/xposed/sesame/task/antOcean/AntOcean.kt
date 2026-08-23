@@ -963,6 +963,7 @@ class AntOcean : ModelTask() {
                                 }
                                 if (idSet.isNotEmpty()) {
                                     val usePropResult = AntOceanRpcCall.usePropByType(order, idSet)
+                                        ?: continue
                                     val usePropResultObj = JSONObject(usePropResult)
                                     if (ResChecker.checkRes(TAG + "使用海洋万能拼图失败:", usePropResultObj)) {
                                         val userCount = idSet.size

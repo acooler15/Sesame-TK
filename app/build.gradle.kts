@@ -1,9 +1,23 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.BuiltArtifactsLoader
+import com.android.build.api.variant.FilterConfiguration
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.Properties
-import java.util.TimeZone
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
 
 plugins {
     alias(libs.plugins.android.application)
@@ -17,9 +31,9 @@ val appVersionName = "0.9.9"
 
 // 构建时间戳（GMT+8），用于产物文件名与 BuildConfig，区分每次 debug/release 构建。
 // 只保留年份后两位，格式如 2608230832（yyMMddHHmm）。放在顶层，配置期求值一次。
-val buildDateTime = SimpleDateFormat("yyMMddHHmm", Locale.CHINA).apply {
-    timeZone = TimeZone.getTimeZone("GMT+8")
-}.format(Date())
+val buildDateTime: String = DateTimeFormatter.ofPattern("yyMMddHHmm", Locale.CHINA)
+    .withZone(ZoneOffset.ofHours(8))
+    .format(Instant.now())
 
 // ============ 构建物签名配置 ============
 // 签名信息来源（优先级从高到低）：
@@ -78,13 +92,13 @@ android {
         minSdk = 26
         targetSdk = 36
 
-        val buildDate = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).apply {
-            timeZone = TimeZone.getTimeZone("GMT+8")
-        }.format(Date())
+        val buildDate: String = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.CHINA)
+            .withZone(ZoneOffset.ofHours(8))
+            .format(Instant.now())
 
-        val buildTime = SimpleDateFormat("HH:mm:ss", Locale.CHINA).apply {
-            timeZone = TimeZone.getTimeZone("GMT+8")
-        }.format(Date())
+        val buildTime: String = DateTimeFormatter.ofPattern("HH:mm:ss", Locale.CHINA)
+            .withZone(ZoneOffset.ofHours(8))
+            .format(Instant.now())
 
         versionCode = gitCommitCount
         versionName = appVersionName
@@ -191,43 +205,79 @@ kotlin {
 androidComponents {
     onVariants { variant ->
         val variantName = variant.name
-        val variantCap = variantName.replaceFirstChar { if (it.isLowerCase()) it.uppercaseChar() else it }
-        val abiNames = variant.outputs.map { out ->
-            out.filters
-                .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
-                ?.identifier ?: "universal"
-        }
-        // 配置期只写稳定的基础名（不含时间戳）。
-        // 原因：项目开启了 org.gradle.configuration-cache，配置期求值的 buildDateTime 会被冻结到缓存创建时刻，
-        // 导致后续重建文件名时间戳不刷新。因此时间戳改由下方的 rename 任务在执行期注入。
+        // 通过 variant.outputs 设置原始 APK 文件名：带版本号、不含时间戳，文件名稳定可追溯。
+        // 这是 AGP 官方推荐的做法（variant outputs API）。
         variant.outputs.forEach { output ->
             val abiName = output.filters
-                .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                .firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }
                 ?.identifier ?: "universal"
-            output.outputFileName.set("Sesame-TK-${abiName}-${variantName}.apk")
+            output.outputFileName.set("Sesame-TK-${abiName}-${variantName}-v${appVersionName}.apk")
         }
-        // 执行期任务：在 assembleXxx 收尾时把真实构建时刻（GMT+8, yyMMddHHmm）追加到文件名。
-        // 写在 doLast 中意味着每次构建都会重新求值 Date()，规避配置缓存的冻结问题。
-        val renameTask = tasks.register("rename${variantCap}Apk") {
-            doLast {
-                val ts = SimpleDateFormat("yyMMddHHmm", Locale.CHINA).apply {
-                    timeZone = TimeZone.getTimeZone("GMT+8")
-                }.format(Date())
-                val apkDir = File(project.layout.buildDirectory.get().asFile, "outputs/apk/${variantName}")
-                abiNames.forEach { abi ->
-                    val src = File(apkDir, "Sesame-TK-${abi}-${variantName}.apk")
-                    if (src.exists()) {
-                        val dst = File(apkDir, "Sesame-TK-${abi}-${variantName}-${ts}.apk")
-                        if (src.renameTo(dst)) {
-                            logger.lifecycle("APK 重命名: ${dst.name}")
-                        } else {
-                            logger.warn("APK 重命名失败(可能被占用): ${src.name}")
-                        }
-                    }
-                }
-            }
+
+        // 官方推荐做法（Google gradle-recipes/listenToArtifacts）：
+        // 用 Artifact API 声明"本任务消费 APK 产物"，AGP 自动接线依赖与输入，
+        // 在 APK 打包完成后把产物复制 + 重命名（追加执行期时间戳）到独立目录。
+        // 交付文件名去掉版本号、只保留 abi + variant + 时间戳，与原始产物区分。
+        val copyTask = tasks.register<CopyApkTask>("copyApksFor${variantName}") {
+            description = "复制并重命名 $variantName 变体的 APK 产物到独立目录"
+            output.set(layout.buildDirectory.dir("outputs/renamed_apks/${variantName}"))
+            builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+            // 与 outputFileName 中的 -v${appVersionName} 对应，重命名时移除。
+            versionName.set(appVersionName)
         }
-        tasks.named("assemble${variantCap}") { finalizedBy(renameTask) }
+        variant.artifacts.use(copyTask)
+            .wiredWith { it.input }
+            .toListenTo(SingleArtifact.APK)
+    }
+}
+
+/**
+ * 复制并重命名 APK 产物到独立目录（不破坏 AGP 原始输出约定）。
+ * 写法与 Google gradle-recipes/listenToArtifacts 一致。
+ */
+abstract class CopyApkTask : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val input: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @get:Internal
+    abstract val builtArtifactsLoader: Property<BuiltArtifactsLoader>
+
+    // 原始 APK 文件名中的版本号（appVersionName），重命名时去掉。
+    @get:Input
+    abstract val versionName: Property<String>
+
+    @TaskAction
+    fun copyAndRename() {
+        val builtArtifacts = builtArtifactsLoader.get().load(input.get())
+            ?: throw RuntimeException("Cannot load APKs from ${input.get().asFile}")
+
+        // 执行期求值时间戳，规避 configuration-cache 冻结问题。
+        val ts: String = DateTimeFormatter.ofPattern("yyMMddHHmm", Locale.CHINA)
+            .withZone(ZoneOffset.ofHours(8))
+            .format(Instant.now())
+
+        val outputDir = output.get().asFile
+        outputDir.deleteRecursively()
+        outputDir.mkdirs()
+
+        builtArtifacts.elements.forEach { artifact ->
+            val srcFile = File(artifact.outputFile)
+            // 交付文件名去掉版本号、追加执行期时间戳：
+            // 原始名形如 Sesame-TK-arm64-v8a-debug-v0.9.9.apk（带版本号、无时间戳），
+            // 重命名后为 Sesame-TK-arm64-v8a-debug-2608231547.apk（无版本号、带时间戳）。
+            val baseName = srcFile.nameWithoutExtension.removeSuffix("-v${versionName.get()}")
+            val newName = "$baseName-$ts.apk"
+            Files.copy(
+                srcFile.toPath(),
+                File(outputDir, newName).toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+            )
+            logger.lifecycle("APK 已复制并重命名: $newName")
+        }
     }
 }
 

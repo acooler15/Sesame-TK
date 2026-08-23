@@ -162,14 +162,14 @@ object ReflectUtil {
 
     /** 实参 → 形参类型；null 实参以 Object 作通配标记 */
     private fun getParameterTypes(vararg args: Any?): Array<Class<*>> =
-        args.map { it?.javaClass ?: java.lang.Object::class.java }.toTypedArray()
+        args.map { it?.javaClass ?: Any::class.java }.toTypedArray()
 
     /** 参数匹配：等类型 / 装箱等类型 / 继承兼容（形参类型须能接受实参类型）；Object 通配任意 */
     private fun isMatch(actual: Array<out Class<*>>, expected: Array<out Class<*>>): Boolean {
         if (actual.size != expected.size) return false
         for (i in actual.indices) {
             val e = expected[i]
-            if (e == java.lang.Object::class.java) continue
+            if (e == Any::class.java) continue
             val a = actual[i]
             if (a == e || box(a) == box(e) || a.isAssignableFrom(e)) continue
             return false
@@ -177,15 +177,16 @@ object ReflectUtil {
         return true
     }
 
+    /** 基本类型 → 装箱类型（引用类型原样返回），用于参数匹配时消除装箱差异 */
     private fun box(c: Class<*>): Class<*> = when (c) {
-        java.lang.Boolean.TYPE -> java.lang.Boolean::class.java
-        java.lang.Byte.TYPE -> java.lang.Byte::class.java
-        java.lang.Character.TYPE -> java.lang.Character::class.java
-        java.lang.Short.TYPE -> java.lang.Short::class.java
-        java.lang.Integer.TYPE -> java.lang.Integer::class.java
-        java.lang.Long.TYPE -> java.lang.Long::class.java
-        java.lang.Float.TYPE -> java.lang.Float::class.java
-        java.lang.Double.TYPE -> java.lang.Double::class.java
+        Boolean::class.javaPrimitiveType -> Boolean::class.javaObjectType
+        Byte::class.javaPrimitiveType -> Byte::class.javaObjectType
+        Char::class.javaPrimitiveType -> Char::class.javaObjectType
+        Short::class.javaPrimitiveType -> Short::class.javaObjectType
+        Int::class.javaPrimitiveType -> Int::class.javaObjectType
+        Long::class.javaPrimitiveType -> Long::class.javaObjectType
+        Float::class.javaPrimitiveType -> Float::class.javaObjectType
+        Double::class.javaPrimitiveType -> Double::class.javaObjectType
         else -> c
     }
 }

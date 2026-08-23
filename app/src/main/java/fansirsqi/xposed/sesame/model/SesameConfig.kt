@@ -1,6 +1,5 @@
 package fansirsqi.xposed.sesame.model
 
-import fansirsqi.xposed.sesame.model.BaseModel.TimedTaskModel
 import fansirsqi.xposed.sesame.model.modelFieldExt.BooleanModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.ChoiceModelField
 import fansirsqi.xposed.sesame.model.modelFieldExt.IntegerModelField
@@ -18,12 +17,6 @@ import fansirsqi.xposed.sesame.core.util.ListUtil
  * 供运行时统一读取，避免构造时快照导致的配置不生效问题。
  */
 class SesameConfig {
-    /**
-     * 是否保持唤醒状态
-     */
-    @JvmField
-    val stayAwake: BooleanModelField = BooleanModelField("stayAwake", "保持唤醒", true)
-
     /**
      * 手动触发是否自动安排下次执行
      */
@@ -53,16 +46,6 @@ class SesameConfig {
     )
 
     /**
-     * 定时唤醒的时间点列表
-     */
-    @JvmField
-    val wakenAtTimeList: ListJoinCommaToStringModelField = ListJoinCommaToStringModelField(
-        "wakenAtTimeList", "定时唤醒(关闭:-1)", ListUtil.newArrayList(
-            "0010", "0030", "0100", "0650", "2350" // 添加多个0点后的时间点
-        )
-    )
-
-    /**
      * 能量收集的时间范围
      */
     @JvmField
@@ -74,12 +57,6 @@ class SesameConfig {
     @JvmField
     val modelSleepTime: ListJoinCommaToStringModelField =
         ListJoinCommaToStringModelField("modelSleepTime", "模块休眠时间(范围|关闭:-1)", ListUtil.newArrayList("0200-0201"))
-
-    /**
-     * 定时任务模式选择
-     */
-    @JvmField
-    val timedTaskModel: ChoiceModelField = ChoiceModelField("timedTaskModel", "定时任务模式", TimedTaskModel.Companion.SYSTEM, TimedTaskModel.Companion.nickNames)
 
     /**
      * 超时是否重启

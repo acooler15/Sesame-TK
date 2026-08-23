@@ -202,10 +202,7 @@ object TaskScheduler {
         if (appContext == null) return
         ensureScheduler()
 
-        val wakenAtTimeList = ApplicationHook.config.wakenAtTimeList.value
-        if (wakenAtTimeList.contains("-1")) return
-
-        // 1. 每日0点
+        // 每日0点
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_MONTH, 1)
         resetToMidnight(calendar)
@@ -217,22 +214,6 @@ object TaskScheduler {
                 updateDay()
                 execHandler()
                 setWakenAtTimeAlarm() // 递归设置明天
-            }
-        }
-
-        // 2. 自定义时间
-        val now = Calendar.getInstance()
-        for (timeStr in wakenAtTimeList) {
-            try {
-                val target = TimeUtil.getTodayCalendarByTimeStr(timeStr)
-                if (target != null && target > now) {
-                    val delay = target.getTimeInMillis() - System.currentTimeMillis()
-                    schedule(delay, "自定义: $timeStr") {
-                        record(TAG, "⏰ 自定义触发: $timeStr")
-                        execHandler()
-                    }
-                }
-            } catch (_: Exception) { /* ignore */
             }
         }
     }

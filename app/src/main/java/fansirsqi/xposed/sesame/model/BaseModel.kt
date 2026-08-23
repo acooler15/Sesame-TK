@@ -29,15 +29,12 @@ class BaseModel : Model() {
     override fun getFields(): ModelFields {
         val modelFields = ModelFields()
         val config = ApplicationHook.config
-        modelFields.addField(config.stayAwake) //是否保持唤醒状态
         modelFields.addField(config.manualTriggerAutoSchedule) //手动触发是否自动安排下次执行
         modelFields.addField(config.checkInterval) //执行间隔时间
         modelFields.addField(config.taskExecutionRounds) //轮数
         modelFields.addField(config.modelSleepTime) //模块休眠时间范围
         modelFields.addField(config.execAtTimeList) //定时执行的时间点列表
-        modelFields.addField(config.wakenAtTimeList) //定时唤醒的时间点列表
         modelFields.addField(config.energyTime) //能量收集的时间范围
-        modelFields.addField(config.timedTaskModel) //定时任务模式选择
         modelFields.addField(config.timeoutRestart) //超时是否重启
         modelFields.addField(config.waitWhenException) //异常发生时的等待时间
         modelFields.addField(config.errNotify) //异常通知开关
@@ -71,14 +68,6 @@ class BaseModel : Model() {
         return modelFields
     }
 
-    interface TimedTaskModel {
-        companion object {
-            const val SYSTEM: Int = 0
-            const val PROGRAM: Int = 1
-            val nickNames: Array<String?> = arrayOf<String?>("🤖系统计时", "📦程序计时")
-        }
-    }
-
     companion object {
         private const val TAG = "BaseModel"
 
@@ -91,9 +80,11 @@ class BaseModel : Model() {
                 IdMapManager.getInstance(BeachMap::class.java).clear()
                 //            IdMapManager.getInstance(ReserveMap.class).clear();
 //            IdMapManager.getInstance(CooperateMap.class).clear();
+// 以下为全局目录（已非按用户隔离），如需清理可取消注释
 //            IdMapManager.getInstance(MemberBenefitsMap.class).clear();
 //            IdMapManager.getInstance(ParadiseCoinBenefitIdMap.class).clear();
 //            IdMapManager.getInstance(VitalityRewardsMap.class).clear();
+//            IdMapManager.getInstance(SesameGiftMap.class).clear();
                 //其他也可以清理清理
             } catch (e: Exception) {
                 Log.printStackTrace(e)

@@ -117,6 +117,9 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         private const val HANDLE_BOUNDS_MIN = 60
         private const val HANDLE_BOUNDS_MAX = 220
 
+        /** 从下往上扫描时行间空白容差（px）：防手柄内部小空洞导致提前分段 */
+        private const val HANDLE_GAP_TOLERANCE = 5
+
         /** 手柄宽高比合法区间 */
         private const val HANDLE_ASPECT_RATIO_MIN = 0.75f
         private const val HANDLE_ASPECT_RATIO_MAX = 1.35f
@@ -427,18 +430,22 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
                 continue
             }
 
-            val distance = recognition.targetX - recognition.sliderX
+            // block 缺失：用像素扫描的蓝色手柄中心代偿滑块参考坐标
+            // （x 用手柄中心、y 用缺口中心，滑块块与缺口同水平线；避免 sliderX==targetX 导致距离为 0）
+            val effectiveRecognition = compensateSliderReference(recognition, detectedHandle.centerX)
+
+            val distance = effectiveRecognition.targetX - effectiveRecognition.sliderX
             Log.record(
                 TAG,
-                "裁剪识别成功: 裁剪内坐标 滑块=(${recognition.sliderX.toInt()},${recognition.sliderY.toInt()}) 目标=(${recognition.targetX.toInt()},${recognition.targetY.toInt()})"
+                "裁剪识别成功: 裁剪内坐标 滑块=(${effectiveRecognition.sliderX.toInt()},${effectiveRecognition.sliderY.toInt()}) 目标=(${effectiveRecognition.targetX.toInt()},${effectiveRecognition.targetY.toInt()})"
             )
             Log.record(
                 TAG,
-                "DecorView坐标: 滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 置信度=${recognition.confidence}"
+                "DecorView坐标: 滑块=(${effectiveRecognition.sliderX.toInt()},${(effectiveRecognition.sliderY + cropTop).toInt()}), 目标=(${effectiveRecognition.targetX.toInt()},${(effectiveRecognition.targetY + cropTop).toInt()}), 置信度=${effectiveRecognition.confidence}"
             )
 
             // 深度前置检测（识别结果级）
-            val preCheck = evaluateModelPreCheck(croppedBitmap, recognition, anchorText, detectedHandle)
+            val preCheck = evaluateModelPreCheck(croppedBitmap, effectiveRecognition, anchorText, detectedHandle)
             if (!preCheck.passed) {
                 if (rpcConfirmed || hasStrongAnchor) {
                     // 强信号已确认是验证码页，模型检测失败应重试而非跳过
@@ -460,7 +467,7 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
             )
             Log.record(
                 TAG,
-                "滑动参数: 模型滑块=(${recognition.sliderX.toInt()},${(recognition.sliderY + cropTop).toInt()}), 模型目标=(${recognition.targetX.toInt()},${(recognition.targetY + cropTop).toInt()}), 距离=${distance.toInt()}px"
+                "滑动参数: 模型滑块=(${effectiveRecognition.sliderX.toInt()},${(effectiveRecognition.sliderY + cropTop).toInt()}), 模型目标=(${effectiveRecognition.targetX.toInt()},${(effectiveRecognition.targetY + cropTop).toInt()}), 距离=${distance.toInt()}px"
             )
 
             val handle = preCheck.sliderHandle ?: detectedHandle
@@ -701,7 +708,8 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         }
 
         // 校正距离过小说明已对齐、过大说明识别异常，均放弃校正
-        val correctionDistance = estimateCorrectionDistance(probeRecognition)
+        val effectiveProbe = compensateSliderReference(probeRecognition, sliderHandle.centerX)
+        val correctionDistance = estimateCorrectionDistance(effectiveProbe)
         if (kotlin.math.abs(correctionDistance) !in CORRECTION_MIN_DISTANCE..CORRECTION_MAX_DISTANCE) {
             Log.record(TAG, "校正距离超出允许范围: $correctionDistance")
             return false
@@ -769,6 +777,26 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
     }
 
     /**
+     * block 缺失时用像素扫描的蓝色手柄中心代偿滑块参考坐标。
+     *
+     * 模型未识别到滑块块（hasBlock=false）时 sliderX/Y 无效。代偿规则：
+     * - x 用蓝色手柄中心（滑块与手柄初始都在最左，x 对齐）；
+     * - y 用缺口中心（滑块块与缺口在同一水平线上）。
+     * 这样 distance=targetX-sliderX 不再为 0，能通过后续距离前置检测。
+     */
+    private fun compensateSliderReference(
+        recognition: SliderTFLite.SlideRecognitionResult,
+        handleCenterX: Float
+    ): SliderTFLite.SlideRecognitionResult {
+        if (recognition.hasBlock) return recognition
+        Log.record(TAG, "[代偿] 未识别到滑块块(block)，用蓝色手柄中心 x 代偿: handleX=${handleCenterX.toInt()}")
+        return recognition.copy(
+            sliderX = handleCenterX,
+            sliderY = recognition.targetY
+        )
+    }
+
+    /**
      * 估算校正滑动距离：目标与当前滑块位置的残余偏差，外加 8px 过冲补偿。
      * 偏差 <1px 时给固定 12px 轻推（视觉上已对齐但判定未过的情况）。
      */
@@ -802,14 +830,55 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
             .coerceAtMost(fullBitmap.height)
         val searchRight = (fullBitmap.width * HANDLE_SCAN_X_LIMIT / 100).coerceAtMost(fullBitmap.width)
 
+        // 行投影：每行蓝色像素数
+        val rowCount = searchBottom - searchTop
+        val rowBlue = IntArray(rowCount)
+        for (i in 0 until rowCount) {
+            val yRow = searchTop + i
+            var c = 0
+            var xScan = 0
+            while (xScan < searchRight) {
+                if (isLikelySliderHandleBlue(fullBitmap.getPixel(xScan, yRow))) c++
+                xScan++
+            }
+            rowBlue[i] = c
+        }
+
+        // 从下往上找第一段连续非零行（带 gap 容差，防手柄内部小空洞）
+        // 先验：手柄位于搜索窗口下方，噪点(UI装饰/标题)位于上方，从下往上首段即手柄
+        var segBottomIdx = -1
+        var segTopIdx = -1
+        var gap = 0
+        var idx = rowCount - 1
+        while (idx >= 0) {
+            if (rowBlue[idx] > 0) {
+                if (segBottomIdx == -1) segBottomIdx = idx
+                segTopIdx = idx
+                gap = 0
+            } else if (segBottomIdx != -1) {
+                gap++
+                if (gap > HANDLE_GAP_TOLERANCE) break
+            }
+            idx--
+        }
+        if (segBottomIdx == -1) {
+            Log.record(
+                TAG,
+                "滑块手柄检测失败: searchRegion=(0,$searchTop,$searchRight,$searchBottom), pixelCount=0 (无蓝色像素)"
+            )
+            return null
+        }
+        val segTop = searchTop + segTopIdx
+        val segBottom = searchTop + segBottomIdx
+
+        // 仅在 [segTop, segBottom] 段内算 bbox，避免上方噪点合并进包围盒
         var minX = Int.MAX_VALUE
         var minY = Int.MAX_VALUE
         var maxX = -1
         var maxY = -1
         var pixelCount = 0
-
-        var y = searchTop
-        while (y < searchBottom) {
+        var y = segTop
+        while (y <= segBottom) {
             var x = 0
             while (x < searchRight) {
                 if (isLikelySliderHandleBlue(fullBitmap.getPixel(x, y))) {
@@ -827,7 +896,7 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         if (pixelCount < HANDLE_MIN_PIXELS || maxX <= minX || maxY <= minY) {
             Log.record(
                 TAG,
-                "滑块手柄检测失败: searchRegion=(0,$searchTop,$searchRight,$searchBottom), pixelCount=$pixelCount"
+                "滑块手柄检测失败: segment=[$segTop,$segBottom], searchRegion=(0,$searchTop,$searchRight,$searchBottom), pixelCount=$pixelCount"
             )
             return null
         }
@@ -835,13 +904,13 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         val width = maxX - minX
         val height = maxY - minY
         if (width !in HANDLE_BOUNDS_MIN..HANDLE_BOUNDS_MAX || height !in HANDLE_BOUNDS_MIN..HANDLE_BOUNDS_MAX) {
-            Log.record(TAG, "滑块手柄检测失败: boundsSize=${width}x$height, pixelCount=$pixelCount")
+            Log.record(TAG, "滑块手柄检测失败: boundsSize=${width}x$height, pixelCount=$pixelCount, segment=[$segTop,$segBottom]")
             return null
         }
 
         val aspectRatio = width.toFloat() / height.toFloat()
         if (aspectRatio !in HANDLE_ASPECT_RATIO_MIN..HANDLE_ASPECT_RATIO_MAX) {
-            Log.record(TAG, "滑块手柄检测失败: aspectRatio=$aspectRatio, boundsSize=${width}x$height, pixelCount=$pixelCount")
+            Log.record(TAG, "滑块手柄检测失败: aspectRatio=$aspectRatio, boundsSize=${width}x$height, pixelCount=$pixelCount, segment=[$segTop,$segBottom]")
             return null
         }
 

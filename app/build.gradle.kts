@@ -15,6 +15,12 @@ var isCIBuild: Boolean = System.getenv("CI").toBoolean()
 
 val appVersionName = "0.9.9"
 
+// 构建时间戳（GMT+8），用于产物文件名与 BuildConfig，区分每次 debug/release 构建。
+// 只保留年份后两位，格式如 2608230832（yyMMddHHmm）。放在顶层，配置期求值一次。
+val buildDateTime = SimpleDateFormat("yyMMddHHmm", Locale.CHINA).apply {
+    timeZone = TimeZone.getTimeZone("GMT+8")
+}.format(Date())
+
 // ============ 构建物签名配置 ============
 // 签名信息来源（优先级从高到低）：
 //   1. 环境变量（CI 构建传入 secrets：ANDROID_KEYSTORE_PATH / ANDROID_KEYSTORE_PASSWORD / ANDROID_KEY_ALIAS / ANDROID_KEY_PASSWORD）
@@ -85,6 +91,7 @@ android {
 
         buildConfigField("String", "BUILD_DATE", "\"$buildDate\"")
         buildConfigField("String", "BUILD_TIME", "\"$buildTime\"")
+        buildConfigField("String", "BUILD_DATETIME", "\"$buildDateTime\"")
         if (isCIBuild) {
             ndk {
                 abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -183,13 +190,44 @@ kotlin {
 
 androidComponents {
     onVariants { variant ->
+        val variantName = variant.name
+        val variantCap = variantName.replaceFirstChar { if (it.isLowerCase()) it.uppercaseChar() else it }
+        val abiNames = variant.outputs.map { out ->
+            out.filters
+                .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                ?.identifier ?: "universal"
+        }
+        // 配置期只写稳定的基础名（不含时间戳）。
+        // 原因：项目开启了 org.gradle.configuration-cache，配置期求值的 buildDateTime 会被冻结到缓存创建时刻，
+        // 导致后续重建文件名时间戳不刷新。因此时间戳改由下方的 rename 任务在执行期注入。
         variant.outputs.forEach { output ->
             val abiName = output.filters
                 .firstOrNull { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
                 ?.identifier ?: "universal"
-            // 只设置文件名（不含路径分隔符），产物会输出到默认的 build/outputs/apk/<variant>/ 目录
-            output.outputFileName.set("Sesame-TK-${abiName}-${appVersionName}-${variant.name}.apk")
+            output.outputFileName.set("Sesame-TK-${abiName}-${variantName}.apk")
         }
+        // 执行期任务：在 assembleXxx 收尾时把真实构建时刻（GMT+8, yyMMddHHmm）追加到文件名。
+        // 写在 doLast 中意味着每次构建都会重新求值 Date()，规避配置缓存的冻结问题。
+        val renameTask = tasks.register("rename${variantCap}Apk") {
+            doLast {
+                val ts = SimpleDateFormat("yyMMddHHmm", Locale.CHINA).apply {
+                    timeZone = TimeZone.getTimeZone("GMT+8")
+                }.format(Date())
+                val apkDir = File(project.layout.buildDirectory.get().asFile, "outputs/apk/${variantName}")
+                abiNames.forEach { abi ->
+                    val src = File(apkDir, "Sesame-TK-${abi}-${variantName}.apk")
+                    if (src.exists()) {
+                        val dst = File(apkDir, "Sesame-TK-${abi}-${variantName}-${ts}.apk")
+                        if (src.renameTo(dst)) {
+                            logger.lifecycle("APK 重命名: ${dst.name}")
+                        } else {
+                            logger.warn("APK 重命名失败(可能被占用): ${src.name}")
+                        }
+                    }
+                }
+            }
+        }
+        tasks.named("assemble${variantCap}") { finalizedBy(renameTask) }
     }
 }
 

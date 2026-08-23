@@ -2777,8 +2777,8 @@ class AntMember : ModelTask() {
                 currentPage++
             }
 
-            // 保存映射关系到本地文件 sesame_gift.json
-            IdMapManager.getInstance(SesameGiftMap::class.java).save(userId)
+            // 保存映射关系到本地文件 sesameGift.json
+            IdMapManager.getInstance(SesameGiftMap::class.java).save()
             record(TAG, "芝麻粒兑换任务处理完毕，商品列表已更新")
             // 标记今日已完成
             setFlagToday("sesameGrainExchange::done")

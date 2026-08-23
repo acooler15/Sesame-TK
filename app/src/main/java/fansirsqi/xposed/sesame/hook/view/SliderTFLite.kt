@@ -225,7 +225,8 @@ class SliderTFLite(val context: Context) {
      */
     data class SlideRecognitionResult(
         val hasGap: Boolean,    // 是否识别到缺口
-        val sliderX: Float,     // 滑块块中心X（hasGap=false 时无效）
+        val hasBlock: Boolean,  // 是否识别到滑块块（false 时 sliderX/Y 无效，调用方用手柄中心代偿）
+        val sliderX: Float,     // 滑块块中心X（hasGap=false 或 hasBlock=false 时无效）
         val sliderY: Float,     // 滑块块中心Y
         val targetX: Float,     // 缺口中心X
         val targetY: Float,     // 缺口中心Y
@@ -279,6 +280,7 @@ class SliderTFLite(val context: Context) {
             Log.record(TAG, "未识别到缺口(gap)，模型候选=${results.size}，交由调用方刷新重试")
             return SlideRecognitionResult(
                 hasGap = false,
+                hasBlock = block != null,
                 sliderX = 0f, sliderY = 0f,
                 targetX = 0f, targetY = 0f,
                 confidence = refresh?.score ?: 0f,
@@ -289,16 +291,13 @@ class SliderTFLite(val context: Context) {
             )
         }
 
-        // 滑块块缺失 → 用缺口位置代偿（调用方会以像素扫描手柄兜底）
-        val blockCenterX: Float
-        val blockCenterY: Float
-        if (block != null) {
-            blockCenterX = (block.x1 + block.x2) / 2f
-            blockCenterY = (block.y1 + block.y2) / 2f
-        } else {
-            Log.record(TAG, "未识别到滑块块(block)，用缺口中心代偿 slider 参考坐标")
-            blockCenterX = (gap.x1 + gap.x2) / 2f
-            blockCenterY = (gap.y1 + gap.y2) / 2f
+        // 滑块块缺失 → sliderX/Y 置无效值，由调用方用像素扫描的蓝色手柄中心代偿
+        // （不能用缺口中心代偿，否则 sliderX==targetX、距离=0，前置检测必失败）
+        val hasBlock = block != null
+        val blockCenterX = if (block != null) (block.x1 + block.x2) / 2f else 0f
+        val blockCenterY = if (block != null) (block.y1 + block.y2) / 2f else 0f
+        if (!hasBlock) {
+            Log.record(TAG, "未识别到滑块块(block)，slider 坐标置无效，交由调用方用手柄中心代偿")
         }
 
         val targetCenterX = (gap.x1 + gap.x2) / 2f
@@ -308,10 +307,11 @@ class SliderTFLite(val context: Context) {
 
         Log.record(
             TAG,
-            "缺口中心: (${targetCenterX.toInt()},${targetCenterY.toInt()}), 滑块块中心: (${blockCenterX.toInt()},${blockCenterY.toInt()}), 刷新: ${if (refresh != null) "(${refreshCenterX!!.toInt()},${refreshCenterY!!.toInt()})" else "null"}, 距离: ${(targetCenterX - blockCenterX).toInt()}"
+            "缺口中心: (${targetCenterX.toInt()},${targetCenterY.toInt()}), 滑块块中心: ${if (hasBlock) "(${blockCenterX.toInt()},${blockCenterY.toInt()})" else "无"}, 刷新: ${if (refresh != null) "(${refreshCenterX!!.toInt()},${refreshCenterY!!.toInt()})" else "null"}, 距离: ${if (hasBlock) (targetCenterX - blockCenterX).toInt() else "N/A"}"
         )
         return SlideRecognitionResult(
             hasGap = true,
+            hasBlock = hasBlock,
             sliderX = blockCenterX,
             sliderY = blockCenterY,
             targetX = targetCenterX,

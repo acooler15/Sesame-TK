@@ -93,11 +93,11 @@ internal class MemberBenefitManager(private val member: AntMember) {
                         hasNextPage = false
                     }
                 }
-                IdMapManager.getInstance(MemberBenefitsMap::class.java).save(userId)
+                IdMapManager.getInstance(MemberBenefitsMap::class.java).save()
                 record(AntMember.TAG, "分类[$catName]处理完毕，已执行中间保存")
             }
             // 7. 保存映射表
-            IdMapManager.getInstance(MemberBenefitsMap::class.java).save(userId)
+            IdMapManager.getInstance(MemberBenefitsMap::class.java).save()
             record(AntMember.TAG, "会员积分🎐全部分类任务处理完毕")
             setFlagToday("memberBenefit::refresh")
 

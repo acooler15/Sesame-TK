@@ -46,7 +46,7 @@ internal class FarmShopManager(private val farm: AntFarm) {
                 }
             }
             IdMapManager.getInstance(ParadiseCoinBenefitIdMap::class.java)
-                .save(UserMap.currentUid)
+                .save()
         } catch (e: CancellationException) {
             // 协程取消异常必须重新抛出，不能吞掉
              Log.record(AntFarm.TAG, "paradiseCoinExchangeBenefit 协程被取消")

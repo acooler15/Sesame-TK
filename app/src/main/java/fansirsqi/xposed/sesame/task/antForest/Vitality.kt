@@ -90,7 +90,7 @@ object Vitality {
                 skuInfo[skuId] = skuModel
                 IdMapManager.getInstance(VitalityRewardsMap::class.java).add(skuId, oderInfo)
             }
-            IdMapManager.getInstance(VitalityRewardsMap::class.java).save(UserMap.currentUid)
+            IdMapManager.getInstance(VitalityRewardsMap::class.java).save()
         } catch (th: Throwable) {
             Log.record(TAG, "handleVitalityItem err")
             Log.printStackTrace(TAG, th)
@@ -111,7 +111,7 @@ object Vitality {
                 skuInfo[skuId] = skuModel
                 IdMapManager.getInstance(VitalityRewardsMap::class.java).add(skuId, skuName)
             }
-            IdMapManager.getInstance(VitalityRewardsMap::class.java).save(UserMap.currentUid)
+            IdMapManager.getInstance(VitalityRewardsMap::class.java).save()
         } catch (th: Throwable) {
             Log.record(TAG, "handleItemDetail err:")
             Log.printStackTrace(TAG, th)

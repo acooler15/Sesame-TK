@@ -5,6 +5,9 @@
 /app/compatible/*
 /app/lint-baseline.xml
 *.jks
+
+# Local signing config (contains keystore paths & passwords)
+/keystore.properties
 # Files for the ART/Dalvik VM
 *.dex
 

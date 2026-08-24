@@ -20,6 +20,7 @@ import fansirsqi.xposed.sesame.core.util.ResChecker
 import fansirsqi.xposed.sesame.core.util.TimeCounter
 import fansirsqi.xposed.sesame.core.util.TimeUtil
 import fansirsqi.xposed.sesame.util.maps.UserMap
+import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.LinkedList
@@ -271,16 +272,14 @@ class AntStall : ModelTask() {
             tc.countDebug("请走")
 
             // 收摊
-            if (stallAutoClose.value) {
-                closeShop()
-                tc.countDebug("收摊")
-            }
+            closeShop()
+            tc.countDebug("收摊")
+
 
             // 摆摊
-            if (stallAutoOpen.value) {
-                openShop()
-                tc.countDebug("摆摊")
-            }
+            openShop()
+            tc.countDebug("摆摊")
+
 
             // 自动任务
             if (stallAutoTask.value) {
@@ -487,10 +486,13 @@ class AntStall : ModelTask() {
                     sendBack(rentLastBill, seatId, rentLastShop, rentLastUser, sentUserId)
                 } else {
                     val taskId = "SB|$seatId"
+                    // 配置不允许请走时不注册空蹲点；到点执行时再判断一次（配置可能中途变化）
                     if (!hasChildTask(taskId)) {
-                        addChildTask(ChildModelTask(taskId, "SB", Runnable {
-                            CoroutineUtils.runBlockingSafe {
-                                if (stallAllowOpenReject.value) {
+                        addChildTask(
+                            ChildModelTask(
+                                id = taskId,
+                                group = "SB",
+                                suspendRunnable = {
                                     sendBack(
                                         rentLastBill,
                                         seatId,
@@ -498,9 +500,10 @@ class AntStall : ModelTask() {
                                         rentLastUser,
                                         sentUserId
                                     )
-                                }
-                            }
-                        }, endTime))
+                                },
+                                execTime = endTime
+                            )
+                        )
                         Log.record(TAG, "添加蹲点请走⛪在[${TimeUtil.getCommonDate(endTime)}]执行")
                     }
                 }
@@ -543,6 +546,9 @@ class AntStall : ModelTask() {
      */
     private suspend fun closeShop() {
         try {
+            if (!stallAutoClose.value) {
+                return
+            }
             val response = AntStallRpcCall.shopList()
             val json = JSONObject(response)
 
@@ -575,18 +581,20 @@ class AntStall : ModelTask() {
                     shopClose(shopId, rentLastBill, rentLastUser)
                 } else {
                     val taskId = "SH|$shopId"
+                    // 收摊/开摊都关闭时不注册空蹲点；到点执行时再判断一次（配置可能中途变化）
                     if (!hasChildTask(taskId)) {
-                        addChildTask(ChildModelTask(taskId, "SH", Runnable {
-                            CoroutineUtils.runBlockingSafe {
-                                if (stallAutoClose.value) {
+                        addChildTask(
+                            ChildModelTask(
+                                id = taskId,
+                                group = "SH",
+                                suspendRunnable = {
                                     shopClose(shopId, rentLastBill, rentLastUser)
-                                }
-                                GlobalThreadPools.sleepCompat(300L)
-                                if (stallAutoOpen.value) {
+                                    delay(300)
                                     openShop()
-                                }
-                            }
-                        }, shopTime))
+                                },
+                                execTime = shopTime
+                            )
+                        )
                         Log.record(TAG, "添加蹲点收摊⛪在[${TimeUtil.getCommonDate(shopTime)}]执行")
                     }
                 }
@@ -601,6 +609,9 @@ class AntStall : ModelTask() {
      */
     private suspend fun openShop() {
         try {
+            if (!stallAutoOpen.value) {
+                return
+            }
             val response = AntStallRpcCall.shopList()
             val json = JSONObject(response)
 
@@ -1038,6 +1049,9 @@ class AntStall : ModelTask() {
             Log.record(TAG, "开始为 ${friendSet.size} 位好友进行新村助力...")
 
             for (uid in friendSet) {
+                if (uid == UserMap.currentUid) {
+                    continue
+                }
                 val shareId = Base64.encodeToString(
                     "$uid-${RandomUtil.getRandomInt(5)}ANUTSALTML_2PA_SHARE".toByteArray(),
                     Base64.NO_WRAP

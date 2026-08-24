@@ -202,7 +202,7 @@ class SesameConfig {
      */
     @JvmField
     val taskTimeoutWhitelist: ListModelField = ListModelField(
-        "taskTimeoutWhitelist", "任务超时白名单", listOf("森林", "庄园", "运动")
+        "taskTimeoutWhitelist", "任务超时白名单", listOf("森林", "庄园")
     )
 }
 

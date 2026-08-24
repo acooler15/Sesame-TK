@@ -127,6 +127,25 @@ object SmartSchedulerManager {
     }
 
     /**
+     * 在当前协程内带 WakeLock 保护地延迟
+     *
+     * 供蹲点等待使用：不额外启动协程，由调用协程自身完成 delay + WakeLock 保护。
+     * delay 期间持有 PARTIAL_WAKE_LOCK 确保 CPU 活跃（抗 Doze 时间停滞），
+     * 支持协程取消（取消时 finally 释放锁）。
+     *
+     * @param delayMillis 延迟毫秒数
+     */
+    suspend fun delayWithWakeLock(delayMillis: Long) {
+        val finalDelay = if (delayMillis < 0) 0L else delayMillis
+        val wakeLock = acquireWakeLock(finalDelay + 5000)
+        try {
+            delay(finalDelay)
+        } finally {
+            releaseWakeLock(wakeLock)
+        }
+    }
+
+    /**
      * 取消特定任务
      */
     fun cancelTask(taskId: Int) {

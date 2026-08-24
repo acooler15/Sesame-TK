@@ -2613,29 +2613,19 @@ class AntFarm : ModelTask() {
                 if (joo.getString("subAnimalType") == "WORK") {
                     val taskId = "HIRE|" + joo.getString("animalId")
                     val beHiredEndTime = joo.getLong("beHiredEndTime")
-                    if (!hasChildTask(taskId)) {
-                        addChildTask(
-                            ChildModelTask(
-                                taskId,
-                                "HIRE",
-                                suspendRunnable = { this.hireAnimal() },
-                                beHiredEndTime
-                            )
+                    // addChildTask 内部会取消同 ID 旧任务并重新登记，无需 hasChildTask 分支
+                    addChildTask(
+                        ChildModelTask(
+                            taskId,
+                            "HIRE",
+                            suspendRunnable = { this.hireAnimal() },
+                            beHiredEndTime
                         )
-                        Log.record(
-                            TAG,
-                            "添加蹲点雇佣👷在[" + TimeUtil.getCommonDate(beHiredEndTime) + "]执行"
-                        )
-                    } else {
-                        addChildTask(
-                            ChildModelTask(
-                                taskId,
-                                "HIRE",
-                                suspendRunnable = { this.hireAnimal() },
-                                beHiredEndTime
-                            )
-                        )
-                    }
+                    )
+                    Log.record(
+                        TAG,
+                        "添加蹲点雇佣👷在[" + TimeUtil.getCommonDate(beHiredEndTime) + "]执行"
+                    )
                 }
                 i++
             }

@@ -33,7 +33,7 @@ class CoroutineTaskRunner(allModels: List<Model>) {
         private const val TAG = "CoroutineTaskRunner"
 
         // 超时白名单：在此名单中的任务"启动即视为完成"，不受超时限制。
-        // 适用场景：某些任务（如蚂蚁森林、庄园、运动）是长期运行的守护型任务，
+        // 适用场景：某些任务（如蚂蚁森林、庄园）是长期运行的守护型任务，
         // 不应被超时机制中断。加入白名单后，任务启动后立即标记为完成，
         // 实际执行由任务内部的自调度逻辑控制。
         private val timeoutWhitelist get() = ApplicationHook.config.taskTimeoutWhitelist.value

@@ -153,22 +153,39 @@ abstract class ModelTask : Model() {
     }
 
     /**
-     * 添加子任务（协程版本，内部使用）
-     * @param childTask 要添加的子任务
+     * 添加子任务（Java/Kotlin通用入口）
+     *
+     * **示例用法：**
+     * ```kotlin
+     * // Kotlin挂起函数
+     * addChildTask(ChildModelTask("task1", "GROUP") {
+     *     delay(1000)
+     *     Log.record("执行成功")
+     * }, execTime = System.currentTimeMillis() + 5000)
+     *
+     * // Java Runnable
+     * addChildTask(new ChildModelTask("task2", "GROUP", () -> {
+     *     Log.record("Java任务");
+     * }, System.currentTimeMillis() + 3000))
+     * ```
+     *
+     * 子任务在父任务 taskScope 中直接启动（不再嵌套额外协程），
+     * 由当前协程负责执行 run()，完成后清理 childTaskMap。
+     *
+     * @return 始终返回true
      */
-    private suspend fun addChildTaskSuspend(childTask: ChildModelTask) {
+    fun addChildTask(childTask: ChildModelTask): Boolean {
         ensureTaskScope()
-        val childId = childTask.id
-        
-        // 取消已存在的同ID任务
-        childTaskMap[childId]?.cancel()
-        
-        // 设置父任务引用
-        childTask.modelTask = this
-        childTaskMap[childTask.id] = childTask
-
-        // 在协程作用域中启动子任务
-        val job = CoroutineScope(currentCoroutineContext()).launch {
+        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            val childId = childTask.id
+            // 取消已存在的同ID任务（childTaskMap.remove 使用对象匹配，不会误删新任务）
+            childTaskMap[childId]?.cancel()
+            // 设置父任务引用并登记
+            childTask.modelTask = this@ModelTask
+            childTaskMap[childId] = childTask
+            // 记录当前协程 Job，供 cancel() 使用（执行协程即子任务协程）
+            childTask.job = coroutineContext[Job]
             try {
                 childTask.run()
             } catch (e: CancellationException) {
@@ -178,43 +195,10 @@ abstract class ModelTask : Model() {
                 throw e
             } catch (e: Exception) {
                 val taskName = getName() ?: "未知任务"
-                Log.printStackTrace("addChildTaskSuspend 子任务执行异常1: $taskName-$childId", e)
+                Log.printStackTrace("addChildTask 子任务执行异常: $taskName-$childId", e)
             } finally {
-//                childTaskMap.remove(childId)
-                childTaskMap.remove(childTask.id, childTask)
-
-
+                childTaskMap.remove(childId, childTask)
             }
-        }
-
-        childTask.job = job
-        job.join() // 挂起直到子任务完成
-    }
-
-    /**
-     * 添加子任务（Java/Kotlin通用入口）
-     * 
-     * **示例用法：**
-     * ```kotlin
-     * // Kotlin挂起函数
-     * addChildTask(ChildModelTask("task1", "GROUP") {
-     *     delay(1000)
-     *     Log.record("执行成功")
-     * }, execTime = System.currentTimeMillis() + 5000)
-     * 
-     * // Java Runnable
-     * addChildTask(new ChildModelTask("task2", "GROUP", () -> {
-     *     Log.record("Java任务");
-     * }, System.currentTimeMillis() + 3000))
-     * ```
-     * 
-     * @return 始终返回true
-     */
-    fun addChildTask(childTask: ChildModelTask): Boolean {
-        ensureTaskScope()
-        val scope = taskScope ?: error("taskScope 未初始化: ${getName()}")
-        scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            addChildTaskSuspend(childTask)
         }
         return true
     }
@@ -413,9 +397,6 @@ abstract class ModelTask : Model() {
         var isCancelled: Boolean = false
             private set
 
-        /** 外部调度器ID (SmartSchedulerManager) */
-        private var schedulerId: Int = -1
-
         companion object {
             /** 统计当前正在等待（delay中）的子任务数量 */
             private val waitingCount = AtomicInteger(0)
@@ -468,24 +449,25 @@ abstract class ModelTask : Model() {
                     waitingTasks[id] = this
                     isCounted = true
 
-                    // 增加 WakeLock 保底方案：注册一个空的调度任务，利用其 WakeLock 能力确保 CPU 活跃
+                    // 优化2：在当前协程内带 WakeLock 保护地 delay（不额外启动调度协程）
+                    // 旧实现：「调度协程 delay+持锁」+「执行协程再等一遍」两个协程
                     if (useSmartScheduler) {
-                        schedulerId = SmartSchedulerManager.schedule(delayTime, "WakeLock:$id") {}
+                        SmartSchedulerManager.delayWithWakeLock(delayTime)
+                    } else {
+                        // 不使用调度器：退化为自身 delay（无 WakeLock 保护）
+                        delay(delayTime)
                     }
-
-                    delay(delayTime)
+                    if (!isCancelled) isSuccess = invokeTask()
 
                     // 等待结束，减少统计
                     waitingCount.decrementAndGet()
                     waitingTasks.remove(id)
                     isCounted = false
+                } else {
+                    // 已到时间，立即执行；yield() 让出协程保持异步语义（与旧嵌套 launch 行为一致）
+                    yield()
+                    if (!isCancelled) isSuccess = invokeTask()
                 }
-
-                if (isCancelled) return
-
-                // 执行任务逻辑
-                suspendRunnable?.invoke() ?: defaultRun()
-                isSuccess = true // 标记为成功执行
             } catch (_: CancellationException) {
                 // 任务被取消是正常的协程控制流程，记录日志但不需要打印堆栈
                 isCancelled = true
@@ -503,14 +485,27 @@ abstract class ModelTask : Model() {
                     waitingCount.decrementAndGet()
                     waitingTasks.remove(id, this)
                 }
-                if (schedulerId != -1) {
-                    SmartSchedulerManager.cancelTask(schedulerId)
-                    schedulerId = -1
-                }
-                // 仅在成功执行完或明确被取消时回调，失败时不提示“已取消”
+                // 仅在成功执行完或明确被取消时回调，失败时不提示"已取消"
                 if (isSuccess || isCancelled) {
                     onCompleted?.invoke(isSuccess)
                 }
+            }
+        }
+
+        /**
+         * 执行任务逻辑，返回是否成功
+         * 业务异常在此捕获记录，不向上传播（由 run() 正常收尾清理统计）
+         */
+        private suspend fun invokeTask(): Boolean {
+            return try {
+                suspendRunnable?.invoke() ?: defaultRun()
+                true
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val parentTaskName = modelTask?.getName() ?: "未知任务"
+                Log.printStackTrace("子任务执行失败: $parentTaskName-$id", e)
+                false
             }
         }
 
@@ -546,12 +541,8 @@ abstract class ModelTask : Model() {
          */
         fun cancel() {
             isCancelled = true
+            // job 即执行协程（addChildTask 中登记），取消后 run() 的 delay 会立即中断
             job?.cancel()
-            // 如果存在外部调度任务，一并取消
-            if (schedulerId != -1) {
-                SmartSchedulerManager.cancelTask(schedulerId)
-                schedulerId = -1
-            }
         }
     }
 

@@ -14,12 +14,15 @@ import fansirsqi.xposed.sesame.hook.ApplicationHook.Companion.appContext
 import fansirsqi.xposed.sesame.hook.ApplicationHook.Companion.classLoader
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.initialize
 import fansirsqi.xposed.sesame.hook.keepalive.SmartSchedulerManager.schedule
+import fansirsqi.xposed.sesame.model.Model
+import fansirsqi.xposed.sesame.task.CoroutineTaskRunner
 import fansirsqi.xposed.sesame.task.MainTask
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
-import fansirsqi.xposed.sesame.task.TaskRunnerAdapter
 import fansirsqi.xposed.sesame.util.maps.UserMap.currentUid
 import java.util.Calendar
 import kotlin.concurrent.Volatile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object TaskScheduler {
     private val TAG = ApplicationHook.TAG
@@ -91,7 +94,10 @@ object TaskScheduler {
                 }
 
                 lastExecTime = currentTime
-                TaskRunnerAdapter().run()
+                // 直接在全局应用作用域启动并发任务执行器（原 TaskRunnerAdapter 内联）
+                ApplicationHook.applicationScope.launch(Dispatchers.Default) {
+                    CoroutineTaskRunner(Model.modelArray.filterNotNull()).run()
+                }
             }
         } catch (e: IllegalStateException) {
             record(TAG, "⚠️ " + e.message)

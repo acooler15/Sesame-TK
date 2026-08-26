@@ -627,6 +627,12 @@ internal class ForestItemManager(private val task: AntForest) {
         return queryPropList(false)
     }
 
+    /**
+     * 强刷背包道具列表
+     * 供保护罩等场景在领取/兑换道具后重新查询最新背包（绕过 5 秒缓存）
+     */
+    internal fun refreshPropList(): JSONObject? = queryPropList(true)
+
     private fun queryPropList(forceRefresh: Boolean): JSONObject? = synchronized(task) {
         val now = System.currentTimeMillis()
         if (!forceRefresh && cachedBagObject != null && now - lastQueryPropListTime < 5000) {

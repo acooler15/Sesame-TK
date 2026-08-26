@@ -203,74 +203,33 @@ internal class ForestShieldManager(private val task: AntForest) {
         try {
             Log.record(TAG, "尝试使用保护罩...")
 
-            // 定义支持的保护罩类型
-            val shieldTypes = listOf(
-                "LIMIT_TIME_ENERGY_SHIELD_TREE",   // 限时森林保护罩（通常来自活动/青春特权）
-                "LIMIT_TIME_ENERGY_SHIELD",        // 限时能量保护罩
-                "ENERGY_SHIELD_YONGJIU",           // 限时能量保护罩（可能为旧版道具）
-                "RUIHE_ENERGY_SHIELD",             // 瑞和能量保护罩（合作方专属？）
-                "PK_SEASON1_ENERGY_SHIELD_TREE",   // PK赛限定保护罩
-                "ENERGY_SHIELD"                    // 通用能量保护罩
-            )
+            // 用户开关：仅限时道具模式下，只使用存在有效 recentExpireTime 的限时保护罩
+            val onlyLimitTime = task.shieldCard!!.value == AntForest.ApplyPropType.ONLY_LIMIT_TIME
 
-            // 步骤1: 从背包中收集所有可用的保护罩
+            // 步骤1: 从背包中收集所有可用的保护罩（按 propGroup 识别，兼容所有保护罩类型）
             val availableShields: MutableList<JSONObject> = ArrayList()
-            val forestPropVOList = bagObject?.optJSONArray("forestPropVOList")
-
-            if (forestPropVOList != null) {
-                for (i in 0..<forestPropVOList.length()) {
-                    val prop = forestPropVOList.optJSONObject(i) ?: continue
-                    val propType = prop.optJSONObject("propConfigVO")?.optString("propType") ?: ""
-
-                    if (shieldTypes.contains(propType)) {
-                        availableShields.add(prop)
-                    }
-                }
-            }
+            collectShieldProps(bagObject, availableShields, onlyLimitTime)
 
             // 步骤2: 如果没有找到保护罩，尝试获取
             if (availableShields.isEmpty()) {
-                // 2.1 若青春特权开启 → 尝试领取并重新查找
+                // 2.1 若青春特权开启 → 尝试领取并重新查找。
+                // 领取可能部分成功（保护罩已入包但整体返回 false），因此不依赖返回值，领取后直接强刷背包
                 if (task.youthPrivilege?.value == true) {
                     Log.record(TAG, "尝试通过青春特权获取保护罩...")
-                    if (youthPrivilege()) {
-                        val freshBag = task.querySelfHome()
-                        val freshPropList = freshBag?.optJSONArray("forestPropVOList")
-                        if (freshPropList != null) {
-                            for (i in 0..<freshPropList.length()) {
-                                val prop = freshPropList.optJSONObject(i) ?: continue
-                                val propType = prop.optJSONObject("propConfigVO")?.optString("propType") ?: ""
-
-                                if ("LIMIT_TIME_ENERGY_SHIELD_TREE" == propType) {
-                                    availableShields.add(prop)
-                                }
-                            }
-                        }
-                    }
+                    youthPrivilege()
+                    collectShieldProps(task.itemManager.refreshPropList(), availableShields, onlyLimitTime)
                 }
 
                 // 2.2 若仍未找到，且活力值兑换开启 → 尝试兑换
                 if (availableShields.isEmpty() && task.shieldCardConstant?.value == true) {
                     Log.record(TAG, "尝试通过活力值兑换保护罩...")
                     if (exchangeEnergyShield()) {
-                        // 兑换后通常获得的是 LIMIT_TIME_ENERGY_SHIELD
-                        val exchangeBag = task.querySelfHome()
-                        val exchangePropList = exchangeBag?.optJSONArray("forestPropVOList")
-                        if (exchangePropList != null) {
-                            for (i in 0..<exchangePropList.length()) {
-                                val prop = exchangePropList.optJSONObject(i) ?: continue
-                                val propType = prop.optJSONObject("propConfigVO")?.optString("propType") ?: ""
-
-                                if ("LIMIT_TIME_ENERGY_SHIELD" == propType) {
-                                    availableShields.add(prop)
-                                }
-                            }
-                        }
+                        collectShieldProps(task.itemManager.refreshPropList(), availableShields, onlyLimitTime)
                     }
                 }
             }
 
-            // 步骤3: 按过期时间升序排序，优先使用即将过期的保护罩
+            // 步骤3: 按过期时间升序排序，优先使用即将过期的限时保护罩（无 recentExpireTime 的无期限保护罩排最后兜底）
             if (availableShields.isNotEmpty()) {
                 Collections.sort(
                     availableShields,
@@ -280,10 +239,16 @@ internal class ForestShieldManager(private val task: AntForest) {
                         expireTime1.compareTo(expireTime2)
                     })
 
-                // 步骤4: 逐个尝试使用保护罩
+                val now = System.currentTimeMillis()
+                // 步骤4: 逐个尝试使用保护罩（跳过已过期的）
                 for (shieldObj in availableShields) {
                     val propType = shieldObj.optJSONObject("propConfigVO")?.optString("propType") ?: ""
                     val propName = shieldObj.optJSONObject("propConfigVO")?.optString("propName") ?: propType
+                    val recentExpireTime = shieldObj.optLong("recentExpireTime", 0L)
+                    if (recentExpireTime in 1..now) {
+                        Log.record(TAG, "保护罩已过期，跳过: $propName")
+                        continue
+                    }
                     Log.record(TAG, "尝试使用保护罩: $propName")
                     if (task.itemManager.usePropBag(shieldObj)) {
                         Log.record(TAG, "保护罩使用成功: $propName")
@@ -298,6 +263,24 @@ internal class ForestShieldManager(private val task: AntForest) {
 
         } catch (th: Throwable) {
             Log.printStackTrace(TAG, "useShieldCard err", th)
+        }
+    }
+
+    /**
+     * 从背包对象中收集保护罩道具
+     * 以 propGroup == "shield" 识别（与 useDoubleCard 按 propGroup 识别双击卡一致），
+     * 避免硬编码 propType 列表导致新类型/活动保护罩无法匹配
+     *
+     * @param onlyLimitTime 仅收集限时保护罩（存在有效 recentExpireTime），用于"限时道具"模式
+     */
+    private fun collectShieldProps(bagObject: JSONObject?, target: MutableList<JSONObject>, onlyLimitTime: Boolean) {
+        val forestPropVOList = bagObject?.optJSONArray("forestPropVOList") ?: return
+        for (i in 0..<forestPropVOList.length()) {
+            val prop = forestPropVOList.optJSONObject(i) ?: continue
+            if ("shield" != prop.optString("propGroup")) continue
+            // 限时道具模式：无 recentExpireTime 的无期限保护罩不参与
+            if (onlyLimitTime && prop.optLong("recentExpireTime", 0L) <= 0L) continue
+            target.add(prop)
         }
     }
 

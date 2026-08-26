@@ -112,14 +112,16 @@ android {
             }
         }
 
-        testOptions {
-            unitTests.all {
-                it.enabled = false
-            }
-        }
     }
 
-
+    val enableUnitTests = providers.gradleProperty("enableUnitTests")
+        .map { it.equals("true", ignoreCase = true) }
+        .getOrElse(false)
+    testOptions {
+        unitTests.all {
+            it.enabled = enableUnitTests
+        }
+    }
 
     buildFeatures {
         viewBinding = false
@@ -330,4 +332,8 @@ dependencies {
     implementation(libs.jackson.core)
     implementation(libs.jackson.databind)
     implementation(libs.jackson.annotations)
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.json:json:20250517")
 }

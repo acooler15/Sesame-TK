@@ -5,11 +5,27 @@ package fansirsqi.xposed.sesame.task.antForest
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.util.maps.UserMap
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 object ForestUtil {
 
     private const val TAG = "ForestUtil"
+
+    // SimpleDateFormat 非线程安全，此处通过 synchronized 包装保证并发安全（见 4.5）
+    private val humanTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+    /**
+     * 格式化时间戳为人性化的日期时间字符串（线程安全）
+     * @param timestamp 毫秒时间戳
+     * @return 形如 "2026-08-24 21:38:56" 的字符串
+     */
+    @JvmStatic
+    fun formatHumanTime(timestamp: Long): String = synchronized(humanTimeFormat) {
+        humanTimeFormat.format(Date(timestamp))
+    }
 
     /**
      * 用户频率限制信息

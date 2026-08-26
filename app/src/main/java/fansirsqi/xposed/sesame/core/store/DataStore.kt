@@ -222,8 +222,12 @@ object DataStore {
         indentObjectsWith(DefaultIndenter("    ", DefaultIndenter.SYS_LF))
     }
 
-    private fun saveToDisk() {
-        if (!::storageFile.isInitialized) return
+    /**
+     * 落盘并返回是否成功（checked 写入基础）。
+     * @return true 表示本次数据已确认写入磁盘
+     */
+    private fun saveToDisk(): Boolean {
+        if (!::storageFile.isInitialized) return false
         try {
             val tempFile = File(storageFile.parentFile, storageFile.name + ".tmp")
             // 1. 写入临时文件
@@ -263,8 +267,10 @@ object DataStore {
                 // 更新加载时间，避免 Watcher 再次触发加载
                 lastLoadedTime.set(storageFile.lastModified())
             }
+            return renameSuccess
         } catch (e: Exception) {
             Log.e(TAG, "Failed to save config", e)
+            return false
         }
     }
 
@@ -310,10 +316,22 @@ object DataStore {
     }
 
     fun put(key: String, value: Any) = lock.write {
+        putCheckedInternal(key, value)
+    }
+
+    /**
+     * checked 写入：返回磁盘是否确认写入成功（区别于 [put] 的 fire-and-forget）。
+     * 用于账户最终 flush 等必须确认结果的场景。
+     */
+    fun putChecked(key: String, value: Any): Boolean = lock.write {
+        putCheckedInternal(key, value)
+    }
+
+    private fun putCheckedInternal(key: String, value: Any): Boolean {
         // 在写入前，强制从磁盘重新加载，以获取其他进程的修改
         forceLoadFromDisk()
         data[key] = value
-        saveToDisk()
+        return saveToDisk()
     }
 
     fun remove(key: String) = lock.write {

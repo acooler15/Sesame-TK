@@ -9,6 +9,10 @@ import fansirsqi.xposed.sesame.core.threads.CoroutineUtils
 import fansirsqi.xposed.sesame.core.app.NetworkUtils
 import fansirsqi.xposed.sesame.core.notify.Notify
 import fansirsqi.xposed.sesame.core.util.TimeUtil
+import fansirsqi.xposed.sesame.task.antForest.waiting.RpcFailureKind
+import fansirsqi.xposed.sesame.task.antForest.waiting.RpcResult
+import fansirsqi.xposed.sesame.task.antForest.waiting.WaitingMetrics
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -45,6 +49,8 @@ object RequestManager {
         // 3. 执行请求
         val result = try {
             block(bridge)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Throwable) {
             Log.printStackTrace(TAG, "RPC 执行异常: $methodLog\n请求体: ${truncateLog(data)}", e)
             null // 异常视为 null，触发失败逻辑
@@ -196,6 +202,50 @@ object RequestManager {
     ): String {
         return executeRpc(method, data) { bridge ->
             bridge.requestString(method, data, relation, tryCount, retryInterval)
+        }
+    }
+
+    /**
+     * 类型化 fail-fast 入口（V2 §3.3.1）。
+     *
+     * 建立在 raw Bridge 调用之上，不经过旧 [requestString] 再从空字符串反推错误：
+     * - 先区分传输结果（离线/网络/Bridge 不可用/空响应/异常），再让调用方解析业务结果；
+     * - 不做 5 秒等待等"隐藏等待"，精确蹲点由自己的重试策略决定等待时间；
+     * - [CancellationException] 继续抛出，保证账户关闭时取消能向上传播。
+     */
+    @JvmStatic
+    suspend fun requestStringResult(
+        rpcEntity: RpcEntity,
+        tryCount: Int = 3,
+        retryInterval: Int = 1200,
+    ): RpcResult<String> {
+        if (ApplicationHook.offline) {
+            WaitingMetrics.recordRpcResult(RpcFailureKind.OFFLINE)
+            return RpcResult.Failed(RpcFailureKind.OFFLINE, message = "offline")
+        }
+        if (!NetworkUtils.isNetworkAvailable()) {
+            WaitingMetrics.recordRpcResult(RpcFailureKind.NETWORK)
+            return RpcResult.Failed(RpcFailureKind.NETWORK, message = "network unavailable")
+        }
+        val bridge = ApplicationHook.rpcBridge
+        if (bridge == null) {
+            WaitingMetrics.recordRpcResult(RpcFailureKind.BRIDGE_UNAVAILABLE)
+            return RpcResult.Failed(RpcFailureKind.BRIDGE_UNAVAILABLE, message = "rpc bridge unavailable")
+        }
+        return try {
+            val result = bridge.requestString(rpcEntity, tryCount, retryInterval)
+            if (result.isNullOrBlank()) {
+                WaitingMetrics.recordRpcResult(RpcFailureKind.EMPTY_RESPONSE)
+                RpcResult.Failed(RpcFailureKind.EMPTY_RESPONSE, message = "empty response")
+            } else {
+                WaitingMetrics.recordRpcResult(null)
+                RpcResult.Ok(result)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            WaitingMetrics.recordRpcResult(RpcFailureKind.UNKNOWN)
+            RpcResult.Failed(RpcFailureKind.UNKNOWN, message = t.message)
         }
     }
 

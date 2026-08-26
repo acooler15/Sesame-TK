@@ -135,7 +135,7 @@ internal class ForestItemManager(private val task: AntForest) {
                 val responseObj = JSONObject(response)
                 if (ResChecker.checkRes(TAG + "收取动物派遣能量失败:", responseObj)) {
                     val energy = extInfo.optInt("energy", 0)
-                    ForestStatistics.totalCollected += energy
+                    ForestStatistics.addToTotalCollected(energy)
                     val str = "收取[" + animalName + "]派遣能量🦩[" + energy + "g]"
                     Toast.show(str)
                     Log.forest(str)
@@ -198,7 +198,7 @@ internal class ForestItemManager(private val task: AntForest) {
                     val responseObj = JSONObject(response)
                     if (ResChecker.checkRes(TAG + "收取炸弹卡能量失败:", responseObj)) {
                         val collected = responseObj.optInt("collectEnergy", 0)
-                        ForestStatistics.totalCollected += collected
+                        ForestStatistics.addToTotalCollected(collected)
                         val str = "收取炸弹卡能量💥[$collected g]"
                         Toast.show(str)
                         Log.forest(str)

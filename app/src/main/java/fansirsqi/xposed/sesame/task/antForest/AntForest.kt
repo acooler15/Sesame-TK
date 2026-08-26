@@ -38,6 +38,11 @@ import fansirsqi.xposed.sesame.task.antForest.ForestUtil.hasBombCard
 import fansirsqi.xposed.sesame.task.antForest.ForestUtil.hasShield
 import fansirsqi.xposed.sesame.task.antForest.Privilege.studentSignInRedEnvelope
 import fansirsqi.xposed.sesame.task.antForest.Privilege.youthPrivilege
+import fansirsqi.xposed.sesame.task.antForest.waiting.EnergyCollectCallback
+import fansirsqi.xposed.sesame.task.antForest.waiting.WaitingBatchResult
+import fansirsqi.xposed.sesame.task.antForest.waiting.WaitingCollectRequest
+import fansirsqi.xposed.sesame.task.antForest.waiting.WaitingProducerHandle
+import fansirsqi.xposed.sesame.task.antForest.waiting.WaitingTaskDraft
 import fansirsqi.xposed.sesame.ui.ObjReference
 import fansirsqi.xposed.sesame.core.util.Average
 import fansirsqi.xposed.sesame.core.threads.GlobalThreadPools
@@ -637,6 +642,13 @@ class AntForest : ModelTask(), EnergyCollectCallback {
         super.boot(classLoader)
         instance = this
 
+        // 仅登记回调候选；initHandler 完整成功后由生命周期控制器激活并绑定 producer handle
+        EnergyWaitingManager.registerCallbackCandidate(
+            uid = requireNotNull(fansirsqi.xposed.sesame.util.maps.UserMap.currentUid),
+            callback = this,
+            bindHandle = ::bindWaitingHandle,
+        )
+
 
         // 安全创建各种区间限制
         val queryIntervalLimit = createSafeIntervalLimit(
@@ -672,15 +684,39 @@ class AntForest : ModelTask(), EnergyCollectCallback {
 
         AntForestRpcCall.init()
 
-        // 设置蹲点管理器的回调
-        EnergyWaitingManager.setEnergyCollectCallback(this)
+        // 回调绑定由 registerCallbackCandidate 登记，onInitialized 激活时完成
     }
+
+    /** 激活时由生命周期控制器回绑精确生产者句柄（旧 AntForest 实例永久持有旧 handle）。 */
+    private var waitingHandle: WaitingProducerHandle? = null
+
+    internal fun bindWaitingHandle(handle: WaitingProducerHandle) {
+        waitingHandle = handle
+    }
+
+    /** 能量球提取器登记蹲点草稿的唯一入口：candidate 尚未激活时 fail-closed（安全跳过）。 */
+    internal fun submitWaitingDraft(draft: WaitingTaskDraft) {
+        val handle = waitingHandle ?: return
+        EnergyWaitingManager.submit(handle, draft)
+    }
+
+    /**
+     * 森林主任务子步骤（任务列表驱动，见优化方案 3.7）
+     * @param name 步骤名（用于 TimeCounter 计时）
+     * @param enabled 是否执行本步骤（可捕获 runSuspend 局部状态，如 selfHomeObj）
+     * @param execute 步骤执行体
+     */
+    private class TaskStep(
+        val name: String,
+        val enabled: () -> Boolean,
+        val execute: suspend () -> Unit,
+    )
 
     override suspend fun runSuspend() {
         val runStartTime = System.currentTimeMillis()
         Log.record(TAG, "🌲🌲🌲 森林主任务开始执行 🌲🌲🌲")
-        val authCode = AuthCodeHelper.getAuthCode("2060170000363691" )
-        val MiniMark = AlipayMiniMarkHelper.getAlipayMiniMark("2060170000363691" ,"1.0.1")
+        val authCode = AuthCodeHelper.getAuthCode("2060170000363691")
+        val MiniMark = AlipayMiniMarkHelper.getAlipayMiniMark("2060170000363691", "1.0.1")
         Log.record(TAG, "游戏 2060170000363691 获取到的 authCode: $authCode   Mark:$MiniMark")
         try {
             // 每次运行时检查并更新计数器
@@ -696,186 +732,100 @@ class AntForest : ModelTask(), EnergyCollectCallback {
             taskCount.set(0)
             selfId = UserMap.currentUid
 
-            // -------------------------------
-            // 自己使用道具
-            // -------------------------------
-            // 先查询主页，更新道具状态（双击卡、保护罩等的剩余时间）
-            itemManager.updateSelfHomePage()
-            tc.countDebug("查询道具状态")
+            // 由"收取自己的能量"步骤赋值，后续步骤依赖其非空
+            var selfHomeObj: JSONObject? = null
 
-            itemManager.usePropBeforeCollectEnergy(selfId)
-            tc.countDebug("使用自己道具卡")
-
-            // -------------------------------
-            // 收好友能量
-            // -------------------------------
-            // 先尝试使用找能量功能快速定位有能量的好友（协程）
-            Log.record(TAG, "🚀 执行找能量功能（协程）")
-            energyCollector.collectEnergyByTakeLook()
-            tc.countDebug("找能量收取（协程）")
-
-            // -------------------------------
-            // 收PK好友能量
-            // -------------------------------
-            Log.record(TAG, "🚀 异步执行PK好友能量收取")
-            energyCollector.collectPKEnergyCoroutine()  // 好友道具在 collectFriendEnergy 内会自动处理
-            tc.countDebug("收PK好友能量（同步）")
-
-            // -------------------------------
-            // 收自己能量
-            // -------------------------------
-            Log.record(TAG, "🌳 【正常流程】开始收取自己的能量...")
-            val selfHomeObj = run {
-                val obj = querySelfHome()
-                tc.countDebug("获取自己主页对象信息")
-                if (obj != null) {
-
-                    energyCollector.collectEnergy(UserMap.currentUid, obj, "self")
-                    Log.record(TAG, "✅ 【正常流程】收取自己的能量完成")
-                    tc.countDebug("收取自己的能量")
+            // 组队模式：取 mainMember 子对象（用于浇水金球/道具）
+            fun processObj(): JSONObject? {
+                val home = selfHomeObj ?: return null
+                return if (isTeam(home)) {
+                    home.optJSONObject("teamHomeResult")?.optJSONObject("mainMember")
                 } else {
-                    Log.error(TAG, "❌ 【正常流程】获取自己主页信息失败，跳过能量收取")
-                    tc.countDebug("跳过自己的能量收取（主页获取失败）")
+                    home
                 }
-                obj
             }
 
-            handleEnergyPvpChallenge()
+            val taskSteps = listOf(
+                // ---- 前置：道具状态与各类收取 ----
+                TaskStep("查询道具状态", { true }) { itemManager.updateSelfHomePage() },
+                TaskStep("使用自己道具卡", { true }) { itemManager.usePropBeforeCollectEnergy(selfId) },
+                TaskStep("找能量收取", { true }) { energyCollector.collectEnergyByTakeLook() },
+                TaskStep("收PK好友能量", { true }) { energyCollector.collectPKEnergyCoroutine() },
+                TaskStep("收取自己的能量", { true }) {
+                    val obj = querySelfHome()
+                    if (obj != null) {
+                        energyCollector.collectEnergy(UserMap.currentUid, obj, "self")
+                        Log.record(TAG, "✅ 【正常流程】收取自己的能量完成")
+                    } else {
+                        Log.error(TAG, "❌ 【正常流程】获取自己主页信息失败，跳过能量收取")
+                    }
+                    selfHomeObj = obj
+                },
+                TaskStep("1V1能量挑战", { true }) { handleEnergyPvpChallenge() },
+                TaskStep("收取好友能量", { true }) { energyCollector.collectFriendEnergyCoroutine() },
 
-            // 然后执行传统的好友排行榜收取（协程）
-            Log.record(TAG, "🚀 执行好友能量收取（协程）")
-            energyCollector.collectFriendEnergyCoroutine() // 内部会自动调用 usePropBeforeCollectEnergy(userId, false)
-            tc.countDebug("收取好友能量（同步）")
-
-            // -------------------------------
-            // 后续任务流程
-            // -------------------------------
-            if (selfHomeObj != null) {
-                // 检查并处理打地鼠（每天一次）
-                checkAndHandleWhackMole()
-                tc.countDebug("拼手速")
-
-                val processObj = if (isTeam(selfHomeObj)) {
-                    selfHomeObj.optJSONObject("teamHomeResult")
-                        ?.optJSONObject("mainMember")
-                } else {
-                    selfHomeObj
-                }
-
-                // 新用户7天签到
-                if (gift7thSign!!.value) {
-                    processGift7thSign()
-                }
-
-                if (collectWateringBubble!!.value) {
-                    wateringBubbles(processObj)
-                    tc.countDebug("收取浇水金球")
-                }
-                if (collectProp!!.value) {
-                    givenProps(processObj)
-                    tc.countDebug("收取道具")
-                }
-                if (userPatrol!!.value) {
-                    queryUserPatrol()
-                    tc.countDebug("动物巡护任务")
-                }
-
-                itemManager.handleUserProps(selfHomeObj)
-                tc.countDebug("收取动物派遣能量")
-
-                itemManager.collectEnergyBomb(selfHomeObj)
-                tc.countDebug("收取炸弹卡能量")
-
-                if (itemManager.canConsumeAnimalProp && consumeAnimalProp!!.value) {
-                    queryAndConsumeAnimal()
-                    tc.countDebug("森林巡护")
-                } else {
-                    Log.record("已经有动物伙伴在巡护森林~")
-                }
-
-                if (combineAnimalPiece!!.value) {
-                    queryAnimalAndPiece()
-                    tc.countDebug("合成动物碎片")
-                }
-
-                if (receiveForestTaskAward!!.value) {
-                    receiveTaskAward()
-                    tc.countDebug("森林任务")
-                }
-                if (ecoLife!!.value) {
-                    // 检查是否到达执行时间
+                // ---- 依赖 selfHomeObj 获取成功（主页可访问）的后续任务 ----
+                TaskStep("拼手速", { selfHomeObj != null }) { checkAndHandleWhackMole() },
+                TaskStep("7天签到", { selfHomeObj != null && gift7thSign!!.value }) { processGift7thSign() },
+                TaskStep("收取浇水金球", { selfHomeObj != null && collectWateringBubble!!.value }) { wateringBubbles(processObj()) },
+                TaskStep("收取道具", { selfHomeObj != null && collectProp!!.value }) { givenProps(processObj()) },
+                TaskStep("动物巡护任务", { selfHomeObj != null && userPatrol!!.value }) { queryUserPatrol() },
+                TaskStep("收取动物派遣能量", { selfHomeObj != null }) { itemManager.handleUserProps(selfHomeObj!!) },
+                TaskStep("收取炸弹卡能量", { selfHomeObj != null }) { itemManager.collectEnergyBomb(selfHomeObj!!) },
+                TaskStep("森林巡护", { selfHomeObj != null }) {
+                    if (itemManager.canConsumeAnimalProp && consumeAnimalProp!!.value) {
+                        queryAndConsumeAnimal()
+                    } else {
+                        Log.record(TAG, "已经有动物伙伴在巡护森林~")
+                    }
+                },
+                TaskStep("合成动物碎片", { selfHomeObj != null && combineAnimalPiece!!.value }) { queryAnimalAndPiece() },
+                TaskStep("森林任务", { selfHomeObj != null && receiveForestTaskAward!!.value }) { receiveTaskAward() },
+                TaskStep("绿色行动", { selfHomeObj != null && ecoLife!!.value }) {
                     if (TaskTimeChecker.isTimeReached(ecoLifeTime?.value, "0800")) {
                         EcoLife.ecoLife()
-                        tc.countDebug("绿色行动")
                     } else {
                         Log.record(TAG, "绿色行动未到执行时间，跳过")
                     }
-                }
-
-                waterFriends()
-                tc.countDebug("给好友浇水")
-
-                if (giveProp!!.value) {
-                    itemManager.giveProp()
-                    tc.countDebug("赠送道具")
-                }
-
-                if (vitalityExchange!!.value) {
-                    handleVitalityExchange()
-                    tc.countDebug("活力值兑换")
-                }
-
-                if (energyRain!!.value) {
-                    // 检查是否到达执行时间
+                },
+                TaskStep("给好友浇水", { selfHomeObj != null }) { waterFriends() },
+                TaskStep("赠送道具", { selfHomeObj != null && giveProp!!.value }) { itemManager.giveProp() },
+                TaskStep("活力值兑换", { selfHomeObj != null && vitalityExchange!!.value }) { handleVitalityExchange() },
+                TaskStep("能量雨", { selfHomeObj != null && energyRain!!.value }) {
                     if (TaskTimeChecker.isTimeReached(energyRainTime?.value, "0810")) {
                         if (energyRainChance!!.value) {
                             itemManager.useEnergyRainChanceCard()
-                            tc.countDebug("使用能量雨卡")
                         }
                         EnergyRainCoroutine.execEnergyRainCompat()
-                        tc.countDebug("能量雨")
                     } else {
                         Log.record(TAG, "能量雨未到执行时间，跳过")
                     }
-                }
-
-                if (forestMarket!!.value) {
-                    GreenLife.ForestMarket("GREEN_LIFE")
-                    //  GreenLife.ForestMarket("ANTFOREST")  二级条目暂时关闭
-                    tc.countDebug("森林集市")
-                }
-
-                if (medicalHealth!!.value) {
+                },
+                TaskStep("森林集市", { selfHomeObj != null && forestMarket!!.value }) { GreenLife.ForestMarket("GREEN_LIFE") },
+                TaskStep("绿色医疗", { selfHomeObj != null && medicalHealth!!.value }) {
                     if (medicalHealthOption!!.value.contains("FEEDS")) {
                         Healthcare.queryForestEnergy("FEEDS")
-                        tc.countDebug("绿色医疗")
                     }
                     if (medicalHealthOption!!.value.contains("BILL")) {
                         Healthcare.queryForestEnergy("BILL")
-                        tc.countDebug("电子小票")
                     }
+                },
+                TaskStep("青春特权森林道具", { selfHomeObj != null && youthPrivilege!!.value }) { youthPrivilege() },
+                TaskStep("签到红包", { selfHomeObj != null && dailyCheckIn!!.value }) { studentSignInRedEnvelope() },
+                TaskStep("抽抽乐", { selfHomeObj != null && forestChouChouLe!!.value }) { ForestChouChouLe().chouChouLe() },
+                TaskStep("森林游戏", { selfHomeObj != null }) { doforestgame() },
+                TaskStep("限时乐园活动", { selfHomeObj != null }) { queryOptionalPlay() },
+            )
+
+            // 任务列表驱动：enabled 通过则执行并计时
+            taskSteps.forEach { step ->
+                if (step.enabled()) {
+                    step.execute()
+                    tc.countDebug(step.name)
                 }
-
-                //青春特权森林道具领取
-                if (youthPrivilege!!.value) {
-                    youthPrivilege()
-                }
-
-                if (dailyCheckIn!!.value) {
-                    studentSignInRedEnvelope()
-                }
-
-                if (forestChouChouLe!!.value) {
-                    val chouChouLe = ForestChouChouLe()
-                    chouChouLe.chouChouLe()
-                    tc.countDebug("抽抽乐")
-                }
-
-                doforestgame()
-                queryOptionalPlay() // 限时乐园活动
-
-                tc.stop()
             }
+
+            tc.stop()
         } catch (e: CancellationException) {
             // 协程被取消是正常行为，不记录错误日志
             Log.record(TAG, "蚂蚁森林任务协程被取消")
@@ -2010,19 +1960,11 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     }
 
     /**
-     * 实现EnergyCollectCallback接口
+     * 实现 EnergyCollectCallback 接口（批量、请求级，V2 §3.3.5）
      * 为蹲点管理器提供能量收取功能（增强版）
      */
-    override fun addToTotalCollected(energyCount: Int) {
-        ForestStatistics.addToTotalCollected(energyCount)
-    }
-
-    override fun getWaitingCollectDelay(): Long {
-        return 0L // 立即收取，无延迟
-    }
-
-    override suspend fun collectUserEnergyForWaiting(task: EnergyWaitingManager.WaitingTask): CollectResult {
-        return energyCollector.collectUserEnergyForWaiting(task)
+    override suspend fun collectUserEnergyForWaiting(request: WaitingCollectRequest): WaitingBatchResult {
+        return energyCollector.collectUserEnergyForWaiting(request)
     }
 
     /**

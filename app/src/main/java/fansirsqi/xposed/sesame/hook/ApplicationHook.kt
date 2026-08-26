@@ -37,6 +37,7 @@ import fansirsqi.xposed.sesame.model.Model
 import fansirsqi.xposed.sesame.model.SesameConfig
 import fansirsqi.xposed.sesame.task.MainTask.Companion.newInstance
 import fansirsqi.xposed.sesame.task.ModelTask.Companion.stopAllTask
+import fansirsqi.xposed.sesame.task.antForest.EnergyWaitingManager
 import fansirsqi.xposed.sesame.core.app.AssetUtil
 import fansirsqi.xposed.sesame.core.app.AssetUtil.copyStorageSoFileToPrivateDir
 import fansirsqi.xposed.sesame.core.app.AssetUtil.dexkitDestFile
@@ -216,6 +217,8 @@ class ApplicationHook {
                     override fun after(p: HookParam) {
                         val targetUid = HookUtil.getUserId(classLoader!!)
                         if (targetUid == null) {
+                            // 退出登录/未登录：先提交 Close 命令（V3 §3.1.3），不直接 return
+                            EnergyWaitingManager.onServiceDestroy()
                             show("用户未登录")
                             return
                         }
@@ -226,9 +229,12 @@ class ApplicationHook {
                         val currentUid = currentUid
                         if (targetUid != currentUid) {
                             if (currentUid != null) {
-                                initHandler()
-                                TaskScheduler.lastExecTime = 0
-                                show("用户已切换")
+                                // 先保存旧账户蹲点任务并取消其协程（此时 currentUid 仍为旧值，防止跨账户污染）
+                                EnergyWaitingManager.onAccountSwitch(currentUid)
+                                if (initHandler()) {
+                                    TaskScheduler.lastExecTime = 0
+                                    show("用户已切换")
+                                }
                                 return
                             }
                             HookUtil.hookUser(classLoader!!)
@@ -280,7 +286,8 @@ class ApplicationHook {
                         if (General.CURRENT_USING_SERVICE == s.javaClass.getCanonicalName()) {
                             updateStatusText("目标应用前台服务被销毁")
                             destroyHandler()
-                            BroadcastReceiverManager.restartByBroadcast()
+                            // 注意：restartByBroadcast 已移到 EnergyWaitingManager.onServiceDestroy 的 close 完成回调
+                            // （确保旧 session 的 close + flush 完成后才发送重启广播，V3 §3.1.3）
                         }
                     }
                 })
@@ -497,6 +504,8 @@ class ApplicationHook {
 
                 offline = false
                 init = true
+                // 初始化完整成功后再激活蹲点会话（候选在 AntForest.boot 中已登记）
+                EnergyWaitingManager.onInitialized()
                 TaskScheduler.execHandler()
                 return true
             } catch (th: Throwable) {
@@ -523,6 +532,11 @@ class ApplicationHook {
         @Synchronized
         fun destroyHandler() {
             try {
+                // 关闭蹲点会话（保存旧快照 + 清空），确保在资源卸载前旧账户任务不再执行。
+                // close + flush 完成后在回调中发送重启广播（V3 §3.1.3：确保旧数据已落盘再重建）
+                EnergyWaitingManager.onServiceDestroy {
+                    BroadcastReceiverManager.restartByBroadcast()
+                }
                 // 先同步停止所有任务，确保在资源卸载前所有 taskScope 已取消，避免竞态
                 stopAllTask()
                 shutdownAndRestart()

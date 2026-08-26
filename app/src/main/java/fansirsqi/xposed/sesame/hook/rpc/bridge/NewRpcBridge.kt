@@ -12,6 +12,7 @@ import fansirsqi.xposed.sesame.core.reflect.ReflectUtil
 import fansirsqi.xposed.sesame.core.util.RandomUtil
 import fansirsqi.xposed.sesame.core.app.SwipeUtil
 import fansirsqi.xposed.sesame.core.util.TimeUtil
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -348,6 +349,8 @@ class NewRpcBridge : RpcBridge {
                             delay(retryInterval.toLong())
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e // 取消必须继续抛出，保证账户关闭时 cancelAndJoin 能正常返回
                 } catch (t: Throwable) {
                     Log.error(TAG, "new rpc request | id: " + rpcEntity.hashCode() + " | method: " + rpcEntity.requestMethod +
                             "\n请求体: " + truncateLog(rpcEntity.requestData) + " err:")

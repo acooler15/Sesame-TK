@@ -12,6 +12,9 @@ import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData
 import fansirsqi.xposed.sesame.hook.rpc.RpcRequestData.putStandard
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.util.RandomUtil
+import fansirsqi.xposed.sesame.task.antForest.waiting.RpcFailureKind
+import fansirsqi.xposed.sesame.task.antForest.waiting.RpcResult
+import kotlinx.coroutines.CancellationException
 import java.util.UUID
 
 /** 森林 RPC 调用类 */
@@ -33,6 +36,8 @@ object AntForestRpcCall {
                 else -> VERSION = "20250813"
             }
             Log.record("AntForestRpcCall", "使用API版本: $VERSION")
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.error("AntForestRpcCall", "版本初始化异常，使用默认版本: $VERSION")
             Log.printStackTrace(e)
@@ -57,6 +62,8 @@ object AntForestRpcCall {
                 },
                 relationLocal
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return ""
         }
@@ -71,6 +78,8 @@ object AntForestRpcCall {
                     putStandard(source = "chInfo_ch_appcenter__chsub_9patch")
                 }
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.printStackTrace(e)
             return ""
@@ -92,6 +101,8 @@ object AntForestRpcCall {
                 },
                 relationLocal
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return ""
         }
@@ -109,6 +120,8 @@ object AntForestRpcCall {
                     putStandard(source = "chInfo_ch_appcenter__chsub_9patch")
                 }
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             return ""
         }
@@ -149,9 +162,59 @@ object AntForestRpcCall {
                 3,
                 1000
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.printStackTrace(e)
             return ""
+        }
+    }
+
+    /**
+     * 蹲点专用：类型化查询好友主页（V2 §3.3.2）。
+     * 单次尝试（tryCount=1），重试时机由蹲点自己的重试策略决定。
+     */
+    @JvmStatic
+    suspend fun queryFriendHomePageResult(userId: String?, fromAct: String?): RpcResult<JSONObject> {
+        var act = fromAct
+        if (act == null) {
+            act = "TAKE_LOOK_FRIEND"
+        }
+        val entity = RpcEntity(
+            "alipay.antforest.forest.h5.queryFriendHomePage",
+            RpcRequestData.array {
+                put("canRobFlags", "T,F,F,F,F")
+                put("configVersionMap", JSONObject().put("wateringBubbleConfig", "0"))
+                put("userId", userId)
+                put("fromAct", act)
+                putStandard(source = "chInfo_ch_appcenter__chsub_9patch", version = VERSION)
+            },
+            null
+        )
+        return when (val r = RequestManager.requestStringResult(entity, 1, 0)) {
+            is RpcResult.Ok -> try {
+                RpcResult.Ok(JSONObject(r.value))
+            } catch (e: JSONException) {
+                RpcResult.Failed(RpcFailureKind.MALFORMED_RESPONSE, message = e.message)
+            }
+            is RpcResult.Failed -> r
+        }
+    }
+
+    /** 蹲点专用：类型化收取能量（V2 §3.3.2）。单次尝试，重试时机由蹲点策略决定。 */
+    @JvmStatic
+    suspend fun collectEnergyResult(userId: String?, bubbleIds: List<Long>): RpcResult<JSONObject> {
+        if (bubbleIds.isEmpty()) {
+            return RpcResult.Failed(RpcFailureKind.EMPTY_RESPONSE, message = "empty bubble ids")
+        }
+        val entity = batchEnergyRpcEntity("GREEN", userId, bubbleIds)
+        return when (val r = RequestManager.requestStringResult(entity, 1, 0)) {
+            is RpcResult.Ok -> try {
+                RpcResult.Ok(JSONObject(r.value))
+            } catch (e: JSONException) {
+                RpcResult.Failed(RpcFailureKind.MALFORMED_RESPONSE, message = e.message)
+            }
+            is RpcResult.Failed -> r
         }
     }
 
@@ -189,6 +252,8 @@ object AntForestRpcCall {
                 },
                 null
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.printStackTrace(e)
             return null
@@ -230,6 +295,8 @@ object AntForestRpcCall {
                     putStandard(source = "chInfo_ch_appcenter__chsub_9patch")
                 }
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.printStackTrace(e)
             return ""
@@ -256,6 +323,8 @@ object AntForestRpcCall {
                     putStandard(source = "chInfo_ch_appcenter__chsub_9patch", version = VERSION)
                 }
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             Log.printStackTrace(e)
             return ""

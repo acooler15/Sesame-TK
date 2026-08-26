@@ -630,14 +630,15 @@ object AntForestRpcCall {
     }
 
     @JvmStatic
-    suspend fun itemList(labelType: String?): String {
+    suspend fun itemList(labelType: String?, startIndex: Int = 0): String {
         return RequestManager.requestString(
             "com.alipay.antiep.itemList",
             RpcRequestData.array {
                 put("extendInfo", "{}")
+                put("fromSpuId", "")
                 put("labelType", labelType ?: "null")
                 put("pageSize", 20)
-                put("startIndex", 0)
+                put("startIndex", startIndex)
                 putStandard(
                     requestType = RpcConst.Type.RPC_L,
                     sceneCode = "ANTFOREST_VITALITY",
@@ -675,6 +676,53 @@ object AntForestRpcCall {
                 put("spuId", spuId)
                 put("skuId", skuId)
                 putStandard(sceneCode = "ANTFOREST_VITALITY", source = "GOOD_DETAIL")
+            }
+        )
+    }
+
+    /** 秒杀兑换（专门用于秒杀场景的活力值兑换接口） */
+    @JvmStatic
+    @Throws(JSONException::class)
+    suspend fun exchangeSkillBenefit(spuId: String?, skuId: String?): String {
+        return RequestManager.requestString(
+            "com.alipay.antcommonweal.exchange.h5.exchangeSkillBenefit",
+            RpcRequestData.array {
+                put(
+                    "requestId",
+                    System.currentTimeMillis().toString() + "_" + RandomUtil.getRandomInt(17)
+                )
+                put("spuId", spuId)
+                put("skuId", skuId)
+                putStandard(sceneCode = "ANTFOREST_VITALITY", source = "GOOD_DETAIL")
+            }
+        )
+    }
+
+    /** 查询活力值商店首页信息（含用户活力值余额 totalVitalityAmount） */
+    @JvmStatic
+    @Throws(JSONException::class)
+    suspend fun queryVitalityStoreIndex(): String {
+        return RequestManager.requestString(
+            "alipay.antforest.forest.h5.queryVitalityStoreIndex",
+            RpcRequestData.array {
+                put("source", "afEntry")
+            }
+        )
+    }
+
+    /** 查询活力值秒杀活动列表（含所有秒杀商品及 secKillStartTime/secKillEndTime） */
+    @JvmStatic
+    @Throws(JSONException::class)
+    suspend fun secKillActivity(): String {
+        return RequestManager.requestString(
+            "com.alipay.antiep.seckill",
+            RpcRequestData.array {
+                put("secKillId", "ANTFOREST_VITALITY_MALL_SEC_KILL")
+                putStandard(
+                    requestType = RpcConst.Type.RPC,
+                    sceneCode = "ANTFOREST_VITALITY",
+                    source = "afEntry"
+                )
             }
         )
     }

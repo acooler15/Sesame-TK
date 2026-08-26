@@ -152,6 +152,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
     private var waterFriendCount: IntegerModelField? = null
     internal var notifyFriend: BooleanModelField? = null
     private var vitalityExchange: BooleanModelField? = null
+    private var vitalitySecKill: BooleanModelField? = null //活力值限时秒杀开关
     private var userPatrol: BooleanModelField? = null
     internal var collectGiftBox: BooleanModelField? = null
     private var medicalHealth: BooleanModelField? = null //医疗健康开关
@@ -544,6 +545,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 alternativeAccountList = it
             })
         modelFields.addField(BooleanModelField("vitalityExchange", "活力值 | 兑换开关", false).also { vitalityExchange = it })
+        modelFields.addField(BooleanModelField("vitalitySecKill", "活力值 | 限时秒杀 | 开关", false).also { vitalitySecKill = it })
         modelFields.addField(
             SelectAndCountModelField(
                 "vitalityExchangeList", "活力值 | 兑换列表", LinkedHashMap<String?, Int?>(),
@@ -791,6 +793,7 @@ class AntForest : ModelTask(), EnergyCollectCallback {
                 TaskStep("给好友浇水", { selfHomeObj != null }) { waterFriends() },
                 TaskStep("赠送道具", { selfHomeObj != null && giveProp!!.value }) { itemManager.giveProp() },
                 TaskStep("活力值兑换", { selfHomeObj != null && vitalityExchange!!.value }) { handleVitalityExchange() },
+                TaskStep("活力值秒杀", { selfHomeObj != null && vitalitySecKill!!.value }) { Vitality.scheduleSecKill(this) },
                 TaskStep("能量雨", { selfHomeObj != null && energyRain!!.value }) {
                     if (TaskTimeChecker.isTimeReached(energyRainTime?.value, "0810")) {
                         if (energyRainChance!!.value) {

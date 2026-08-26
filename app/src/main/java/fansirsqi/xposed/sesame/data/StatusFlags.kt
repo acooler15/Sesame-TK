@@ -88,19 +88,6 @@ object StatusFlags {
 
 
     // ============================================================
-    // 福气鱼池（AntFishPond）
-    // ============================================================
-
-    /** 福气鱼池：今日是否因缺少 riskToken 而跳过自动钓鱼 */
-    const val FLAG_ANTFISHPOND_RISK_TOKEN_MISSING =
-        "AntFishPond::riskTokenMissing"
-
-    /** 福气鱼池：今日已确认钓鱼次数 */
-    const val FLAG_ANTFISHPOND_FISH_COUNT =
-        "AntFishPond::fishCount"
-
-
-    // ============================================================
     // 森林 1V1 能量挑战（EnergyPvp）
     // ============================================================
 

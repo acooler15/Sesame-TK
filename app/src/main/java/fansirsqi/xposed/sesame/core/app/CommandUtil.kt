@@ -13,6 +13,7 @@ import fansirsqi.xposed.sesame.ICallback
 import fansirsqi.xposed.sesame.ICommandService
 import fansirsqi.xposed.sesame.IStatusListener
 import fansirsqi.xposed.sesame.hook.ApplicationHook
+import fansirsqi.xposed.sesame.service.ShellType
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,7 +41,7 @@ object CommandUtil {
     // --- 状态定义 ---
     sealed class ServiceStatus {
         data object Loading : ServiceStatus()
-        data class Active(val type: String) : ServiceStatus() // type = "Root" or "Shizuku"
+        data class Active(val type: ShellType) : ServiceStatus()
         data object Inactive : ServiceStatus()
         data class Error(val msg: String) : ServiceStatus()
     }
@@ -104,12 +105,11 @@ object CommandUtil {
         _serviceStatus.value = ServiceStatus.Inactive // 更新状态为断开
     }
 
-    private fun mapTypeToStatus(typeName: String): ServiceStatus {
-        return when (typeName) {
-            "SafeRootShell", "RootShell" -> ServiceStatus.Active("Root")
-            "ShizukuShell" -> ServiceStatus.Active("Shizuku")
-            "no_executor", "Unknown" -> ServiceStatus.Inactive
-            else -> ServiceStatus.Inactive
+    private fun mapTypeToStatus(typeName: String?): ServiceStatus {
+        val type = ShellType.fromName(typeName)
+        return when (type) {
+            ShellType.ROOT, ShellType.SHIZUKU -> ServiceStatus.Active(type)
+            ShellType.NONE -> ServiceStatus.Inactive
         }
     }
 

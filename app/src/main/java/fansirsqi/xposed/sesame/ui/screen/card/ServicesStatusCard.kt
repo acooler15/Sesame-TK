@@ -81,7 +81,7 @@ fun ServicesStatusCard(
                         Icon(Icons.Outlined.CheckCircle, "已授权")
                         Column(Modifier.padding(start = 20.dp)) {
                             Text(text = "滑块验证服务正常", style = MaterialTheme.typography.titleMedium)
-                            Text(text = "授权方式: ${status.type}", style = MaterialTheme.typography.bodyMedium)
+                            Text(text = "授权方式: ${status.type.displayName}", style = MaterialTheme.typography.bodyMedium)
                             Spacer(Modifier.height(4.dp))
                             Text(text = "", style = MaterialTheme.typography.bodySmall)
                         }

@@ -93,7 +93,7 @@ class CommandService : Service() {
                     try {
                         ensureShellManager()
                         // 优化: 如果 ShellManager 依然没有 Shell，尝试重置一下（应对 Shizuku 刚授权的情况）
-                        if (shellManager?.selectedName == "no_executor") {
+                        if (shellManager?.selectedType == ShellType.NONE) {
                             shellManager?.reset()
                         }
 
@@ -158,7 +158,8 @@ class CommandService : Service() {
         override fun registerListener(listener: IStatusListener?) {
             listeners.register(listener)
             // 💡 注册时立即回调一次当前状态，防止客户端状态不同步
-            listener?.onStatusChanged(shellManager?.selectedName)
+            // 注意：shellManager 未初始化时 selectedType 为 NONE，不再 push null
+            listener?.onStatusChanged(shellManager?.selectedType?.name ?: ShellType.NONE.name)
         }
 
         /**
@@ -201,7 +202,7 @@ class CommandService : Service() {
             try {
                 ensureShellManager()
                 shellManager?.onStateChanged = { newType ->
-                    dispatchStatusChange(newType)
+                    dispatchStatusChange(newType.name)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "ShellManager 初始化失败", e)

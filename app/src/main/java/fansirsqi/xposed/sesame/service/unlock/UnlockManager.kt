@@ -54,7 +54,7 @@ object UnlockManager {
         Log.record(TAG, "决策链[0]：无障碍服务可用 ✓")
         val probe = shellManager.exec("echo ok") // 触发 selectExecutor：Root 优先，Shizuku 次之
         val hasShell = !(probe.exitCode == -1 && probe.stderr.contains("No valid"))
-        Log.record(TAG, "决策链[0]：shell 探测 exitCode=${probe.exitCode}, selected=${shellManager.selectedName}, hasShell=$hasShell")
+        Log.record(TAG, "决策链[0]：shell 探测 exitCode=${probe.exitCode}, selected=${shellManager.selectedType}, hasShell=$hasShell")
         if (!hasShell) {
             Log.record(TAG, "决策链[0]：Root/Shizuku 均不可用 → FAIL(no_privilege_shell)")
             return UnlockResult(false, FAIL_NO_SHELL)

@@ -2,7 +2,6 @@ package fansirsqi.xposed.sesame.ui.viewmodel
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +14,7 @@ import fansirsqi.xposed.sesame.core.store.DataStore
 import fansirsqi.xposed.sesame.core.app.FansirsqiUtil
 import fansirsqi.xposed.sesame.core.log.Log
 import fansirsqi.xposed.sesame.core.notify.ToastUtil
-import rikka.shizuku.Shizuku
+import fansirsqi.xposed.sesame.service.ShizukuChecker
 
 // 定义菜单项数据类
 data class MenuItem(
@@ -96,7 +95,7 @@ class ExtendViewModel : ViewModel() {
             })
 
             menuItems.add(MenuItem("TestShow") {
-                ToastUtil.showToast(context, "shizuku:"+isShizukuReady().toString())
+                ToastUtil.showToast(context, "shizuku:" + ShizukuChecker.isReady().toString())
             })
         }
     }
@@ -145,15 +144,5 @@ class ExtendViewModel : ViewModel() {
         }
         context.sendBroadcast(intent)
         Log.debug("ExtendViewModel", "扩展工具主动调用广播查询📢：$type")
-    }
-
-    private fun isShizukuReady(): Boolean {
-        return try {
-            val isBinderAlive = Shizuku.pingBinder()
-            val hasPermission = if (isBinderAlive) Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED else false
-            isBinderAlive && hasPermission
-        } catch (_: Exception) {
-            false
-        }
     }
 }

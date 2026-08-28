@@ -93,6 +93,18 @@
 >
 > 自 **北京时间2025年12月15日开始** 提交的所有代码 ，又他们改回遵循 `GPLv3` 协议，并禁止用于任何商业用途、禁止二次修改后闭源发布
 
+---
+
+## 项目文档
+
+详细的架构分析、模块说明与流程剖析请参阅 [docs/README.md](docs/README.md) 文档中心：
+
+- [开发文档](docs/开发文档.md) — 项目概览、技术栈、架构分层、双 Hook 入口、构建与签名、二次开发指南
+- [功能模块文档](docs/功能模块文档.md) — 全部 15 个功能模块的职责、配置项、支撑性模块与辅助服务
+- [任务执行流程分析](docs/任务执行流程分析.md) — 定时任务调度链路、蚂蚁森林蹲点引擎、通用蹲点机制、调优常量速查
+
+---
+
 > [!Important]
 > ## 鸣谢 感谢各位开发者的辛苦贡献
 > ![[贡献列表](https://github.com/Fansirsqi/Sesame-TK/graphs/contributors)](https://contrib.rocks/image?repo=Fansirsqi/Sesame-TK)

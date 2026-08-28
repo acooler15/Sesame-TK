@@ -230,10 +230,13 @@ class ApplicationHook {
                         if (targetUid != currentUid) {
                             if (currentUid != null) {
                                 // 先保存旧账户蹲点任务并取消其协程（此时 currentUid 仍为旧值，防止跨账户污染）
+                                record(TAG, "onResume: 检测到用户切换 $currentUid -> $targetUid")
                                 EnergyWaitingManager.onAccountSwitch(currentUid)
                                 if (initHandler()) {
                                     TaskScheduler.lastExecTime = 0
                                     show("用户已切换")
+                                } else {
+                                    record(TAG, "onResume: 用户切换 initHandler 失败，init 已重置，下次 onResume 将重试")
                                 }
                                 return
                             }
@@ -567,6 +570,11 @@ class ApplicationHook {
                 applicationScope.cancel("Application destroyed")
             } catch (th: Throwable) {
                 printStackTrace(TAG, "stopHandler err:", th)
+            } finally {
+                // 确保 destroy 后 init 重置为 false，
+                // 否则下次 onResume 时 init 仍为 true 但模块未启动，
+                // 导致切换用户后无法重新初始化模块
+                init = false
             }
         }
     }

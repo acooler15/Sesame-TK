@@ -142,6 +142,7 @@ object UserMap {
     @Synchronized
     fun unload() {
         userMap.clear()
+        currentUid = null
     }
 
     /**

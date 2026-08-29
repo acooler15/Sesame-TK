@@ -419,14 +419,9 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
                 if (attempt >= MAX_REFRESH_ATTEMPTS) {
                     return terminateRetryable("刷新${MAX_REFRESH_ATTEMPTS}次后仍未识别到缺口", "刷新后仍无gap")
                 }
-                val refreshClicked = attemptRefreshForRetry(activity, recognition, cropTop)
-                if (!refreshClicked) {
-                    return terminateRetryable("无法点击刷新按钮重试", "刷新按钮缺失或点击失败")
-                }
-                // 等待新图加载完成后重新截图 + 轻量前置检测
-                delay(REFRESH_SETTLE_DELAY_MS)
-                val decorView = activity.window.decorView
-                lightweight = evaluateLightweightPreCheck(decorView, anchorText)
+                val refreshed = refreshAndReEvaluate(activity, recognition, cropTop, anchorText)
+                    ?: return terminateRetryable("无法点击刷新按钮重试", "刷新按钮缺失或点击失败")
+                lightweight = refreshed
                 continue
             }
 
@@ -448,15 +443,21 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
             val preCheck = evaluateModelPreCheck(croppedBitmap, effectiveRecognition, anchorText, detectedHandle)
             if (!preCheck.passed) {
                 if (rpcConfirmed || hasStrongAnchor) {
-                    // 强信号已确认是验证码页，模型检测失败应重试而非跳过
-                    return terminateRetryable(
-                        if (rpcConfirmed) {
-                            "RPC信号已确认验证码页，但模型前置检测未通过"
-                        } else {
-                            "文本锚点已确认验证码页，但模型前置检测未通过"
-                        },
-                        "强信号确认但模型前置检测未通过"
+                    // 强信号已确认是验证码页，模型检测失败应刷新换图重试
+                    Log.record(
+                        TAG,
+                        "[刷新流程] 模型检测未通过，尝试刷新 (第 ${attempt + 1} 次): ${preCheck.failReasons.joinToString("; ")}"
                     )
+                    if (attempt >= MAX_REFRESH_ATTEMPTS) {
+                        return terminateRetryable(
+                            "刷新${MAX_REFRESH_ATTEMPTS}次后模型检测仍未通过",
+                            if (rpcConfirmed) "RPC信号确认但模型前置检测持续失败" else "文本锚点确认但模型前置检测持续失败"
+                        )
+                    }
+                    val refreshed = refreshAndReEvaluate(activity, recognition, cropTop, anchorText)
+                        ?: return terminateRetryable("无法点击刷新按钮重试", "刷新按钮缺失或点击失败")
+                    lightweight = refreshed
+                    continue
                 }
                 logPrecheckSkip("文本锚点缺失且前置检测未通过", preCheck.failReasons, preCheck.passReasons)
                 return SlidePreparation.Terminate(ActivityHandleResult.SKIP_NON_RETRYABLE)
@@ -530,6 +531,28 @@ class Captcha2Handler : BaseCaptchaHandler(), PageMonitor.ActivityFocusHandler {
         val viewLocation = IntArray(2)
         decorView.getLocationOnScreen(viewLocation)
         return dispatchTapWithFallback(decorView, tapX + viewLocation[0], tapY + viewLocation[1])
+    }
+
+    /**
+     * 刷新换图并重新执行轻量前置检测。
+     *
+     * 点击验证码刷新按钮后等待新图加载，重新截图并产出新的轻量前置检测结果，
+     * 供下一次循环迭代重新走模型识别。
+     *
+     * @return 新图的轻量前置检测结果；点击刷新失败时为 null（无可重试路径）
+     */
+    private suspend fun refreshAndReEvaluate(
+        activity: Activity,
+        recognition: SliderTFLite.SlideRecognitionResult,
+        cropTop: Int,
+        anchorText: String?
+    ): CaptchaPreCheckResult? {
+        if (!attemptRefreshForRetry(activity, recognition, cropTop)) {
+            return null
+        }
+        // 等待新图加载完成后重新截图 + 轻量前置检测
+        delay(REFRESH_SETTLE_DELAY_MS)
+        return evaluateLightweightPreCheck(activity.window.decorView, anchorText)
     }
 
     /**
